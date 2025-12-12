@@ -313,13 +313,14 @@ async def websocket_transcribe(websocket: WebSocket):
                         })
 
                     elif msg_type == "clear":
-                        # Clear accumulated text
+                        # Clear accumulated text and answer cache
                         accumulated_text = ""
                         audio_buffer.clear()
                         audio_chunk_count = 0
                         total_audio_bytes = 0
                         last_processed_question = ""
-                        logger.info("Session cleared")
+                        claude_service.clear_cache()
+                        logger.info("Session cleared, including answer cache")
                         await manager.send_json(websocket, {
                             "type": "cleared",
                             "message": "Session cleared"

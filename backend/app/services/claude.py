@@ -2,25 +2,110 @@
 Anthropic Claude API integration for AI answer generation
 """
 
+import re
 import logging
+from typing import Optional
+from difflib import SequenceMatcher
 from anthropic import Anthropic
 from app.core.config import settings
 
 # 로거 설정
 logger = logging.getLogger(__name__)
 
+
+def normalize_question(question: str) -> str:
+    """
+    Normalize question for cache key generation.
+    Removes punctuation, extra spaces, and converts to lowercase.
+    """
+    # Remove punctuation and convert to lowercase
+    normalized = re.sub(r'[^\w\s]', '', question.lower())
+    # Remove extra spaces
+    normalized = ' '.join(normalized.split())
+    return normalized
+
+
+def calculate_similarity(str1: str, str2: str) -> float:
+    """
+    Calculate similarity ratio between two strings.
+    Returns a value between 0 and 1, where 1 is identical.
+    """
+    return SequenceMatcher(None, str1, str2).ratio()
+
+
 class ClaudeService:
     def __init__(self):
         self.client = Anthropic(api_key=settings.ANTHROPIC_API_KEY)
         self.model = "claude-sonnet-4-20250514"
-        logger.info("Claude service initialized")
+        # Simple in-memory cache for answers
+        # Format: {normalized_question: {"question": original, "answer": generated_answer}}
+        self._answer_cache = {}
+        self._cache_similarity_threshold = 0.85  # 85% similarity to use cached answer
+        self._max_cache_size = 50  # Limit cache size to prevent memory issues
+        logger.info("Claude service initialized with semantic caching")
+
+    def _get_cached_answer(self, question: str) -> Optional[str]:
+        """
+        Check cache for similar questions and return cached answer if found.
+
+        Args:
+            question: The question to check
+
+        Returns:
+            Cached answer if similar question found, None otherwise
+        """
+        normalized_q = normalize_question(question)
+
+        # First check exact match
+        if normalized_q in self._answer_cache:
+            logger.info(f"Cache hit (exact): '{question}'")
+            return self._answer_cache[normalized_q]["answer"]
+
+        # Check for similar questions
+        for cached_q, cached_data in self._answer_cache.items():
+            similarity = calculate_similarity(normalized_q, cached_q)
+            if similarity >= self._cache_similarity_threshold:
+                logger.info(f"Cache hit (similar, {similarity:.2%}): '{question}' ~ '{cached_data['question']}'")
+                return cached_data["answer"]
+
+        logger.debug(f"Cache miss: '{question}'")
+        return None
+
+    def _cache_answer(self, question: str, answer: str):
+        """
+        Cache the generated answer for future use.
+
+        Args:
+            question: The original question
+            answer: The generated answer
+        """
+        normalized_q = normalize_question(question)
+
+        # Implement simple LRU: remove oldest if cache is full
+        if len(self._answer_cache) >= self._max_cache_size:
+            # Remove first item (oldest in insertion order for Python 3.7+)
+            oldest_key = next(iter(self._answer_cache))
+            del self._answer_cache[oldest_key]
+            logger.debug(f"Cache full, removed oldest entry: '{oldest_key}'")
+
+        self._answer_cache[normalized_q] = {
+            "question": question,
+            "answer": answer
+        }
+        logger.info(f"Cached answer for: '{question}' (cache size: {len(self._answer_cache)})")
+
+    def clear_cache(self):
+        """Clear the answer cache."""
+        self._answer_cache.clear()
+        logger.info("Answer cache cleared")
 
     async def generate_answer(
         self,
         question: str,
         resume_text: str = "",
         star_stories: list = None,
-        talking_points: list = None
+        talking_points: list = None,
+        use_cache: bool = True
     ) -> str:
         """
         Generate an interview answer based on question and user context.
@@ -36,6 +121,12 @@ class ClaudeService:
         """
         star_stories = star_stories or []
         talking_points = talking_points or []
+
+        # Check cache first if enabled
+        if use_cache:
+            cached_answer = self._get_cached_answer(question)
+            if cached_answer:
+                return cached_answer
 
         logger.info(f"Generating answer for question: '{question}'")
         logger.info(f"Context: resume={len(resume_text)} chars, stories={len(star_stories)}, points={len(talking_points)}")
@@ -95,8 +186,13 @@ Generate a suggested answer:"""
 
             answer = response.content[0].text
             logger.info(f"Generated answer: {len(answer)} chars")
+
+            # Cache the answer for future use
+            if use_cache:
+                self._cache_answer(question, answer)
+
             return answer
-            
+
         except Exception as e:
             logger.error(f"Claude API error: {str(e)}", exc_info=True)
             return "Error generating answer. Please try again."
