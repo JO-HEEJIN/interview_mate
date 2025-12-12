@@ -5,6 +5,8 @@ OpenAI Whisper API integration for speech-to-text
 import io
 import logging
 import tempfile
+import subprocess
+from pathlib import Path
 from openai import OpenAI
 from app.core.config import settings
 
@@ -52,12 +54,54 @@ class WhisperService:
         logger.warning(f"Unknown audio format, header: {header.hex()}, defaulting to .webm")
         return '.webm'
 
+    def _convert_to_wav(self, input_path: str, output_path: str) -> bool:
+        """
+        Convert audio to WAV using ffmpeg.
+
+        Returns True if successful, False otherwise.
+        """
+        try:
+            # Use ffmpeg to convert to WAV (16kHz, mono, 16-bit PCM)
+            cmd = [
+                'ffmpeg',
+                '-i', input_path,
+                '-ar', '16000',  # 16kHz sample rate
+                '-ac', '1',      # Mono
+                '-f', 'wav',     # WAV format
+                '-y',            # Overwrite output
+                output_path
+            ]
+
+            result = subprocess.run(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                timeout=10
+            )
+
+            if result.returncode == 0:
+                logger.info("Audio converted to WAV successfully")
+                return True
+            else:
+                logger.error(f"FFmpeg conversion failed: {result.stderr.decode()}")
+                return False
+
+        except FileNotFoundError:
+            logger.error("FFmpeg not found. Please install: brew install ffmpeg")
+            return False
+        except subprocess.TimeoutExpired:
+            logger.error("FFmpeg conversion timeout")
+            return False
+        except Exception as e:
+            logger.error(f"Error converting audio: {str(e)}")
+            return False
+
     async def transcribe(self, audio_data: bytes, language: str = "en") -> str:
         """
         Transcribe audio data to text using Whisper API.
 
         Args:
-            audio_data: Raw audio bytes (webm format from browser)
+            audio_data: Raw audio bytes (webm chunks from browser)
             language: Language code (default: English)
 
         Returns:
@@ -67,62 +111,69 @@ class WhisperService:
             logger.warning("Empty audio data received")
             return ""
 
+        # Skip very small chunks (likely incomplete)
+        if len(audio_data) < 1000:
+            logger.warning(f"Audio data too small ({len(audio_data)} bytes), skipping")
+            return ""
+
+        temp_input = None
+        temp_output = None
+
         try:
             logger.info(f"Transcribing audio data: {len(audio_data)} bytes, language: {language}")
 
-            # Check audio data header to determine format
-            audio_header = audio_data[:12] if len(audio_data) >= 12 else audio_data
-            logger.debug(f"Audio header: {audio_header.hex()}")
+            # Create temporary files
+            with tempfile.NamedTemporaryFile(suffix='.webm', delete=False) as f:
+                temp_input = f.name
+                f.write(audio_data)
 
-            # Detect file format from header
-            file_extension = self._detect_audio_format(audio_data)
-            logger.info(f"Detected audio format: {file_extension}")
+            temp_output = temp_input.replace('.webm', '.wav')
 
-            # Create a temporary file with the correct extension
-            with tempfile.NamedTemporaryFile(suffix=file_extension, delete=False) as temp_file:
-                temp_file.write(audio_data)
-                temp_file.flush()
-                temp_file_path = temp_file.name
+            # Convert to WAV using ffmpeg (more reliable than format detection)
+            if not self._convert_to_wav(temp_input, temp_output):
+                logger.error("Failed to convert audio to WAV")
+                return ""
 
-            try:
-                # Interview-specific prompt to guide transcription
-                prompt = (
-                    "This is an interview recording. "
-                    "Transcribe clear interview questions accurately. "
-                    "Ignore filler words, repetitions, and incomplete thoughts. "
-                    "Focus on complete questions only."
+            # Verify WAV file was created
+            if not Path(temp_output).exists() or Path(temp_output).stat().st_size < 100:
+                logger.error("WAV file not created or too small")
+                return ""
+
+            # Interview-specific prompt to guide transcription
+            prompt = (
+                "This is an interview recording. "
+                "Transcribe clear interview questions accurately. "
+                "Ignore filler words, repetitions, and incomplete thoughts. "
+                "Focus on complete questions only."
+            )
+
+            # Transcribe the WAV file
+            with open(temp_output, 'rb') as audio_file:
+                response = self.client.audio.transcriptions.create(
+                    model="whisper-1",
+                    file=audio_file,
+                    language=language,
+                    response_format="text",
+                    prompt=prompt,
+                    temperature=0.1
                 )
 
-                with open(temp_file_path, 'rb') as audio_file:
-                    response = self.client.audio.transcriptions.create(
-                        model="whisper-1",
-                        file=audio_file,
-                        language=language,
-                        response_format="text",
-                        prompt=prompt,
-                        temperature=0.1  # Lower temperature for more deterministic output
-                    )
-
-                result = response.strip()
-                logger.info(f"Transcription successful: '{result}'")
-                return result
-
-            finally:
-                # Clean up temporary file
-                import os
-                try:
-                    os.unlink(temp_file_path)
-                except Exception as cleanup_err:
-                    logger.warning(f"Failed to delete temp file: {cleanup_err}")
+            result = response.strip()
+            logger.info(f"Transcription successful: '{result}'")
+            return result
 
         except Exception as e:
             logger.error(f"Whisper transcription error: {str(e)}", exc_info=True)
-
-            # If webm fails, log more details
-            if "Invalid file format" in str(e):
-                logger.error(f"Audio format detection failed. Data size: {len(audio_data)}, Header: {audio_data[:20].hex() if len(audio_data) >= 20 else 'too short'}")
-
             return ""
+
+        finally:
+            # Clean up temporary files
+            for temp_file in [temp_input, temp_output]:
+                if temp_file and Path(temp_file).exists():
+                    try:
+                        Path(temp_file).unlink()
+                    except Exception as e:
+                        logger.warning(f"Failed to delete temp file {temp_file}: {e}")
 
     async def transcribe_with_timestamps(self, audio_data: bytes, language: str = "en") -> dict:
         """
