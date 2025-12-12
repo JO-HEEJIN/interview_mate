@@ -62,33 +62,52 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
 
     const connect = useCallback(() => {
         if (wsRef.current?.readyState === WebSocket.OPEN) {
+            console.log('WebSocket already connected');
             return;
         }
 
         try {
+            console.log('Connecting to WebSocket:', url);
             const ws = new WebSocket(url);
 
             ws.onopen = () => {
+                console.log('WebSocket connected successfully');
                 setIsConnected(true);
                 onConnectionChange?.(true);
             };
 
-            ws.onclose = () => {
+            ws.onclose = (event) => {
+                console.log('WebSocket disconnected:', event.code, event.reason);
                 setIsConnected(false);
                 onConnectionChange?.(false);
+
+                // Auto-reconnect after 3 seconds in development
+                if (event.code !== 1000) { // 1000 = normal closure
+                    console.log('Attempting to reconnect in 3 seconds...');
+                    setTimeout(() => {
+                        if (wsRef.current?.readyState !== WebSocket.OPEN) {
+                            connect();
+                        }
+                    }, 3000);
+                }
             };
 
             ws.onerror = (error) => {
-                console.error('WebSocket error:', error);
-                onError?.('WebSocket connection error');
+                console.error('WebSocket error details:', {
+                    error,
+                    readyState: ws.readyState,
+                    url: url,
+                    timestamp: new Date().toISOString()
+                });
+                onError?.('WebSocket connection failed. Please check if backend is running on port 8000');
             };
 
             ws.onmessage = handleMessage;
 
             wsRef.current = ws;
         } catch (err) {
-            console.error('Failed to connect WebSocket:', err);
-            onError?.('Failed to connect to server');
+            console.error('Failed to create WebSocket:', err);
+            onError?.(`Failed to connect to server: ${err instanceof Error ? err.message : 'Unknown error'}`);
         }
     }, [url, handleMessage, onConnectionChange, onError]);
 

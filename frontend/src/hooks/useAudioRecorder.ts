@@ -184,13 +184,26 @@ export function useAudioRecorder(options: UseAudioRecorderOptions = {}): UseAudi
             await initializeAudioContext(stream);
 
             // Set up MediaRecorder with appropriate MIME type
-            let mimeType = `audio/${format}`;
-            if (format === 'webm') {
-                mimeType = 'audio/webm;codecs=opus';
+            // Try different formats in order of preference
+            let mimeType = 'audio/webm;codecs=opus';
+
+            if (!MediaRecorder.isTypeSupported(mimeType)) {
+                mimeType = 'audio/webm';
+            }
+            if (!MediaRecorder.isTypeSupported(mimeType)) {
+                mimeType = 'audio/ogg;codecs=opus';
+            }
+            if (!MediaRecorder.isTypeSupported(mimeType)) {
+                mimeType = 'audio/mp4';
             }
 
+            console.log('Using MIME type:', mimeType);
+
             const recorderOptions = MediaRecorder.isTypeSupported(mimeType)
-                ? { mimeType }
+                ? {
+                    mimeType,
+                    audioBitsPerSecond: 128000 // 128kbps for better quality
+                }
                 : undefined;
 
             const mediaRecorder = new MediaRecorder(stream, recorderOptions);
