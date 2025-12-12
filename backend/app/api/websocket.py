@@ -159,6 +159,7 @@ async def websocket_transcribe(websocket: WebSocket):
     audio_chunk_count = 0
     total_audio_bytes = 0
     last_processed_question = ""
+    last_transcribed_text = ""  # Track what we already transcribed
 
     logger.info("WebSocket transcription session started")
 
@@ -177,17 +178,26 @@ async def websocket_transcribe(websocket: WebSocket):
                 
                 logger.debug(f"Audio chunk #{audio_chunk_count}: {chunk_size} bytes, buffer: {len(audio_buffer)} bytes")
 
-                # Process when we have enough audio (about 1.5 seconds worth at 16kHz)
-                # 16000 samples/sec * 2 bytes * 1.5 sec = 48000 bytes
-                # 또는 마지막 처리 후 1.0초가 지났을 때도 처리 (타임아웃 메커니즘)
-                buffer_threshold_reached = len(audio_buffer) >= 48000
-                timeout_reached = (current_time - last_process_time >= 1.0 and len(audio_buffer) > 16000)
+                # Limit buffer size to prevent memory issues and slow processing
+                # Keep only last 30 seconds of audio (30 * 16000 * 2 = 960000 bytes)
+                MAX_BUFFER_SIZE = 960000
+                if len(audio_buffer) > MAX_BUFFER_SIZE:
+                    # Remove oldest audio (keep last 30 seconds)
+                    bytes_to_remove = len(audio_buffer) - MAX_BUFFER_SIZE
+                    audio_buffer = audio_buffer[bytes_to_remove:]
+                    logger.info(f"Buffer trimmed to {len(audio_buffer)} bytes")
+
+                # Process when we have enough audio (about 2 seconds worth at 16kHz)
+                # 16000 samples/sec * 2 bytes * 2 sec = 64000 bytes
+                # 또는 마지막 처리 후 2.0초가 지났을 때도 처리 (타임아웃 메커니즘)
+                buffer_threshold_reached = len(audio_buffer) >= 64000
+                timeout_reached = (current_time - last_process_time >= 2.0 and len(audio_buffer) > 32000)
                 
                 if (buffer_threshold_reached or timeout_reached) and not is_processing:
                     is_processing = True
+                    # Send entire accumulated buffer (not clearing it)
+                    # This creates a valid WebM file from accumulated chunks
                     audio_data = bytes(audio_buffer)
-                    # Clear buffer after copying to prevent duplicate processing
-                    audio_buffer.clear()
                     last_process_time = current_time
                     
                     logger.info(f"Processing audio: {len(audio_data)} bytes (chunk #{audio_chunk_count})")
@@ -200,11 +210,10 @@ async def websocket_transcribe(websocket: WebSocket):
                         )
 
                         if transcription:
-                            # Whisper returns full text for the whole buffer
-                            accumulated_text = transcription
-                            accumulated_text = accumulated_text.strip()
+                            # Use the transcription as-is (Whisper already handles the full buffer)
+                            accumulated_text = transcription.strip()
 
-                            logger.info(f"Transcription result: '{transcription}', accumulated: '{accumulated_text}'")
+                            logger.info(f"Transcription: '{accumulated_text}'")
 
                             # Send transcription to client
                             sent = await manager.send_json(websocket, {
@@ -319,6 +328,7 @@ async def websocket_transcribe(websocket: WebSocket):
                         audio_chunk_count = 0
                         total_audio_bytes = 0
                         last_processed_question = ""
+                        last_transcribed_text = ""
                         claude_service.clear_cache()
                         logger.info("Session cleared, including answer cache")
                         await manager.send_json(websocket, {
@@ -348,7 +358,7 @@ async def websocket_transcribe(websocket: WebSocket):
                         if len(audio_buffer) > 0:
                             logger.info(f"Finalizing: processing remaining {len(audio_buffer)} bytes")
                             audio_data = bytes(audio_buffer)
-                            audio_buffer.clear()
+                            # Keep buffer for context, will be cleared on next "clear" message
 
                             transcription = await whisper_service.transcribe(
                                 audio_data,

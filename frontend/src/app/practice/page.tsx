@@ -271,18 +271,22 @@ export default function PracticePage() {
                 )}
 
                 {/* Instructions */}
-                <div className="mt-4 rounded-lg border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900">
-                    <h3 className="mb-2 font-medium text-zinc-900 dark:text-zinc-100">
-                        How to use
+                <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-950">
+                    <h3 className="mb-2 font-medium text-blue-900 dark:text-blue-100">
+                        How to use (Manual Control)
                     </h3>
-                    <ol className="list-inside list-decimal space-y-1 text-sm text-zinc-600 dark:text-zinc-400">
-                        <li>Click &quot;Start Recording&quot; to begin your practice session</li>
-                        <li>Speak interview questions (or have someone ask you)</li>
-                        <li>The system will transcribe audio in real-time</li>
-                        <li>When a question is detected, an AI-generated answer suggestion will appear</li>
-                        <li>Use suggestion as a guide for your own answer</li>
-                        <li>Click &quot;Clear&quot; to reset and start fresh</li>
+                    <ol className="list-inside list-decimal space-y-2 text-sm text-blue-800 dark:text-blue-200">
+                        <li><strong>Start Recording</strong> - Begin recording session</li>
+                        <li><strong>Pause</strong> when interviewer asks question - Listen to the question</li>
+                        <li><strong>Resume</strong> after question ends - System will transcribe</li>
+                        <li><strong>Wait 2-3 seconds</strong> - Transcription and answer generation in progress</li>
+                        <li><strong>Pause again</strong> before answering - Use the AI suggestion</li>
+                        <li><strong>Resume</strong> to record your answer (optional)</li>
+                        <li><strong>Clear</strong> to reset everything</li>
                     </ol>
+                    <div className="mt-3 rounded bg-blue-100 dark:bg-blue-900 p-2 text-xs text-blue-700 dark:text-blue-300">
+                        <strong>Tip:</strong> Pause during questions, Resume to process. This gives you control and better accuracy.
+                    </div>
                 </div>
             </main>
         </div>

@@ -101,7 +101,7 @@ class WhisperService:
         Transcribe audio data to text using Whisper API.
 
         Args:
-            audio_data: Raw audio bytes (webm chunks from browser)
+            audio_data: Raw audio bytes (accumulated webm buffer)
             language: Language code (default: English)
 
         Returns:
@@ -116,28 +116,16 @@ class WhisperService:
             logger.warning(f"Audio data too small ({len(audio_data)} bytes), skipping")
             return ""
 
-        temp_input = None
-        temp_output = None
+        temp_file = None
 
         try:
             logger.info(f"Transcribing audio data: {len(audio_data)} bytes, language: {language}")
 
-            # Create temporary files
+            # Write accumulated buffer to temp file
+            # The accumulated chunks form a valid WebM file
             with tempfile.NamedTemporaryFile(suffix='.webm', delete=False) as f:
-                temp_input = f.name
+                temp_file = f.name
                 f.write(audio_data)
-
-            temp_output = temp_input.replace('.webm', '.wav')
-
-            # Convert to WAV using ffmpeg (more reliable than format detection)
-            if not self._convert_to_wav(temp_input, temp_output):
-                logger.error("Failed to convert audio to WAV")
-                return ""
-
-            # Verify WAV file was created
-            if not Path(temp_output).exists() or Path(temp_output).stat().st_size < 100:
-                logger.error("WAV file not created or too small")
-                return ""
 
             # Interview-specific prompt to guide transcription
             prompt = (
@@ -147,8 +135,8 @@ class WhisperService:
                 "Focus on complete questions only."
             )
 
-            # Transcribe the WAV file
-            with open(temp_output, 'rb') as audio_file:
+            # Transcribe directly (no conversion needed with accumulated buffer)
+            with open(temp_file, 'rb') as audio_file:
                 response = self.client.audio.transcriptions.create(
                     model="whisper-1",
                     file=audio_file,
@@ -167,13 +155,12 @@ class WhisperService:
             return ""
 
         finally:
-            # Clean up temporary files
-            for temp_file in [temp_input, temp_output]:
-                if temp_file and Path(temp_file).exists():
-                    try:
-                        Path(temp_file).unlink()
-                    except Exception as e:
-                        logger.warning(f"Failed to delete temp file {temp_file}: {e}")
+            # Clean up temporary file
+            if temp_file and Path(temp_file).exists():
+                try:
+                    Path(temp_file).unlink()
+                except Exception as e:
+                    logger.warning(f"Failed to delete temp file {temp_file}: {e}")
 
     async def transcribe_with_timestamps(self, audio_data: bytes, language: str = "en") -> dict:
         """
