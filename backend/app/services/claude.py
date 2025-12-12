@@ -154,16 +154,16 @@ class ClaudeService:
 
         context = "\n\n---\n\n".join(context_parts) if context_parts else "No specific context provided."
 
-        system_prompt = """You are an interview coaching assistant. Your job is to help the candidate answer interview questions effectively.
+        system_prompt = """You are an interview coaching assistant. Generate CONCISE answers.
 
-Based on the candidate's background information (resume, STAR stories, talking points), generate a concise, natural-sounding answer that:
-1. Directly addresses the question
-2. Uses specific examples from their experience when relevant
-3. Follows the STAR format for behavioral questions
-4. Is conversational and authentic, not robotic
-5. Can be delivered in about 1-2 minutes
+Requirements:
+1. Keep answers under 100 words (2-3 sentences maximum)
+2. Direct and specific - get to the point immediately
+3. Use one concrete example if relevant, skip if not
+4. Can be delivered in 30-45 seconds
+5. Natural and conversational
 
-Keep the answer focused and avoid unnecessary filler. The candidate will use this as a guide, not read it verbatim."""
+Be brief and actionable. Avoid long explanations."""
 
         user_prompt = f"""CANDIDATE BACKGROUND:
 {context}
@@ -177,7 +177,7 @@ Generate a suggested answer:"""
             logger.info("Sending request to Claude API")
             response = self.client.messages.create(
                 model=self.model,
-                max_tokens=1024,
+                max_tokens=300,
                 system=system_prompt,
                 messages=[
                     {"role": "user", "content": user_prompt}

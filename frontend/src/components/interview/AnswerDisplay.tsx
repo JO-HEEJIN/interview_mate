@@ -20,6 +20,7 @@ interface AnswerDisplayProps {
     isGenerating: boolean;
     onRegenerate?: (question: string) => void;
     onRateAnswer?: (question: string, rating: 'up' | 'down') => void;
+    onStopGenerating?: () => void;
 }
 
 // Inline SVG Icons
@@ -53,7 +54,13 @@ const ThumbsDownIcon = ({ className }: { className?: string }) => (
     </svg>
 );
 
-export function AnswerDisplay({ answers, isGenerating, onRegenerate, onRateAnswer }: AnswerDisplayProps) {
+const XIcon = ({ className }: { className?: string }) => (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+    </svg>
+);
+
+export function AnswerDisplay({ answers, isGenerating, onRegenerate, onRateAnswer, onStopGenerating }: AnswerDisplayProps) {
     const [expandedAnswers, setExpandedAnswers] = useState<Set<number>>(new Set());
     const [copiedAnswer, setCopiedAnswer] = useState<number | null>(null);
     const [ratedAnswers, setRatedAnswers] = useState<Map<string, 'up' | 'down'>>(new Map());
@@ -139,11 +146,23 @@ export function AnswerDisplay({ answers, isGenerating, onRegenerate, onRateAnswe
 
             {isGenerating && (
                 <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-900 dark:bg-blue-950">
-                    <div className="flex items-center gap-3">
-                        <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
-                        <span className="text-blue-700 dark:text-blue-300 font-medium">
-                            Generating answer...
-                        </span>
+                    <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                            <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
+                            <span className="text-blue-700 dark:text-blue-300 font-medium">
+                                Generating answer...
+                            </span>
+                        </div>
+                        {onStopGenerating && (
+                            <button
+                                onClick={onStopGenerating}
+                                className="flex items-center gap-2 rounded bg-red-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-600 transition-colors"
+                                title="Stop generating"
+                            >
+                                <XIcon className="h-4 w-4" />
+                                Stop
+                            </button>
+                        )}
                     </div>
                     <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-blue-100 dark:bg-blue-900">
                         <div className="h-full w-1/3 animate-pulse rounded-full bg-blue-500"></div>

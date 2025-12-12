@@ -181,6 +181,12 @@ export default function PracticePage() {
         requestAnswer(question);
     }, [requestAnswer]);
 
+    // Handle stop generating
+    const handleStopGenerating = useCallback(() => {
+        setIsGenerating(false);
+        console.log('Answer generation stopped by user');
+    }, []);
+
     return (
         <div className="min-h-screen bg-zinc-50 dark:bg-black">
             {/* Header */}
@@ -255,6 +261,7 @@ export default function PracticePage() {
                             answers={answers}
                             isGenerating={isGenerating}
                             onRegenerate={handleRegenerate}
+                            onStopGenerating={handleStopGenerating}
                         />
                     </div>
                 </div>
