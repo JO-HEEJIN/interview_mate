@@ -1,0 +1,163 @@
+"""
+Unified LLM service with multi-provider support and failover
+Supports Claude (Anthropic) and GLM-4.6 (ZhipuAI) with intelligent routing
+
+Strategy options:
+- "claude": Use only Claude (high quality, higher cost)
+- "glm": Use only GLM (ultra-low cost, good quality)
+- "hybrid": Try GLM first, fallback to Claude if error (best of both worlds)
+"""
+
+import logging
+from typing import Optional, AsyncIterator
+from app.core.config import settings
+from app.services.claude import claude_service
+from app.services.glm_service import glm_service
+
+logger = logging.getLogger(__name__)
+
+
+class LLMService:
+    def __init__(self):
+        self.strategy = settings.LLM_SERVICE  # "claude" or "glm" or "hybrid"
+        self.primary_service = None
+        self.fallback_service = None
+
+        # Configure based on strategy
+        if self.strategy == "claude":
+            self.primary_service = claude_service
+            self.fallback_service = None
+            logger.info("LLM strategy: Claude only")
+        elif self.strategy == "glm":
+            self.primary_service = glm_service
+            self.fallback_service = None
+            logger.info("LLM strategy: GLM only")
+        elif self.strategy == "hybrid":
+            self.primary_service = glm_service
+            self.fallback_service = claude_service
+            logger.info("LLM strategy: Hybrid (GLM → Claude fallback)")
+        else:
+            logger.warning(f"Unknown LLM strategy: {self.strategy}, defaulting to Claude")
+            self.primary_service = claude_service
+            self.fallback_service = None
+
+    async def generate_answer_stream(
+        self,
+        question: str,
+        resume_text: str = "",
+        star_stories: list = None,
+        talking_points: list = None,
+        format: str = "bullet"
+    ) -> AsyncIterator[str]:
+        """
+        Generate streaming answer with automatic failover.
+
+        Args:
+            question: The interview question
+            resume_text: User's resume content
+            star_stories: List of STAR stories
+            talking_points: List of key talking points
+            format: "bullet" for bullet points, "paragraph" for full text
+
+        Yields:
+            str: Text chunks as they're generated
+        """
+        try:
+            # Try primary service
+            if hasattr(self.primary_service, 'generate_answer_stream'):
+                logger.info(f"Using primary service: {self.primary_service.__class__.__name__}")
+                async for chunk in self.primary_service.generate_answer_stream(
+                    question, resume_text, star_stories, talking_points, format
+                ):
+                    yield chunk
+            else:
+                # Primary service doesn't support streaming, use non-streaming method
+                logger.info(f"Primary service doesn't support streaming, using non-streaming")
+                answer = await self.primary_service.generate_answer(
+                    question, resume_text, star_stories, talking_points
+                )
+                yield answer
+
+        except Exception as e:
+            logger.error(f"Primary service error: {str(e)}")
+
+            # Try fallback if available
+            if self.fallback_service:
+                logger.info(f"Falling back to: {self.fallback_service.__class__.__name__}")
+                try:
+                    yield "\n\n[Switched to backup service]\n\n"
+
+                    # Claude doesn't have streaming yet, use non-streaming
+                    answer = await self.fallback_service.generate_answer(
+                        question, resume_text, star_stories, talking_points
+                    )
+                    yield answer
+
+                except Exception as fallback_error:
+                    logger.error(f"Fallback service also failed: {str(fallback_error)}")
+                    yield "\n\n⚠️ Error generating answer. Please try again."
+            else:
+                # No fallback available
+                yield "\n\n⚠️ Error generating answer. Please try again."
+
+    async def generate_answer(
+        self,
+        question: str,
+        resume_text: str = "",
+        star_stories: list = None,
+        talking_points: list = None,
+        format: str = "bullet"
+    ) -> str:
+        """
+        Generate complete answer (non-streaming) with automatic failover.
+
+        Args:
+            question: The interview question
+            resume_text: User's resume content
+            star_stories: List of STAR stories
+            talking_points: List of key talking points
+            format: "bullet" or "paragraph"
+
+        Returns:
+            str: Complete generated answer
+        """
+        try:
+            # Try primary service
+            logger.info(f"Using primary service: {self.primary_service.__class__.__name__}")
+
+            if hasattr(self.primary_service, 'generate_answer'):
+                if format == "bullet" and hasattr(self.primary_service, 'generate_answer_stream'):
+                    # GLM service - use format parameter
+                    chunks = []
+                    async for chunk in self.primary_service.generate_answer_stream(
+                        question, resume_text, star_stories, talking_points, format
+                    ):
+                        chunks.append(chunk)
+                    return "".join(chunks)
+                else:
+                    # Claude service - no format parameter
+                    return await self.primary_service.generate_answer(
+                        question, resume_text, star_stories, talking_points
+                    )
+            else:
+                raise Exception("Primary service doesn't support generate_answer")
+
+        except Exception as e:
+            logger.error(f"Primary service error: {str(e)}")
+
+            # Try fallback if available
+            if self.fallback_service:
+                logger.info(f"Falling back to: {self.fallback_service.__class__.__name__}")
+                try:
+                    return await self.fallback_service.generate_answer(
+                        question, resume_text, star_stories, talking_points
+                    )
+                except Exception as fallback_error:
+                    logger.error(f"Fallback service also failed: {str(fallback_error)}")
+                    return "⚠️ Error generating answer. Please try again."
+            else:
+                return "⚠️ Error generating answer. Please try again."
+
+
+# Global LLM service instance
+llm_service = LLMService()

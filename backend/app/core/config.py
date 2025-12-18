@@ -35,7 +35,12 @@ class Settings(BaseSettings):
     
     # Anthropic
     ANTHROPIC_API_KEY: str = ""
-    
+
+    # ZhipuAI (GLM-4.6)
+    ZHIPUAI_API_KEY: str = ""
+    GLM_MODEL: str = "glm-4-flash"  # or "glm-4-air"
+    LLM_SERVICE: str = "claude"  # "claude" or "glm" or "hybrid"
+
     # JWT
     JWT_SECRET: str = "development-secret-change-in-production"
     JWT_ALGORITHM: str = "HS256"
@@ -86,6 +91,11 @@ class Settings(BaseSettings):
     CLAUDE_MODEL: str = "claude-3-sonnet-20240229"
     MAX_TOKENS: int = 1024
     TEMPERATURE: float = 0.7
+
+    # Deepgram (Transcription)
+    DEEPGRAM_API_KEY: str = ""
+    TRANSCRIPTION_SERVICE: str = "deepgram"  # "deepgram" or "whisper"
+    DEEPGRAM_MODEL: str = "nova-3"
     
     # File Storage
     UPLOAD_DIR: str = "uploads"

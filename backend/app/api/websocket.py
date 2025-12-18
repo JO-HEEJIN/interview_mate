@@ -8,6 +8,7 @@ import logging
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from app.services.deepgram_service import deepgram_service
 from app.services.claude import claude_service, detect_question_fast
+from app.services.llm_service import llm_service
 
 # 로거 설정
 logger = logging.getLogger(__name__)
@@ -235,28 +236,46 @@ async def websocket_transcribe(websocket: WebSocket):
                         matched_qa = claude_service.find_matching_qa_pair_fast(question)
 
                         if matched_qa:
-                            # 3a. Return uploaded answer
+                            # 3a. Return uploaded answer (instant)
                             logger.info(f"Using uploaded Q&A pair (ID: {matched_qa.get('id')})")
                             await manager.send_json(websocket, {
                                 "type": "answer",
                                 "question": question,
                                 "answer": matched_qa["answer"],
                                 "source": "uploaded",
-                                "qa_pair_id": matched_qa.get("id")
+                                "qa_pair_id": matched_qa.get("id"),
+                                "is_streaming": False
                             })
                         else:
-                            # 3b. Generate with Claude
-                            logger.info("No matching Q&A found, generating with Claude")
-                            answer = await claude_service.generate_answer(
+                            # 3b. Generate with streaming LLM (Phase 1.3)
+                            logger.info("No matching Q&A found, generating with streaming LLM")
+
+                            # Signal streaming start
+                            await manager.send_json(websocket, {
+                                "type": "answer_stream_start",
+                                "question": question,
+                                "source": "generated"
+                            })
+
+                            # Stream answer chunks in real-time
+                            async for chunk in llm_service.generate_answer_stream(
                                 question=question,
                                 resume_text=user_context["resume_text"],
                                 star_stories=user_context["star_stories"],
-                                talking_points=user_context["talking_points"]
-                            )
+                                talking_points=user_context["talking_points"],
+                                format="bullet"  # Bullet point format for real-time interview
+                            ):
+                                await manager.send_json(websocket, {
+                                    "type": "answer_stream_chunk",
+                                    "question": question,
+                                    "chunk": chunk,
+                                    "source": "generated"
+                                })
+
+                            # Signal streaming end
                             await manager.send_json(websocket, {
-                                "type": "answer",
+                                "type": "answer_stream_end",
                                 "question": question,
-                                "answer": answer,
                                 "source": "generated"
                             })
                 finally:
@@ -386,28 +405,46 @@ async def websocket_transcribe(websocket: WebSocket):
                                 matched_qa = claude_service.find_matching_qa_pair_fast(question)
 
                                 if matched_qa:
-                                    # 3a. Return uploaded answer
+                                    # 3a. Return uploaded answer (instant)
                                     logger.info(f"Using uploaded Q&A pair (ID: {matched_qa.get('id')})")
                                     await manager.send_json(websocket, {
                                         "type": "answer",
                                         "question": question,
                                         "answer": matched_qa["answer"],
                                         "source": "uploaded",
-                                        "qa_pair_id": matched_qa.get("id")
+                                        "qa_pair_id": matched_qa.get("id"),
+                                        "is_streaming": False
                                     })
                                 else:
-                                    # 3b. Generate with Claude
-                                    logger.info("No matching Q&A found, generating with Claude")
-                                    answer = await claude_service.generate_answer(
+                                    # 3b. Generate with streaming LLM (Phase 1.3)
+                                    logger.info("No matching Q&A found, generating with streaming LLM")
+
+                                    # Signal streaming start
+                                    await manager.send_json(websocket, {
+                                        "type": "answer_stream_start",
+                                        "question": question,
+                                        "source": "generated"
+                                    })
+
+                                    # Stream answer chunks in real-time
+                                    async for chunk in llm_service.generate_answer_stream(
                                         question=question,
                                         resume_text=user_context["resume_text"],
                                         star_stories=user_context["star_stories"],
-                                        talking_points=user_context["talking_points"]
-                                    )
+                                        talking_points=user_context["talking_points"],
+                                        format="bullet"  # Bullet point format for real-time interview
+                                    ):
+                                        await manager.send_json(websocket, {
+                                            "type": "answer_stream_chunk",
+                                            "question": question,
+                                            "chunk": chunk,
+                                            "source": "generated"
+                                        })
+
+                                    # Signal streaming end
                                     await manager.send_json(websocket, {
-                                        "type": "answer",
+                                        "type": "answer_stream_end",
                                         "question": question,
-                                        "answer": answer,
                                         "source": "generated"
                                     })
 
