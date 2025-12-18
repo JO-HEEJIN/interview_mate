@@ -358,13 +358,13 @@ class ClaudeService:
 INTERVIEW QUESTION:
 {question}
 
-Generate a suggested answer:"""
+Generate a suggested answer (MAXIMUM 60-70 WORDS, 30 SECONDS SPOKEN):"""
 
         try:
             # Claude streaming API
             with self.client.messages.stream(
                 model=self.model,
-                max_tokens=300,
+                max_tokens=150,  # Strict limit: 60-70 words = ~100-120 tokens
                 system=system_prompt,
                 messages=[{"role": "user", "content": user_prompt}]
             ) as stream:
@@ -435,17 +435,36 @@ Actual Files in GitHub (github.com/JO-HEEJIN/birth2death-backend):
 
 NEVER mention files that don't exist. If unsure, say "in the codebase" without specific filename.
 
-Style Requirements (INTRO CALL FORMAT - 25 minutes total):
-1. BREVITY: 2-3 sentences MAX (30-45 seconds spoken) - this is an intro call, not a deep dive
-2. Lead with the core answer first, details second
-3. End with "Would you like me to elaborate?" or "I can walk through the details if helpful"
-4. Professional yet conversational - avoid excessive formality
-5. Use specific metrics when relevant (e.g., "92.6% measured reduction", "0.92 similarity threshold")
-6. Reference files only if directly asked (don't volunteer "in router.py lines 20-30" unless specifically asked)
-7. For behavioral questions: Brief STAR format - Situation + Result in 2 sentences
-8. Avoid filler words ("So honestly...", "Yeah, so...", "Like...") - be direct
-9. Never use "First, Second, Third" structure unless listing is explicitly requested
-10. Business impact in one phrase: "92.6% cost reduction" not "which resulted in significant cost savings"
+CRITICAL ANSWER FORMAT (NON-NEGOTIABLE):
+**MAXIMUM 60-70 WORDS (30 SECONDS SPOKEN)** - Answers over 70 words will be rejected in interviews
+
+Structure:
+1. Lead with direct answer (1 sentence, 15-20 words)
+2. ONE supporting point with metric/example (1 sentence, 20-30 words)
+3. Optional: Brief next step or offer to elaborate (1 sentence, 15-20 words)
+
+Examples:
+
+❌ BAD (Too long - 150+ words):
+"I learned that credibility matters more than looking impressive. If I could go back, I'd write exactly what was true: validated architecture, real test data, no fake users. That authenticity is what builds trust with customers. The moment I wrote '1,000+ users' knowing we hadn't launched, I prioritized looking good over being truthful. That's the same mentality that leads to promising customers features that don't exist..."
+
+✅ GOOD (60 words):
+"I learned that credibility beats looking impressive. If I could go back, I'd write exactly what was true: validated architecture, real test data, no fake users. In SA work, the moment you oversell - whether on a resume or to a customer - you damage trust. Authenticity builds stronger relationships than perfection."
+
+SA Communication Style:
+- Start with the answer, not preamble ("Here's what I'd recommend..." not "That's a great question, let me think...")
+- ONE metric per answer ("92.6% cost reduction" not multiple statistics)
+- No numbered lists unless explicitly requested
+- No "Would you like me to elaborate?" - assume smart follow-up questions
+- Concrete over abstract ("Semantic cache + prompt caching + model routing" not "multi-layer optimization strategy")
+- Cut ALL filler words
+
+For STAR questions (behavioral):
+- Situation: 1 sentence (10-15 words)
+- Task: Implied, don't state separately
+- Action: 1 sentence (20-30 words)
+- Result: 1 sentence with metric (15-20 words)
+Total: 50-60 words MAX
 
 Key principles:
 - ACCURACY about project stage (validation/testing, NOT production)
@@ -524,13 +543,13 @@ Resume Issue Handling:
 INTERVIEW QUESTION:
 {question}
 
-Generate a suggested answer:"""
+Generate a suggested answer (MAXIMUM 60-70 WORDS, 30 SECONDS SPOKEN):"""
 
         try:
             logger.info("Sending request to Claude API")
             response = self.client.messages.create(
                 model=self.model,
-                max_tokens=300,  # Shorter for 25-min intro call format
+                max_tokens=150,  # Strict limit: 60-70 words = ~100-120 tokens
                 system=system_prompt,
                 messages=[
                     {"role": "user", "content": user_prompt}
