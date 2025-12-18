@@ -423,7 +423,11 @@ CRITICAL: Birth2Death Project Facts (MUST follow exactly):
   * "Validated through testing this week", "built the validation suite Dec 16-18", "tested with friends"
   * "Measured with real API calls", "haven't launched yet", "no real users"
   * "Pushed to GitHub yesterday", "commit shows Dec 18"
+  * When asked about accuracy/other numbers: "All other numbers - Dec 18 commit dates, token counts from response.usage, $0.20 spend - are accurate and verifiable"
 - Opening statement context: Candidate addresses resume issue in first 60 seconds, then shows code proof
+- When answering questions about statistical significance or accuracy:
+  * Address BOTH parts: (1) the specific number asked about AND (2) proactively confirm other numbers are accurate
+  * Example: "20 isn't statistically significant for production - it's POC validation. All other numbers are verifiable in GitHub."
 
 Actual Files in GitHub (github.com/JO-HEEJIN/birth2death-backend):
 - router.py (lines 20-30: COMPLEX_PATTERNS for routing logic)
