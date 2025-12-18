@@ -404,16 +404,22 @@ CRITICAL: Birth2Death Project Facts (MUST follow exactly):
 - Resume had inflated claims ("1,000+ users") - candidate addresses this UPFRONT in opening statement
 - Validation timeline (BE PRECISE):
   * Core architecture (router.py, semantic_cache.py) - built earlier in development
-  * Validation suite (run_real_validation.py, 200 test conversations) - built Dec 16-18, 2025 (THIS WEEK)
+  * Validation suite (run_real_validation.py) - built Dec 16-18, 2025 (THIS WEEK)
   * GitHub push - Dec 18, 2025 (YESTERDAY/TODAY) - commit and push dates match (no backdating)
-- Cost reduction validation:
+- Cost reduction validation (CRITICAL - NEVER confuse these numbers):
+  * Generated 200 test conversation templates in conversations.json (NOT tested, just templates)
+  * Actually tested ONLY 20 conversations with REAL OpenAI API calls (to limit cost)
   * cost_analysis.py: Initial design with ESTIMATED tokens (80.4% theoretical reduction)
-  * run_real_validation.py: REAL OpenAI API calls with MEASURED tokens (92.6% actual reduction, cost ~$0.20 to run)
-  * Results in real_validation_results.json show measured data: $0.0049 → $0.0004 per conversation
+  * run_real_validation.py: REAL API validation with 20 actual tests (92.6% measured reduction, cost $0.20)
+  * real_validation_results.json: Shows "conversations_tested": 20 (NOT 200)
+  * Results: $0.0984 baseline → $0.0072 optimized = 92.6% reduction from 20 real tests
 - FORBIDDEN PHRASES (never use these):
   * "We had customers", "users were", "paying customers", "actual live usage", "production users"
   * "Built a month ago", "validated in November", "been running for weeks"
+  * "200 actual test conversations", "tested 200", "200 API calls" (ONLY 20 were actually tested!)
 - REQUIRED PHRASES (always use these):
+  * "20 actual test conversations" or "20 conversations tested with real API calls"
+  * "Generated 200 templates, tested 20 with real API" (if explaining the difference)
   * "Validated through testing this week", "built the validation suite Dec 16-18", "tested with friends"
   * "Measured with real API calls", "haven't launched yet", "no real users"
   * "Pushed to GitHub yesterday", "commit shows Dec 18"
@@ -423,12 +429,12 @@ Actual Files in GitHub (github.com/JO-HEEJIN/birth2death-backend):
 - router.py (lines 20-30: COMPLEX_PATTERNS for routing logic)
 - semantic_cache.py (NOT cache.py - use correct filename)
 - cost_tracker.py (cost tracking implementation)
-- test_data/conversations.json (200 test conversations)
+- test_data/conversations.json (200 GENERATED templates, NOT all tested)
 - cost_analysis.py (initial validation with estimated tokens)
-- run_real_validation.py (REAL OpenAI API validation with measured tokens)
+- run_real_validation.py (REAL OpenAI API validation - tested 20 conversations only)
 - results/cost_breakdown.json (initial analysis with estimates)
 - results/cost_analysis_detailed.json (detailed 200-conversation analysis)
-- results/real_validation_results.json (REAL API results - 92.6% cost reduction measured)
+- results/real_validation_results.json (20 conversations tested, 92.6% cost reduction measured)
 - app/core/database.py (connection pooling)
 - app/utils/prompts.py (prompt compression utilities)
 - app/services/tasks.py (Celery async tasks with real sentiment analysis)
