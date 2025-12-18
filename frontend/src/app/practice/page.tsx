@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { AudioLevelIndicator } from '@/components/interview/AudioLevelIndicator';
@@ -12,6 +14,7 @@ interface Answer {
     question: string;
     answer: string;
     timestamp: Date;
+    source?: string;
 }
 
 interface StarStory {
@@ -24,18 +27,32 @@ interface StarStory {
     tags: string[];
 }
 
+interface QAPair {
+    id: string;
+    question: string;
+    answer: string;
+    question_type: string;
+    source: string;
+    usage_count: number;
+}
+
 const WS_URL = 'ws://localhost:8000/ws/transcribe';
 const API_URL = 'http://localhost:8000';
-const USER_ID = 'heejin';
 
 export default function PracticePage() {
+    const router = useRouter();
+    const [userId, setUserId] = useState<string | null>(null);
     const [currentText, setCurrentText] = useState('');
     const [accumulatedText, setAccumulatedText] = useState('');
     const [answers, setAnswers] = useState<Answer[]>([]);
+    const [temporaryAnswer, setTemporaryAnswer] = useState<string | null>(null);
+    const [streamingAnswer, setStreamingAnswer] = useState<string>('');
+    const [streamingQuestion, setStreamingQuestion] = useState<string>('');
     const [isGenerating, setIsGenerating] = useState(false);
     const [sessionTime, setSessionTime] = useState(0);
     const [error, setError] = useState<string | null>(null);
     const [starStories, setStarStories] = useState<StarStory[]>([]);
+    const [qaPairs, setQaPairs] = useState<QAPair[]>([]);
     const [contextLoaded, setContextLoaded] = useState(false);
     const [processingState, setProcessingState] = useState<'idle' | 'transcribing' | 'detecting' | 'generating'>('idle');
 
@@ -57,21 +74,63 @@ export default function PracticePage() {
             setProcessingState('idle');
         },
         onQuestionDetected: (question, type) => {
+            // Just detection, do not auto-generate
+            // setIsGenerating(true);
+            // setProcessingState('generating');
+            console.log('Question detected:', question);
+        },
+        onTemporaryAnswer: (question, answer) => {
+            setTemporaryAnswer(answer);
             setIsGenerating(true);
             setProcessingState('generating');
         },
-        onAnswer: (question, answer) => {
+        onAnswer: (question, answer, source) => {
             setAnswers(prev => [{
                 question,
                 answer,
                 timestamp: new Date(),
+                source,
             }, ...prev]);
+            setTemporaryAnswer(null);
+            setStreamingAnswer('');
+            setStreamingQuestion('');
+            setIsGenerating(false);
+            setProcessingState('idle');
+            setAccumulatedText('');
+        },
+        onAnswerStreamStart: (question) => {
+            console.log('Streaming answer started for:', question);
+            setStreamingQuestion(question);
+            setStreamingAnswer('');
+            setTemporaryAnswer(null);
+            setIsGenerating(true);
+            setProcessingState('generating');
+        },
+        onAnswerStreamChunk: (chunk) => {
+            setStreamingAnswer(prev => prev + chunk);
+        },
+        onAnswerStreamEnd: (question) => {
+            console.log('Streaming answer completed for:', question);
+            // Move streaming answer to final answers
+            if (streamingAnswer) {
+                setAnswers(prev => [{
+                    question: streamingQuestion || question,
+                    answer: streamingAnswer,
+                    timestamp: new Date(),
+                    source: 'streamed',
+                }, ...prev]);
+            }
+            setStreamingAnswer('');
+            setStreamingQuestion('');
             setIsGenerating(false);
             setProcessingState('idle');
             setAccumulatedText('');
         },
         onError: (message) => {
             setError(message);
+            setTemporaryAnswer(null);
+            setStreamingAnswer('');
+            setStreamingQuestion('');
             setIsGenerating(false);
         },
         onConnectionChange: (connected) => {
@@ -104,22 +163,62 @@ export default function PracticePage() {
         silenceDuration: 800,
     });
 
-    // Fetch STAR stories on mount
+    // Check authentication on mount
     useEffect(() => {
-        const fetchContext = async () => {
+        const checkAuth = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+                router.push('/auth/login');
+                return;
+            }
+            setUserId(session.user.id);
+        };
+        checkAuth();
+
+        // Listen for auth changes
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            if (!session) {
+                router.push('/auth/login');
+            } else {
+                setUserId(session.user.id);
+            }
+        });
+
+        return () => subscription.unsubscribe();
+    }, [router]);
+
+    // Fetch user context (STAR stories and Q&A pairs) when userId is available
+    useEffect(() => {
+        if (!userId) return;
+
+        const fetchAll = async () => {
             try {
-                const response = await fetch(`${API_URL}/api/profile/context/${USER_ID}`);
-                if (response.ok) {
-                    const data = await response.json();
-                    setStarStories(data.star_stories || []);
-                    setContextLoaded(true);
+                // Fetch both context and Q&A pairs in parallel
+                const [contextResponse, qaPairsResponse] = await Promise.all([
+                    fetch(`${API_URL}/api/profile/context/${userId}`),
+                    fetch(`${API_URL}/api/qa-pairs/${userId}`)
+                ]);
+
+                if (contextResponse.ok) {
+                    const contextData = await contextResponse.json();
+                    setStarStories(contextData.star_stories || []);
                 }
+
+                if (qaPairsResponse.ok) {
+                    const qaPairsData = await qaPairsResponse.json();
+                    setQaPairs(qaPairsData || []);
+                    console.log(`Loaded ${qaPairsData?.length || 0} Q&A pairs`);
+                }
+
+                // Set contextLoaded only after BOTH are loaded
+                setContextLoaded(true);
             } catch (err) {
                 console.error('Failed to fetch user context:', err);
             }
         };
-        fetchContext();
-    }, []);
+
+        fetchAll();
+    }, [userId]);
 
     // Send context when connected
     useEffect(() => {
@@ -127,10 +226,11 @@ export default function PracticePage() {
             sendContext({
                 resume_text: '',
                 star_stories: starStories,
-                talking_points: []
+                talking_points: [],
+                qa_pairs: qaPairs
             });
         }
-    }, [isConnected, contextLoaded, starStories, sendContext]);
+    }, [isConnected, contextLoaded, starStories, qaPairs, sendContext]);
 
     // Session timer
     useEffect(() => {
@@ -166,13 +266,33 @@ export default function PracticePage() {
     };
 
     // Handle clear
-    const handleClear = () => {
+    // Handle clear
+    const handleClear = async () => {
+        const wasRecording = isRecording;
+
+        // 1. Stop recording first to flush final data
+        if (wasRecording) {
+            stopRecording();
+            // Wait for data to flush
+            await new Promise(resolve => setTimeout(resolve, 200));
+        }
+
+        // 2. Clear backend session (safe now, no more chunks from old stream)
+        clearSession();
+
+        // 3. Reset local state
         setCurrentText('');
         setAccumulatedText('');
         setAnswers([]);
         setSessionTime(0);
         setError(null);
-        clearSession();
+
+        // 4. Restart recording if it was active
+        if (wasRecording) {
+            // Small buffer before starting new
+            await new Promise(resolve => setTimeout(resolve, 100));
+            await startRecording();
+        }
     };
 
     // Handle regenerate
@@ -186,6 +306,16 @@ export default function PracticePage() {
         setIsGenerating(false);
         console.log('Answer generation stopped by user');
     }, []);
+
+    // Handle manual answer generation
+    const handleManualGenerate = useCallback(() => {
+        if (accumulatedText.trim()) {
+            console.log('Manually requesting answer for:', accumulatedText);
+            setIsGenerating(true);
+            setProcessingState('generating');
+            requestAnswer(accumulatedText);
+        }
+    }, [accumulatedText, requestAnswer]);
 
     return (
         <div className="min-h-screen bg-zinc-50 dark:bg-black">
@@ -252,6 +382,8 @@ export default function PracticePage() {
                             accumulatedText={accumulatedText}
                             isProcessing={isRecording}
                             processingState={processingState}
+                            onGenerateAnswer={handleManualGenerate}
+                            canGenerate={isPaused && accumulatedText.length > 0 && !isGenerating}
                         />
                     </div>
 
@@ -260,6 +392,9 @@ export default function PracticePage() {
                         <AnswerDisplay
                             answers={answers}
                             isGenerating={isGenerating}
+                            temporaryAnswer={temporaryAnswer}
+                            streamingAnswer={streamingAnswer}
+                            streamingQuestion={streamingQuestion}
                             onRegenerate={handleRegenerate}
                             onStopGenerating={handleStopGenerating}
                         />
@@ -268,12 +403,21 @@ export default function PracticePage() {
 
                 {/* Context Status */}
                 {contextLoaded && (
-                    <div className="mt-6 rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-950">
-                        <p className="text-sm text-green-700 dark:text-green-300">
-                            {starStories.length > 0
-                                ? `${starStories.length} STAR stories loaded for personalized answers`
-                                : 'No STAR stories found. Add some at /profile/stories for personalized answers'}
-                        </p>
+                    <div className="mt-6 space-y-3">
+                        <div className="rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-950">
+                            <p className="text-sm text-green-700 dark:text-green-300">
+                                {starStories.length > 0
+                                    ? `${starStories.length} STAR stories loaded for personalized answers`
+                                    : 'No STAR stories found. Add some at /profile/stories for personalized answers'}
+                            </p>
+                        </div>
+                        {qaPairs.length > 0 && (
+                            <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-950">
+                                <p className="text-sm text-blue-700 dark:text-blue-300">
+                                    {qaPairs.length} Q&A pairs ready for instant answers ⚡
+                                </p>
+                            </div>
+                        )}
                     </div>
                 )}
 
@@ -284,11 +428,10 @@ export default function PracticePage() {
                     </h3>
                     <ol className="list-inside list-decimal space-y-2 text-sm text-blue-800 dark:text-blue-200">
                         <li><strong>Start Recording</strong> - Begin recording session</li>
-                        <li><strong>Pause</strong> when interviewer asks question - Listen to the question</li>
-                        <li><strong>Resume</strong> after question ends - System will transcribe</li>
-                        <li><strong>Wait 2-3 seconds</strong> - Transcription and answer generation in progress</li>
-                        <li><strong>Pause again</strong> before answering - Use the AI suggestion</li>
-                        <li><strong>Resume</strong> to record your answer (optional)</li>
+                        <li><strong>Speak your question</strong> - Audio will be transcribed in real-time</li>
+                        <li><strong>Pause</strong> when finished speaking - This enables answer generation</li>
+                        <li><strong>Click "Generate Answer"</strong> - Get AI-powered feedback</li>
+                        <li><strong>Resume</strong> to continue the interview</li>
                         <li><strong>Clear</strong> to reset everything</li>
                     </ol>
                     <div className="mt-3 rounded bg-blue-100 dark:bg-blue-900 p-2 text-xs text-blue-700 dark:text-blue-300">

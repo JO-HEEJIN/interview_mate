@@ -8,7 +8,11 @@ interface UseWebSocketOptions {
     url: string;
     onTranscription?: (text: string, accumulated: string) => void;
     onQuestionDetected?: (question: string, type: string) => void;
-    onAnswer?: (question: string, answer: string) => void;
+    onTemporaryAnswer?: (question: string, answer: string) => void;
+    onAnswer?: (question: string, answer: string, source?: string) => void;
+    onAnswerStreamStart?: (question: string) => void;
+    onAnswerStreamChunk?: (chunk: string) => void;
+    onAnswerStreamEnd?: (question: string) => void;
     onError?: (message: string) => void;
     onConnectionChange?: (connected: boolean) => void;
 }
@@ -18,8 +22,8 @@ interface UseWebSocketReturn {
     connect: () => void;
     disconnect: () => void;
     sendAudio: (data: Blob) => void;
-    sendContext: (context: { resume_text: string; star_stories: any[]; talking_points: any[] }) => void;
-    requestAnswer: (question: string) => void;
+    sendContext: (context: { resume_text: string; star_stories: any[]; talking_points: any[]; qa_pairs?: any[] }) => void;
+    requestAnswer: (question: string, question_type?: string) => void;
     clearSession: () => void;
     finalizeAudio: () => void;
 }
@@ -29,7 +33,11 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
         url,
         onTranscription,
         onQuestionDetected,
+        onTemporaryAnswer,
         onAnswer,
+        onAnswerStreamStart,
+        onAnswerStreamChunk,
+        onAnswerStreamEnd,
         onError,
         onConnectionChange,
     } = options;
@@ -48,8 +56,20 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
                 case 'question_detected':
                     onQuestionDetected?.(data.question, data.question_type);
                     break;
+                case 'answer_temporary':
+                    onTemporaryAnswer?.(data.question, data.answer);
+                    break;
                 case 'answer':
-                    onAnswer?.(data.question, data.answer);
+                    onAnswer?.(data.question, data.answer, data.source);
+                    break;
+                case 'answer_stream_start':
+                    onAnswerStreamStart?.(data.question);
+                    break;
+                case 'answer_stream_chunk':
+                    onAnswerStreamChunk?.(data.chunk);
+                    break;
+                case 'answer_stream_end':
+                    onAnswerStreamEnd?.(data.question);
                     break;
                 case 'error':
                     onError?.(data.message);
@@ -58,7 +78,7 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
         } catch (err) {
             console.error('Failed to parse WebSocket message:', err);
         }
-    }, [onTranscription, onQuestionDetected, onAnswer, onError]);
+    }, [onTranscription, onQuestionDetected, onTemporaryAnswer, onAnswer, onAnswerStreamStart, onAnswerStreamChunk, onAnswerStreamEnd, onError]);
 
     const connect = useCallback(() => {
         if (wsRef.current?.readyState === WebSocket.OPEN) {
@@ -126,7 +146,7 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
         }
     }, []);
 
-    const sendContext = useCallback((context: { resume_text: string; star_stories: any[]; talking_points: any[] }) => {
+    const sendContext = useCallback((context: { resume_text: string; star_stories: any[]; talking_points: any[]; qa_pairs?: any[] }) => {
         if (wsRef.current?.readyState === WebSocket.OPEN) {
             wsRef.current.send(JSON.stringify({
                 type: 'context',
@@ -135,11 +155,12 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
         }
     }, []);
 
-    const requestAnswer = useCallback((question: string) => {
+    const requestAnswer = useCallback((question: string, question_type: string = 'general') => {
         if (wsRef.current?.readyState === WebSocket.OPEN) {
             wsRef.current.send(JSON.stringify({
                 type: 'generate_answer',
                 question,
+                question_type,
             }));
         }
     }, []);

@@ -13,11 +13,15 @@ interface Answer {
     timestamp: Date;
     questionType?: string;
     isRegenerating?: boolean;
+    source?: string;
 }
 
 interface AnswerDisplayProps {
     answers: Answer[];
     isGenerating: boolean;
+    temporaryAnswer?: string | null;
+    streamingAnswer?: string;
+    streamingQuestion?: string;
     onRegenerate?: (question: string) => void;
     onRateAnswer?: (question: string, rating: 'up' | 'down') => void;
     onStopGenerating?: () => void;
@@ -60,7 +64,7 @@ const XIcon = ({ className }: { className?: string }) => (
     </svg>
 );
 
-export function AnswerDisplay({ answers, isGenerating, onRegenerate, onRateAnswer, onStopGenerating }: AnswerDisplayProps) {
+export function AnswerDisplay({ answers, isGenerating, temporaryAnswer, streamingAnswer, streamingQuestion, onRegenerate, onRateAnswer, onStopGenerating }: AnswerDisplayProps) {
     const [expandedAnswers, setExpandedAnswers] = useState<Set<number>>(new Set());
     const [copiedAnswer, setCopiedAnswer] = useState<number | null>(null);
     const [ratedAnswers, setRatedAnswers] = useState<Map<string, 'up' | 'down'>>(new Map());
@@ -150,7 +154,7 @@ export function AnswerDisplay({ answers, isGenerating, onRegenerate, onRateAnswe
                         <div className="flex items-center gap-3">
                             <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
                             <span className="text-blue-700 dark:text-blue-300 font-medium">
-                                Generating answer...
+                                {streamingAnswer ? 'Streaming answer...' : temporaryAnswer ? 'Finding best answer...' : 'Generating answer...'}
                             </span>
                         </div>
                         {onStopGenerating && (
@@ -164,9 +168,43 @@ export function AnswerDisplay({ answers, isGenerating, onRegenerate, onRateAnswe
                             </button>
                         )}
                     </div>
-                    <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-blue-100 dark:bg-blue-900">
-                        <div className="h-full w-1/3 animate-pulse rounded-full bg-blue-500"></div>
-                    </div>
+
+                    {/* Show streaming question if available */}
+                    {streamingQuestion && (
+                        <div className="mt-3">
+                            <span className="text-xs font-medium text-blue-600 dark:text-blue-400 uppercase tracking-wide">
+                                Question
+                            </span>
+                            <p className="mt-1 text-sm font-medium text-blue-900 dark:text-blue-100">
+                                {streamingQuestion}
+                            </p>
+                        </div>
+                    )}
+
+                    {/* Show streaming answer as it arrives */}
+                    {streamingAnswer ? (
+                        <div className="mt-3 rounded border border-green-300 bg-green-50 p-3 dark:border-green-800 dark:bg-green-950">
+                            <div className="flex items-center gap-2 mb-2">
+                                <span className="text-xs font-medium text-green-700 dark:text-green-300 uppercase tracking-wide">
+                                    Suggested Answer
+                                </span>
+                                <span className="inline-block h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
+                            </div>
+                            <p className="whitespace-pre-wrap text-sm text-green-900 dark:text-green-100 leading-relaxed">
+                                {streamingAnswer}
+                            </p>
+                        </div>
+                    ) : temporaryAnswer ? (
+                        <div className="mt-3 rounded border border-blue-300 bg-blue-100 p-3 dark:border-blue-800 dark:bg-blue-900">
+                            <p className="text-sm text-blue-800 dark:text-blue-200 italic">
+                                {temporaryAnswer}
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-blue-100 dark:bg-blue-900">
+                            <div className="h-full w-1/3 animate-pulse rounded-full bg-blue-500"></div>
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -214,9 +252,20 @@ export function AnswerDisplay({ answers, isGenerating, onRegenerate, onRateAnswe
 
                         <div className="border-t border-zinc-100 pt-3 dark:border-zinc-800">
                             <div className="flex items-start justify-between gap-2">
-                                <span className="text-xs font-medium text-green-600 dark:text-green-400 uppercase tracking-wide">
-                                    Suggested Answer
-                                </span>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xs font-medium text-green-600 dark:text-green-400 uppercase tracking-wide">
+                                        Suggested Answer
+                                    </span>
+                                    {answer.source && (
+                                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                                            answer.source === 'uploaded'
+                                                ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300'
+                                                : 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300'
+                                        }`}>
+                                            {answer.source === 'uploaded' ? '⚡ Pre-loaded' : '🤖 AI Generated'}
+                                        </span>
+                                    )}
+                                </div>
                                 <div className="flex items-center gap-1">
                                     <button
                                         onClick={() => copyToClipboard(answer.answer, index)}
