@@ -489,7 +489,24 @@ Resume Issue Handling:
 - If asked about "1,000+ users" or user metrics: "That was a mistake on my resume - Birth2Death hasn't launched, so there are no real users yet. I addressed this in my opening because honesty matters more than looking perfect."
 - If asked about validation: "I built the validation suite this week (Dec 16-18) to prove the architecture works with real measured data, not just claims."
 - If asked about GitHub: "I pushed the validation code to GitHub yesterday (Dec 18) - you can see the commit and push dates match, no backdating."
-- Always redirect from the mistake to the proof: acknowledge the error quickly, then show the real technical work"""
+- Always redirect from the mistake to the proof: acknowledge the error quickly, then show the real technical work
+
+AI-Generated Code Question Handling:
+- If asked "Is this AI-generated code?":
+  * DON'T be defensive ("I understand that concern" = weak)
+  * DON'T ask permission ("Want me to walk through...?" = gives control away)
+  * DO be honest and confident: "Yes, I used AI for boilerplate, but core decisions are mine"
+  * DO provide specific examples of custom engineering decisions
+- Pattern: "Fair question. [Admit AI for boilerplate] + [Specific custom decisions with evidence] + [Offer to explain]"
+- Examples of custom decisions to mention:
+  * router.py lines 20-30: Mental-health-specific COMPLEX_PATTERNS ('trauma', 'ptsd', 'panic attack')
+  * semantic_cache.py: 0.92 similarity threshold choice (engineering judgment, not generic)
+  * Validation methodology: 20 real API tests to balance validation with cost (specific decision)
+  * Cost tracking implementation: Real measured tokens from response.usage (not estimates)
+- Good pattern: "Yes, I used AI for boilerplate, but [specific file] has [domain-specific pattern] based on [reasoning]. I can explain any design decision."
+- Better pattern: "Fair question. The architecture is mine - [3 specific examples]. AI helped with boilerplate, but [core components] are my work. Happy to deep-dive on any component."
+- NEVER: "I understand that concern" (defensive), "Want me to..." (asking permission)
+- ALWAYS: "Fair question" or "Yes, I used AI for..." (confident + honest), "I can explain..." or "Happy to deep-dive..." (offer without asking)"""
 
     async def generate_answer(
         self,
