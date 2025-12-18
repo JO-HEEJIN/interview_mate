@@ -6,8 +6,8 @@ import json
 import asyncio
 import logging
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
-from app.services.whisper import whisper_service
-from app.services.claude import claude_service
+from app.services.deepgram_service import deepgram_service
+from app.services.claude import claude_service, detect_question_fast
 
 # 로거 설정
 logger = logging.getLogger(__name__)
@@ -131,10 +131,10 @@ def is_question_likely_complete(text: str) -> bool:
 @router.websocket("/ws/transcribe")
 async def websocket_transcribe(websocket: WebSocket):
     """
-    WebSocket endpoint for real-time audio transcription.
+    WebSocket endpoint for real-time audio transcription using Deepgram streaming.
 
     Client sends:
-        - Binary audio data (WAV format chunks)
+        - Binary audio data (WebM/Opus format chunks)
         - JSON messages: {"type": "config", "language": "en"}
 
     Server sends:
@@ -146,201 +146,107 @@ async def websocket_transcribe(websocket: WebSocket):
     await manager.connect(websocket)
 
     # Session state
-    audio_buffer = bytearray()
     language = "en"
     user_context = {
         "resume_text": "",
         "star_stories": [],
-        "talking_points": []
+        "talking_points": [],
+        "qa_pairs": []  # User's uploaded Q&A pairs
     }
     accumulated_text = ""
-    last_process_time = asyncio.get_event_loop().time()
     is_processing = False
     audio_chunk_count = 0
     total_audio_bytes = 0
     last_processed_question = ""
-    last_transcribed_text = ""  # Track what we already transcribed
+    deepgram_connected = False
 
     logger.info("WebSocket transcription session started")
 
-    try:
-        while True:
-            message = await websocket.receive()
+    # Deepgram transcript callback
+    async def on_transcript(text: str, is_final: bool):
+        nonlocal accumulated_text, is_processing
 
-            if "bytes" in message:
-                # Audio data received
-                audio_chunk_count += 1
-                chunk_size = len(message["bytes"])
-                total_audio_bytes += chunk_size
-                audio_buffer.extend(message["bytes"])
-                
-                current_time = asyncio.get_event_loop().time()
-                
-                logger.debug(f"Audio chunk #{audio_chunk_count}: {chunk_size} bytes, buffer: {len(audio_buffer)} bytes")
+        try:
+            if not text.strip():
+                return
 
-                # Limit buffer size to prevent memory issues and slow processing
-                # Keep only last 30 seconds of audio (30 * 16000 * 2 = 960000 bytes)
-                MAX_BUFFER_SIZE = 960000
-                if len(audio_buffer) > MAX_BUFFER_SIZE:
-                    # Remove oldest audio (keep last 30 seconds)
-                    bytes_to_remove = len(audio_buffer) - MAX_BUFFER_SIZE
-                    audio_buffer = audio_buffer[bytes_to_remove:]
-                    logger.info(f"Buffer trimmed to {len(audio_buffer)} bytes")
+            logger.info(f"Deepgram transcript ({'final' if is_final else 'interim'}): '{text}'")
 
-                # Process when we have enough audio (about 2 seconds worth at 16kHz)
-                # 16000 samples/sec * 2 bytes * 2 sec = 64000 bytes
-                # 또는 마지막 처리 후 2.0초가 지났을 때도 처리 (타임아웃 메커니즘)
-                buffer_threshold_reached = len(audio_buffer) >= 64000
-                timeout_reached = (current_time - last_process_time >= 2.0 and len(audio_buffer) > 32000)
-                
-                if (buffer_threshold_reached or timeout_reached) and not is_processing:
-                    is_processing = True
-                    # Send entire accumulated buffer (not clearing it)
-                    # This creates a valid WebM file from accumulated chunks
-                    audio_data = bytes(audio_buffer)
-                    last_process_time = current_time
-                    
-                    logger.info(f"Processing audio: {len(audio_data)} bytes (chunk #{audio_chunk_count})")
+            # Update accumulated text
+            if is_final:
+                accumulated_text = text.strip()
 
-                    try:
-                        # Transcribe audio
-                        transcription = await whisper_service.transcribe(
-                            audio_data,
-                            language=language
-                        )
+            # Send transcription to client
+            sent = await manager.send_json(websocket, {
+                "type": "transcription",
+                "text": text,
+                "accumulated_text": accumulated_text,
+                "is_final": is_final
+            })
+            if not sent:
+                return
 
-                        if transcription:
-                            # Use the transcription as-is (Whisper already handles the full buffer)
-                            accumulated_text = transcription.strip()
+            # Only process questions on final transcripts
+            if is_final and not is_processing:
+                is_processing = True
 
-                            logger.info(f"Transcription: '{accumulated_text}'")
-
-                            # Send transcription to client
-                            sent = await manager.send_json(websocket, {
-                                "type": "transcription",
-                                "text": "", # accumulated_text contains everything
-                                "accumulated_text": accumulated_text,
-                                "is_final": False,
-                                "chunk_count": audio_chunk_count
-                            })
-                            if not sent:
-                                break
-
-                            # Pre-filter: Quick check if this looks like a question
-                            if not is_likely_question(accumulated_text):
-                                logger.debug(f"Text does not appear to be a question, skipping Claude detection: '{accumulated_text[:50]}...'")
-                                continue
-
-                            # Check if it's a question using Claude
-                            detection = await claude_service.detect_question(accumulated_text)
-
-                            if detection["is_question"] and detection["question"]:
-                                # Validate question completeness
-                                if not is_question_likely_complete(detection["question"]):
-                                    logger.info(f"Question detected but appears incomplete: '{detection['question']}' - waiting for more input")
-                                    continue
-
-                                logger.info(f"Complete question detected: '{detection['question']}' ({detection['question_type']})")
-
-                                sent = await manager.send_json(websocket, {
-                                    "type": "question_detected",
-                                    "question": detection["question"],
-                                    "question_type": detection["question_type"]
-                                })
-                                if not sent:
-                                    break
-
-                                # Check if we already answered this question (fuzzy match)
-                                question_normalized = detection["question"].strip().lower()
-                                last_normalized = last_processed_question.lower()
-
-                                # If questions are very similar (same start or 80% overlap), skip
-                                if last_normalized and (
-                                    question_normalized.startswith(last_normalized[:20]) or
-                                    last_normalized.startswith(question_normalized[:20])
-                                ):
-                                    logger.info(f"Skipping answer generation for similar question: '{detection['question']}'")
-                                    continue
-
-                                last_processed_question = detection["question"].strip()
-
-                                # Generate answer
-                                answer = await claude_service.generate_answer(
-                                    question=detection["question"],
-                                    resume_text=user_context["resume_text"],
-                                    star_stories=user_context["star_stories"],
-                                    talking_points=user_context["talking_points"]
-                                )
-
-                                sent = await manager.send_json(websocket, {
-                                    "type": "answer",
-                                    "question": detection["question"],
-                                    "answer": answer
-                                })
-                                if not sent:
-                                    break
-
-                                # Reset accumulated text after generating answer
-                                accumulated_text = ""
-                                logger.info("Reset accumulated text after answer generation")
-                        else:
-                            logger.warning("Empty transcription result")
-                    
-                    except Exception as e:
-                        logger.error(f"Error processing audio chunk #{audio_chunk_count}: {str(e)}", exc_info=True)
-                        await manager.send_json(websocket, {
-                            "type": "error",
-                            "message": f"Error processing audio: {str(e)}"
-                        })
-                    finally:
-                        is_processing = False
-
-            elif "text" in message:
-                # JSON message received
                 try:
-                    data = json.loads(message["text"])
-                    msg_type = data.get("type", "")
-                    logger.info(f"Received JSON message: {msg_type}")
+                    # Pre-filter: Quick check if this looks like a question
+                    if not is_likely_question(accumulated_text):
+                        logger.debug(f"Text does not appear to be a question: '{accumulated_text[:50]}...'")
+                        return
 
-                    if msg_type == "config":
-                        language = data.get("language", "en")
-                        logger.info(f"Language configured to: {language}")
+                    # OPTIMIZATION (Phase 1.2): Fast pattern-based detection first
+                    # Only fall back to Claude API if confidence is low
+                    detection = detect_question_fast(accumulated_text)
+
+                    # Fallback: Use Claude API for low-confidence cases
+                    if detection["confidence"] == "low" and detection["is_question"]:
+                        logger.info("Low confidence pattern match, verifying with Claude API")
+                        detection = await claude_service.detect_question(accumulated_text)
+
+                    if detection["is_question"] and detection["question"]:
+                        # Validate question completeness
+                        if not is_question_likely_complete(detection["question"]):
+                            logger.info(f"Question incomplete: '{detection['question']}' - waiting")
+                            return
+
+                        question = detection["question"]
+                        question_type = detection["question_type"]
+
+                        logger.info(f"Complete question detected: '{question}' ({question_type})")
+
                         await manager.send_json(websocket, {
-                            "type": "config_ack",
-                            "language": language
+                            "type": "question_detected",
+                            "question": question,
+                            "question_type": question_type
                         })
 
-                    elif msg_type == "context":
-                        # Update user context
-                        user_context["resume_text"] = data.get("resume_text", "")
-                        user_context["star_stories"] = data.get("star_stories", [])
-                        user_context["talking_points"] = data.get("talking_points", [])
-                        logger.info(f"Context updated: {len(user_context['star_stories'])} stories, {len(user_context['talking_points'])} points")
+                        # Auto-generate answer with Q&A matching
+                        # 1. Send temporary answer immediately
+                        temp_answer = claude_service.get_temporary_answer(question_type)
                         await manager.send_json(websocket, {
-                            "type": "context_ack",
-                            "message": "Context updated"
+                            "type": "answer_temporary",
+                            "question": question,
+                            "answer": temp_answer
                         })
 
-                    elif msg_type == "clear":
-                        # Clear accumulated text and answer cache
-                        accumulated_text = ""
-                        audio_buffer.clear()
-                        audio_chunk_count = 0
-                        total_audio_bytes = 0
-                        last_processed_question = ""
-                        last_transcribed_text = ""
-                        claude_service.clear_cache()
-                        logger.info("Session cleared, including answer cache")
-                        await manager.send_json(websocket, {
-                            "type": "cleared",
-                            "message": "Session cleared"
-                        })
+                        # 2. Check for uploaded Q&A match (OPTIMIZED: <1ms lookup)
+                        matched_qa = claude_service.find_matching_qa_pair_fast(question)
 
-                    elif msg_type == "generate_answer":
-                        # Manual answer generation request
-                        question = data.get("question", "")
-                        if question:
-                            logger.info(f"Manual answer generation for: '{question}'")
+                        if matched_qa:
+                            # 3a. Return uploaded answer
+                            logger.info(f"Using uploaded Q&A pair (ID: {matched_qa.get('id')})")
+                            await manager.send_json(websocket, {
+                                "type": "answer",
+                                "question": question,
+                                "answer": matched_qa["answer"],
+                                "source": "uploaded",
+                                "qa_pair_id": matched_qa.get("id")
+                            })
+                        else:
+                            # 3b. Generate with Claude
+                            logger.info("No matching Q&A found, generating with Claude")
                             answer = await claude_service.generate_answer(
                                 question=question,
                                 resume_text=user_context["resume_text"],
@@ -350,42 +256,183 @@ async def websocket_transcribe(websocket: WebSocket):
                             await manager.send_json(websocket, {
                                 "type": "answer",
                                 "question": question,
-                                "answer": answer
+                                "answer": answer,
+                                "source": "generated"
+                            })
+                finally:
+                    is_processing = False
+
+        except Exception as e:
+            logger.error(f"Error in transcript callback: {e}", exc_info=True)
+
+    # Deepgram error callback
+    async def on_error(error: str):
+        logger.error(f"Deepgram error: {error}")
+        await manager.send_json(websocket, {
+            "type": "error",
+            "message": f"Transcription error: {error}"
+        })
+
+    # Connect to Deepgram using context manager
+    try:
+        async with deepgram_service.create_connection(
+            on_transcript=on_transcript,
+            on_error=on_error
+        ) as dg_connection:
+            # Set up event handlers and start listening
+            await deepgram_service.setup_connection(dg_connection)
+            deepgram_connected = True
+
+            # Main message loop
+            while True:
+                try:
+                    message = await websocket.receive()
+                except RuntimeError as e:
+                    err_msg = str(e).lower()
+                    if "disconnect" in err_msg or "close message" in err_msg:
+                        logger.info("WebSocket disconnected during receive")
+                        break
+                    logger.error(f"WebSocket receive error: {e}")
+                    break
+                except Exception as e:
+                    logger.error(f"Unexpected WebSocket error: {e}")
+                    break
+
+                if "bytes" in message:
+                    # Audio data received - send immediately to Deepgram
+                    audio_chunk_count += 1
+                    chunk_size = len(message["bytes"])
+                    total_audio_bytes += chunk_size
+
+                    logger.debug(f"Audio chunk #{audio_chunk_count}: {chunk_size} bytes (total: {total_audio_bytes} bytes)")
+
+                    # Send audio chunk immediately to Deepgram for real-time transcription
+                    if deepgram_connected:
+                        success = await deepgram_service.send_audio(message["bytes"])
+                        if not success:
+                            logger.warning(f"Failed to send audio chunk #{audio_chunk_count} to Deepgram")
+                    else:
+                        logger.warning("Deepgram not connected, skipping audio chunk")
+
+                elif "text" in message:
+                    # JSON message received
+                    try:
+                        data = json.loads(message["text"])
+                        msg_type = data.get("type", "")
+                        logger.info(f"Received JSON message: {msg_type}")
+
+                        if msg_type == "config":
+                            language = data.get("language", "en")
+                            logger.info(f"Language configured to: {language}")
+                            await manager.send_json(websocket, {
+                                "type": "config_ack",
+                                "language": language
                             })
 
-                    elif msg_type == "finalize":
-                        # Process any remaining audio
-                        if len(audio_buffer) > 0:
-                            logger.info(f"Finalizing: processing remaining {len(audio_buffer)} bytes")
-                            audio_data = bytes(audio_buffer)
-                            # Keep buffer for context, will be cleared on next "clear" message
+                        elif msg_type == "context":
+                            # Update user context
+                            user_context["resume_text"] = data.get("resume_text", "")
+                            user_context["star_stories"] = data.get("star_stories", [])
+                            user_context["talking_points"] = data.get("talking_points", [])
+                            user_context["qa_pairs"] = data.get("qa_pairs", [])
 
-                            transcription = await whisper_service.transcribe(
-                                audio_data,
-                                language=language
+                            # OPTIMIZATION (Phase 1.1): Build Q&A index for fast lookup
+                            # This takes <1ms and enables O(1) exact matching + faster similarity search
+                            if user_context["qa_pairs"]:
+                                claude_service.build_qa_index(user_context["qa_pairs"])
+
+                            logger.info(
+                                f"Context updated: {len(user_context['star_stories'])} stories, "
+                                f"{len(user_context['talking_points'])} points, "
+                                f"{len(user_context['qa_pairs'])} Q&A pairs"
                             )
+                            await manager.send_json(websocket, {
+                                "type": "context_ack",
+                                "message": "Context updated"
+                            })
 
-                            if transcription:
-                                accumulated_text = transcription
-                                accumulated_text = accumulated_text.strip()
+                        elif msg_type == "clear":
+                            # Clear accumulated text, answer cache, and Q&A index
+                            accumulated_text = ""
+                            audio_chunk_count = 0
+                            total_audio_bytes = 0
+                            last_processed_question = ""
+                            user_context["qa_pairs"] = []
+                            claude_service.clear_cache()
+                            claude_service.build_qa_index([])  # Clear Q&A index
+                            logger.info("Session cleared, including answer cache and Q&A index")
+                            await manager.send_json(websocket, {
+                                "type": "cleared",
+                                "message": "Session cleared"
+                            })
 
+                        elif msg_type == "generate_answer":
+                            # Manual answer generation request
+                            question = data.get("question", "")
+                            question_type = data.get("question_type", "general")
+
+                            if question:
+                                logger.info(f"Manual answer generation for: '{question}' (type: {question_type})")
+
+                                # 1. Send temporary answer immediately
+                                temp_answer = claude_service.get_temporary_answer(question_type)
                                 await manager.send_json(websocket, {
-                                    "type": "transcription",
-                                    "text": transcription,
-                                    "accumulated_text": accumulated_text,
-                                    "is_final": True
+                                    "type": "answer_temporary",
+                                    "question": question,
+                                    "answer": temp_answer
                                 })
 
-                except json.JSONDecodeError as e:
-                    logger.error(f"JSON decode error: {str(e)}")
-                    await manager.send_json(websocket, {
-                        "type": "error",
-                        "message": "Invalid JSON message"
-                    })
+                                # 2. Check for uploaded Q&A match (OPTIMIZED: <1ms lookup)
+                                matched_qa = claude_service.find_matching_qa_pair_fast(question)
+
+                                if matched_qa:
+                                    # 3a. Return uploaded answer
+                                    logger.info(f"Using uploaded Q&A pair (ID: {matched_qa.get('id')})")
+                                    await manager.send_json(websocket, {
+                                        "type": "answer",
+                                        "question": question,
+                                        "answer": matched_qa["answer"],
+                                        "source": "uploaded",
+                                        "qa_pair_id": matched_qa.get("id")
+                                    })
+                                else:
+                                    # 3b. Generate with Claude
+                                    logger.info("No matching Q&A found, generating with Claude")
+                                    answer = await claude_service.generate_answer(
+                                        question=question,
+                                        resume_text=user_context["resume_text"],
+                                        star_stories=user_context["star_stories"],
+                                        talking_points=user_context["talking_points"]
+                                    )
+                                    await manager.send_json(websocket, {
+                                        "type": "answer",
+                                        "question": question,
+                                        "answer": answer,
+                                        "source": "generated"
+                                    })
+
+                        elif msg_type == "finalize":
+                            # Signal end of audio stream to Deepgram
+                            if deepgram_connected:
+                                logger.info("Finalizing Deepgram stream")
+                                await deepgram_service.finish()
+                                await manager.send_json(websocket, {
+                                    "type": "finalized",
+                                    "message": "Audio stream finalized"
+                                })
+
+                    except json.JSONDecodeError as e:
+                        logger.error(f"JSON decode error: {str(e)}")
+                        await manager.send_json(websocket, {
+                            "type": "error",
+                            "message": "Invalid JSON message"
+                        })
 
     except WebSocketDisconnect:
         logger.info(f"WebSocket disconnected after {audio_chunk_count} chunks, {total_audio_bytes} total bytes")
-        manager.disconnect(websocket)
     except Exception as e:
         logger.error(f"WebSocket error: {str(e)}", exc_info=True)
+    finally:
+        # Deepgram connection is automatically closed by context manager
         manager.disconnect(websocket)
+        logger.info("WebSocket session ended")
