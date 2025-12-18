@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
@@ -56,6 +56,10 @@ export default function PracticePage() {
     const [contextLoaded, setContextLoaded] = useState(false);
     const [processingState, setProcessingState] = useState<'idle' | 'transcribing' | 'detecting' | 'generating'>('idle');
 
+    // Refs to track streaming state (avoids closure issues)
+    const streamingAnswerRef = useRef<string>('');
+    const streamingQuestionRef = useRef<string>('');
+
     // WebSocket connection
     const {
         isConnected,
@@ -92,6 +96,8 @@ export default function PracticePage() {
                 source,
             }, ...prev]);
             setTemporaryAnswer(null);
+            streamingAnswerRef.current = '';
+            streamingQuestionRef.current = '';
             setStreamingAnswer('');
             setStreamingQuestion('');
             setIsGenerating(false);
@@ -100,6 +106,8 @@ export default function PracticePage() {
         },
         onAnswerStreamStart: (question) => {
             console.log('Streaming answer started for:', question);
+            streamingQuestionRef.current = question;
+            streamingAnswerRef.current = '';
             setStreamingQuestion(question);
             setStreamingAnswer('');
             setTemporaryAnswer(null);
@@ -107,19 +115,29 @@ export default function PracticePage() {
             setProcessingState('generating');
         },
         onAnswerStreamChunk: (chunk) => {
+            streamingAnswerRef.current += chunk;
             setStreamingAnswer(prev => prev + chunk);
         },
         onAnswerStreamEnd: (question) => {
             console.log('Streaming answer completed for:', question);
-            // Move streaming answer to final answers
-            if (streamingAnswer) {
+            // Move streaming answer to final answers using ref (avoids closure issue)
+            const finalAnswer = streamingAnswerRef.current;
+            const finalQuestion = streamingQuestionRef.current || question;
+
+            if (finalAnswer.trim()) {
                 setAnswers(prev => [{
-                    question: streamingQuestion || question,
-                    answer: streamingAnswer,
+                    question: finalQuestion,
+                    answer: finalAnswer,
                     timestamp: new Date(),
                     source: 'streamed',
                 }, ...prev]);
+            } else {
+                console.warn('Streaming ended but answer is empty');
             }
+
+            // Clear refs and state
+            streamingAnswerRef.current = '';
+            streamingQuestionRef.current = '';
             setStreamingAnswer('');
             setStreamingQuestion('');
             setIsGenerating(false);
@@ -129,6 +147,8 @@ export default function PracticePage() {
         onError: (message) => {
             setError(message);
             setTemporaryAnswer(null);
+            streamingAnswerRef.current = '';
+            streamingQuestionRef.current = '';
             setStreamingAnswer('');
             setStreamingQuestion('');
             setIsGenerating(false);
