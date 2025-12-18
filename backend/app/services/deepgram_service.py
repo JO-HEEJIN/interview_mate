@@ -90,23 +90,40 @@ class DeepgramStreamingService:
         connection.on(EventType.OPEN, lambda _: logger.info("✓ Deepgram WebSocket opened"))
         connection.on(EventType.CLOSE, lambda _: logger.info("Deepgram WebSocket closed"))
 
-        # Start ffmpeg process to convert WebM/Opus to linear16 PCM
-        # Input: WebM/Opus via stdin
-        # Output: s16le (signed 16-bit little-endian) PCM, 16000 Hz, mono
+        # DON'T start ffmpeg yet - wait for initial buffer to fill
+        # ffmpeg will be started in send_audio() after we have enough data
+        logger.info("⏳ FFmpeg will start after initial buffer fills (8KB)")
+
+        # Start listening in background task (non-blocking)
+        # start_listening() is an infinite loop that processes Deepgram messages
+        self.listening_task = asyncio.create_task(connection.start_listening())
+        self.is_connected = True
+        logger.info("✓ Deepgram WebSocket connected and listening")
+
+    def _start_ffmpeg(self):
+        """
+        Start ffmpeg process and converter threads.
+        Called AFTER initial buffer is collected.
+        """
+        if self.ffmpeg_process is not None:
+            logger.warning("FFmpeg already started")
+            return
+
         try:
+            logger.info("🚀 Starting ffmpeg process...")
             self.ffmpeg_process = subprocess.Popen([
                 "ffmpeg",
-                "-loglevel", "warning",  # Show warnings and errors for better debugging
-                "-fflags", "+genpts+igndts",  # Generate timestamps & ignore DTS errors
-                "-err_detect", "ignore_err",  # Ignore minor errors in input stream
-                "-f", "webm",  # Input format: WebM
-                "-i", "pipe:0",  # Read from stdin
-                "-vn",  # Disable video (audio only)
-                "-f", "s16le",  # Output format: signed 16-bit little-endian PCM
-                "-ar", "16000",  # Audio rate: 16000 Hz
-                "-ac", "1",  # Audio channels: 1 (mono)
-                "-fflags", "+discardcorrupt",  # Discard corrupted packets
-                "pipe:1"  # Write to stdout
+                "-loglevel", "warning",
+                "-fflags", "+genpts+igndts",
+                "-err_detect", "ignore_err",
+                "-f", "webm",
+                "-i", "pipe:0",
+                "-vn",
+                "-f", "s16le",
+                "-ar", "16000",
+                "-ac", "1",
+                "-fflags", "+discardcorrupt",
+                "pipe:1"
             ], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=8192)
 
             # Start background thread to read from ffmpeg and send to Deepgram
@@ -124,16 +141,10 @@ class DeepgramStreamingService:
             )
             self.stderr_thread.start()
 
-            logger.info("✓ FFmpeg converter started")
+            logger.info("✅ FFmpeg process started successfully")
         except Exception as e:
-            logger.error(f"Failed to start ffmpeg: {e}", exc_info=True)
+            logger.error(f"❌ Failed to start ffmpeg: {e}", exc_info=True)
             raise
-
-        # Start listening in background task (non-blocking)
-        # start_listening() is an infinite loop that processes Deepgram messages
-        self.listening_task = asyncio.create_task(connection.start_listening())
-        self.is_connected = True
-        logger.info("✓ Deepgram WebSocket connected and listening")
 
     def _handle_transcript(self, callback: Callable):
         """Create transcript event handler for v2 API."""
@@ -259,10 +270,6 @@ class DeepgramStreamingService:
         Args:
             audio_data: Raw audio bytes (WebM/Opus format from client)
         """
-        if not self.ffmpeg_process or not self.ffmpeg_process.stdin:
-            logger.warning("⚠️ Cannot send audio: ffmpeg not running")
-            return False
-
         # PHASE 1: Buffer initial chunks until we have enough data for complete WebM header
         if not self.buffering_complete:
             self.initial_buffer.append(audio_data)
@@ -271,27 +278,36 @@ class DeepgramStreamingService:
             logger.debug(f"🔄 Buffering audio: {buffered_size}/{self.buffer_threshold} bytes")
 
             if buffered_size >= self.buffer_threshold:
-                # We have enough data - flush buffer to ffmpeg
-                logger.info(f"✅ Buffer threshold reached ({buffered_size} bytes), flushing to ffmpeg")
+                # We have enough data - START ffmpeg now
+                logger.info(f"✅ Buffer threshold reached ({buffered_size} bytes)")
 
                 try:
+                    # Start ffmpeg process
+                    self._start_ffmpeg()
+
+                    # Immediately write buffered data to ffmpeg
+                    logger.info(f"📤 Flushing {buffered_size} bytes to ffmpeg")
                     for chunk in self.initial_buffer:
                         self.ffmpeg_process.stdin.write(chunk)
                     self.ffmpeg_process.stdin.flush()
 
                     self.buffering_complete = True
                     self.initial_buffer.clear()
-                    logger.info("✅ Initial buffer flushed successfully")
+                    logger.info("✅ Initial buffer flushed successfully, ffmpeg running")
                     return True
 
                 except Exception as e:
-                    logger.error(f"❌ Error flushing initial buffer: {e}", exc_info=True)
+                    logger.error(f"❌ Error starting ffmpeg or flushing buffer: {e}", exc_info=True)
                     return False
 
             # Still buffering
             return True
 
         # PHASE 2: Normal operation - send directly to ffmpeg
+        if not self.ffmpeg_process or not self.ffmpeg_process.stdin:
+            logger.warning("⚠️ Cannot send audio: ffmpeg not started yet (still buffering)")
+            return False
+
         # Check if ffmpeg process is still alive
         if self.ffmpeg_process.poll() is not None:
             # Process has terminated
