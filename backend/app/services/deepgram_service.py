@@ -27,6 +27,12 @@ class DeepgramStreamingService:
         self.stderr_thread = None
         self.listening_task = None
         self.stop_converter = False
+
+        # Buffer for initial audio chunks to ensure complete WebM header
+        self.initial_buffer = []
+        self.buffer_threshold = 8192  # Buffer first 8KB to ensure complete header
+        self.buffering_complete = False
+
         logger.info(f"Deepgram streaming service initialized with model: {self.model}")
 
     def create_connection(
@@ -69,6 +75,11 @@ class DeepgramStreamingService:
             connection: Deepgram connection object
         """
         self.connection = connection
+
+        # Reset buffer state for new session
+        self.initial_buffer.clear()
+        self.buffering_complete = False
+        logger.debug("🔄 Buffer state reset for new session")
 
         # Store event loop for thread-safe async scheduling
         self._loop = asyncio.get_event_loop()
@@ -243,6 +254,7 @@ class DeepgramStreamingService:
     async def send_audio(self, audio_data: bytes):
         """
         Send audio chunk to ffmpeg for conversion, which will then forward to Deepgram.
+        Buffers initial chunks to ensure complete WebM header before starting ffmpeg.
 
         Args:
             audio_data: Raw audio bytes (WebM/Opus format from client)
@@ -251,6 +263,35 @@ class DeepgramStreamingService:
             logger.warning("⚠️ Cannot send audio: ffmpeg not running")
             return False
 
+        # PHASE 1: Buffer initial chunks until we have enough data for complete WebM header
+        if not self.buffering_complete:
+            self.initial_buffer.append(audio_data)
+            buffered_size = sum(len(chunk) for chunk in self.initial_buffer)
+
+            logger.debug(f"🔄 Buffering audio: {buffered_size}/{self.buffer_threshold} bytes")
+
+            if buffered_size >= self.buffer_threshold:
+                # We have enough data - flush buffer to ffmpeg
+                logger.info(f"✅ Buffer threshold reached ({buffered_size} bytes), flushing to ffmpeg")
+
+                try:
+                    for chunk in self.initial_buffer:
+                        self.ffmpeg_process.stdin.write(chunk)
+                    self.ffmpeg_process.stdin.flush()
+
+                    self.buffering_complete = True
+                    self.initial_buffer.clear()
+                    logger.info("✅ Initial buffer flushed successfully")
+                    return True
+
+                except Exception as e:
+                    logger.error(f"❌ Error flushing initial buffer: {e}", exc_info=True)
+                    return False
+
+            # Still buffering
+            return True
+
+        # PHASE 2: Normal operation - send directly to ffmpeg
         # Check if ffmpeg process is still alive
         if self.ffmpeg_process.poll() is not None:
             # Process has terminated
