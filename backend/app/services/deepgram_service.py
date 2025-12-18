@@ -28,11 +28,6 @@ class DeepgramStreamingService:
         self.listening_task = None
         self.stop_converter = False
 
-        # Buffer for initial audio chunks to ensure complete WebM header
-        self.initial_buffer = []
-        self.buffer_threshold = 8192  # Buffer first 8KB to ensure complete header
-        self.buffering_complete = False
-
         logger.info(f"Deepgram streaming service initialized with model: {self.model}")
 
     def create_connection(
@@ -120,9 +115,7 @@ class DeepgramStreamingService:
 
         self.connection = connection
 
-        # Reset ALL state for new session
-        self.initial_buffer.clear()
-        self.buffering_complete = False
+        # Reset state for new session
         self.is_connected = False
         logger.info("🔄 State reset for new connection")
 
@@ -135,9 +128,9 @@ class DeepgramStreamingService:
         connection.on(EventType.OPEN, lambda _: logger.info("✓ Deepgram WebSocket opened"))
         connection.on(EventType.CLOSE, lambda _: logger.info("Deepgram WebSocket closed"))
 
-        # DON'T start ffmpeg yet - wait for initial buffer to fill
-        # ffmpeg will be started in send_audio() after we have enough data
-        logger.info("⏳ FFmpeg will start after initial buffer fills (8KB)")
+        # Start ffmpeg immediately (streaming mode handles incomplete headers gracefully)
+        self._start_ffmpeg()
+        logger.info("✅ FFmpeg started and ready for streaming")
 
         # Start listening in background task (non-blocking)
         # start_listening() is an infinite loop that processes Deepgram messages
@@ -148,7 +141,7 @@ class DeepgramStreamingService:
     def _start_ffmpeg(self):
         """
         Start ffmpeg process and converter threads.
-        Called AFTER initial buffer is collected.
+        Called immediately during setup_connection().
         """
         # Defensive: cleanup any zombie process
         if self.ffmpeg_process is not None:
@@ -311,52 +304,16 @@ class DeepgramStreamingService:
     async def send_audio(self, audio_data: bytes):
         """
         Send audio chunk to ffmpeg for conversion, which will then forward to Deepgram.
-        Buffers initial chunks to ensure complete WebM header before starting ffmpeg.
 
         Args:
             audio_data: Raw audio bytes (WebM/Opus format from client)
         """
-        # PHASE 1: Buffer initial chunks until we have enough data for complete WebM header
-        if not self.buffering_complete:
-            self.initial_buffer.append(audio_data)
-            buffered_size = sum(len(chunk) for chunk in self.initial_buffer)
-
-            logger.debug(f"🔄 Buffering audio: {buffered_size}/{self.buffer_threshold} bytes")
-
-            if buffered_size >= self.buffer_threshold:
-                # We have enough data - START ffmpeg now
-                logger.info(f"✅ Buffer threshold reached ({buffered_size} bytes)")
-
-                try:
-                    # Start ffmpeg process
-                    self._start_ffmpeg()
-
-                    # Immediately write buffered data to ffmpeg
-                    logger.info(f"📤 Flushing {buffered_size} bytes to ffmpeg")
-                    for chunk in self.initial_buffer:
-                        self.ffmpeg_process.stdin.write(chunk)
-                    self.ffmpeg_process.stdin.flush()
-
-                    self.buffering_complete = True
-                    self.initial_buffer.clear()
-                    logger.info("✅ Initial buffer flushed successfully, ffmpeg running")
-                    return True
-
-                except Exception as e:
-                    logger.error(f"❌ Error starting ffmpeg or flushing buffer: {e}", exc_info=True)
-                    return False
-
-            # Still buffering
-            return True
-
-        # PHASE 2: Normal operation - send directly to ffmpeg
         if not self.ffmpeg_process or not self.ffmpeg_process.stdin:
-            logger.warning("⚠️ Cannot send audio: ffmpeg not started yet (still buffering)")
+            logger.warning("⚠️ Cannot send audio: ffmpeg not started")
             return False
 
         # Check if ffmpeg process is still alive
         if self.ffmpeg_process.poll() is not None:
-            # Process has terminated
             exit_code = self.ffmpeg_process.returncode
             logger.error(f"❌ FFmpeg process died with exit code {exit_code}")
 
