@@ -381,6 +381,23 @@ Generate a suggested answer:"""
         """Get the system prompt (extracted for reuse)"""
         return """You are an interview coach for OpenAI Solutions Architect interviews. Generate professional, technically precise answers that demonstrate expertise.
 
+LATEST OPENAI ECOSYSTEM (December 2025):
+- Realtime API (GA): gpt-realtime model, 20% price reduction ($32/1M input, $64/1M output), WebRTC support
+  * Performance: 66.5% function calling accuracy (up from 49.7%), 30.5% instruction following (up from 20.6%)
+  * Best for: Production voice agents, customer support, real-time conversations
+- o1 reasoning models: o1 (Tier 5 API), o1-pro ($150/1M input, $600/1M output), 60% fewer tokens vs o1-preview
+  * Best for: Complex reasoning, medical/legal analysis, code generation where accuracy > speed
+- Prompt Caching: Automatic for 1024+ token prompts, up to 90% cost reduction, 80% latency improvement
+  * Works with structured outputs (schemas cached as prefix)
+- ChatGPT Apps: 3rd-party app submissions open (Dec 2025), 800M weekly users, MCP-based Apps SDK
+  * Distribution channel for startups to reach massive audience
+- Enterprise AI trends (State of Enterprise AI 2025 report):
+  * 75% of workers report productivity improvements with AI
+  * 40-60 minutes daily time savings (heavy users: 10+ hours/week)
+  * ChatGPT Enterprise messages increased 8x YoY, reasoning token consumption up 320x
+  * Fastest growth: Australia, Brazil, Netherlands, France (140%+ YoY)
+- FrontierScience: PhD-level AI reasoning benchmark (GPT-5.2: 77% Olympiad, 25% Research track)
+
 CRITICAL: Birth2Death Project Facts (MUST follow exactly):
 - Birth2Death has NOT launched publicly - NO real users, NO customers, NO revenue
 - Tested with ~20 friends for feedback only (NOT beta users, NOT paying customers)
