@@ -67,19 +67,64 @@ class DeepgramStreamingService:
             eager_eot_threshold=0.3,  # Early end of turn detection
         )
 
+    def _cleanup_ffmpeg(self):
+        """
+        Clean up existing ffmpeg process and threads.
+        Safe to call even if nothing is running.
+        """
+        logger.debug("🧹 Cleaning up ffmpeg process and threads...")
+
+        # Stop converter thread
+        self.stop_converter = True
+
+        # Kill ffmpeg process if running
+        if self.ffmpeg_process:
+            try:
+                if self.ffmpeg_process.poll() is None:  # Still running
+                    logger.debug("Terminating existing ffmpeg process")
+                    self.ffmpeg_process.terminate()
+                    try:
+                        self.ffmpeg_process.wait(timeout=1.0)
+                    except subprocess.TimeoutExpired:
+                        logger.warning("FFmpeg didn't terminate, killing forcefully")
+                        self.ffmpeg_process.kill()
+                        self.ffmpeg_process.wait()
+                self.ffmpeg_process = None
+            except Exception as e:
+                logger.error(f"Error killing ffmpeg: {e}")
+                self.ffmpeg_process = None
+
+        # Wait for threads to stop
+        if self.converter_thread and self.converter_thread.is_alive():
+            logger.debug("Waiting for converter thread to stop...")
+            self.converter_thread.join(timeout=2.0)
+
+        if self.stderr_thread and self.stderr_thread.is_alive():
+            logger.debug("Waiting for stderr thread to stop...")
+            self.stderr_thread.join(timeout=2.0)
+
+        self.converter_thread = None
+        self.stderr_thread = None
+        logger.debug("✅ FFmpeg cleanup complete")
+
     async def setup_connection(self, connection):
         """
         Set up event handlers for the connection and start ffmpeg converter.
+        Cleans up any existing state from previous connections.
 
         Args:
             connection: Deepgram connection object
         """
+        # CRITICAL: Clean up any existing ffmpeg process from previous connection
+        self._cleanup_ffmpeg()
+
         self.connection = connection
 
-        # Reset buffer state for new session
+        # Reset ALL state for new session
         self.initial_buffer.clear()
         self.buffering_complete = False
-        logger.debug("🔄 Buffer state reset for new session")
+        self.is_connected = False
+        logger.info("🔄 State reset for new connection")
 
         # Store event loop for thread-safe async scheduling
         self._loop = asyncio.get_event_loop()
@@ -105,9 +150,10 @@ class DeepgramStreamingService:
         Start ffmpeg process and converter threads.
         Called AFTER initial buffer is collected.
         """
+        # Defensive: cleanup any zombie process
         if self.ffmpeg_process is not None:
-            logger.warning("FFmpeg already started")
-            return
+            logger.warning("⚠️ FFmpeg process already exists, cleaning up first...")
+            self._cleanup_ffmpeg()
 
         try:
             logger.info("🚀 Starting ffmpeg process...")
@@ -366,8 +412,7 @@ class DeepgramStreamingService:
 
     async def disconnect(self):
         """Close WebSocket connection and cleanup ffmpeg process."""
-        # Stop converter thread
-        self.stop_converter = True
+        logger.info("🔌 Disconnecting Deepgram service...")
 
         # Cancel listening task
         if self.listening_task and not self.listening_task.done():
@@ -376,27 +421,10 @@ class DeepgramStreamingService:
                 await self.listening_task
             except asyncio.CancelledError:
                 pass
-            logger.info("Deepgram listening task cancelled")
+            logger.debug("Deepgram listening task cancelled")
 
-        # Terminate ffmpeg process
-        if self.ffmpeg_process:
-            try:
-                self.ffmpeg_process.terminate()
-                self.ffmpeg_process.wait(timeout=2)
-                logger.info("FFmpeg process terminated")
-            except subprocess.TimeoutExpired:
-                self.ffmpeg_process.kill()
-                logger.warning("FFmpeg process killed (timeout)")
-            except Exception as e:
-                logger.error(f"Error terminating ffmpeg: {e}", exc_info=True)
-            finally:
-                self.ffmpeg_process = None
-
-        # Wait for converter threads to finish
-        if self.converter_thread and self.converter_thread.is_alive():
-            self.converter_thread.join(timeout=2)
-        if self.stderr_thread and self.stderr_thread.is_alive():
-            self.stderr_thread.join(timeout=2)
+        # Use centralized cleanup for ffmpeg
+        self._cleanup_ffmpeg()
 
         # Close Deepgram connection
         if self.connection:
