@@ -353,30 +353,20 @@ class ClaudeService:
         # Use same system prompt as non-streaming
         system_prompt = self._get_system_prompt()
 
-        # Detect yes/no questions and enforce ultra-brief answers
-        question_lower = question.lower()
-        is_yes_no = any(phrase in question_lower for phrase in [
-            "yes or no", "correct?", "is this", "is that", "would you tell"
-        ])
+        # Detect question type and frustration level
+        context_info = self._detect_question_context(question)
+        qtype = context_info["type"]
+        frustrated = context_info["frustrated"]
+        max_tokens = context_info["max_tokens"]
+        instruction = context_info["instruction"]
 
-        if is_yes_no:
-            user_prompt = f"""CANDIDATE BACKGROUND:
+        user_prompt = f"""CANDIDATE BACKGROUND:
 {context}
 
 INTERVIEW QUESTION:
 {question}
 
-Generate a suggested answer (CRITICAL: This is a YES/NO question - Answer in MAXIMUM 10 WORDS):"""
-            max_tokens = 30  # Ultra-brief for yes/no
-        else:
-            user_prompt = f"""CANDIDATE BACKGROUND:
-{context}
-
-INTERVIEW QUESTION:
-{question}
-
-Generate a suggested answer (MAXIMUM 60-70 WORDS, 30 SECONDS SPOKEN):"""
-            max_tokens = 150
+Generate a suggested answer ({instruction}):"""
 
         try:
             # Claude streaming API
@@ -394,6 +384,67 @@ Generate a suggested answer (MAXIMUM 60-70 WORDS, 30 SECONDS SPOKEN):"""
         except Exception as e:
             logger.error(f"Claude streaming error: {str(e)}", exc_info=True)
             yield "\n\n⚠️ Error generating answer. Please try again."
+
+    def _detect_question_context(self, question: str) -> dict:
+        """
+        Detect question type and interviewer frustration level.
+
+        Returns:
+            {
+                "type": "yes_no" | "direct" | "deep_dive" | "clarification" | "general",
+                "frustrated": bool,
+                "max_tokens": int,
+                "instruction": str
+            }
+        """
+        question_lower = question.lower()
+
+        # Detect frustration signals
+        frustration_phrases = [
+            "stop", "hold on", "whoa",
+            "that's not what i asked", "i didn't ask",
+            "you're doing it again", "answer the question",
+            "i just told you", "i asked you", "listen"
+        ]
+        is_frustrated = any(phrase in question_lower for phrase in frustration_phrases)
+
+        # Detect question type
+        yes_no_phrases = ["yes or no", "correct?", "is this", "is that", "would you tell"]
+        direct_phrases = ["what is", "what would", "when did", "where is", "how much", "how many"]
+        deep_dive_phrases = ["walk me through", "explain how", "tell me about", "describe", "talk about"]
+        clarification_phrases = ["what do you mean", "can you clarify", "i don't understand"]
+
+        if any(phrase in question_lower for phrase in yes_no_phrases):
+            qtype = "yes_no"
+            max_tokens = 20 if is_frustrated else 30
+            instruction = "CRITICAL: YES/NO question - Answer in MAXIMUM 5-10 WORDS"
+        elif any(phrase in question_lower for phrase in direct_phrases):
+            qtype = "direct"
+            max_tokens = 40 if is_frustrated else 80
+            instruction = "CRITICAL: Direct question - Answer in MAXIMUM 20 WORDS"
+        elif any(phrase in question_lower for phrase in deep_dive_phrases):
+            qtype = "deep_dive"
+            max_tokens = 80 if is_frustrated else 150
+            instruction = "Deep-dive question - Answer in MAXIMUM 60 WORDS (30 seconds)"
+        elif any(phrase in question_lower for phrase in clarification_phrases):
+            qtype = "clarification"
+            max_tokens = 50 if is_frustrated else 100
+            instruction = "Clarification - Answer in MAXIMUM 30 WORDS"
+        else:
+            qtype = "general"
+            max_tokens = 100 if is_frustrated else 150
+            instruction = "Answer in MAXIMUM 60 WORDS (30 seconds)"
+
+        # If frustrated, add explicit warning
+        if is_frustrated:
+            instruction = f"🚨 INTERVIEWER IS FRUSTRATED - BE ULTRA BRIEF! {instruction}"
+
+        return {
+            "type": qtype,
+            "frustrated": is_frustrated,
+            "max_tokens": max_tokens,
+            "instruction": instruction
+        }
 
     def _get_system_prompt(self) -> str:
         """Get the system prompt (extracted for reuse)"""
@@ -513,33 +564,23 @@ Now answer the interview question following these examples."""
 
         system_prompt = self._get_system_prompt()
 
-        # Detect yes/no questions and enforce ultra-brief answers
-        question_lower = question.lower()
-        is_yes_no = any(phrase in question_lower for phrase in [
-            "yes or no", "correct?", "is this", "is that", "would you tell"
-        ])
+        # Detect question type and frustration level
+        context_info = self._detect_question_context(question)
+        qtype = context_info["type"]
+        frustrated = context_info["frustrated"]
+        max_tokens = context_info["max_tokens"]
+        instruction = context_info["instruction"]
 
-        if is_yes_no:
-            user_prompt = f"""CANDIDATE BACKGROUND:
+        user_prompt = f"""CANDIDATE BACKGROUND:
 {context}
 
 INTERVIEW QUESTION:
 {question}
 
-Generate a suggested answer (CRITICAL: This is a YES/NO question - Answer in MAXIMUM 10 WORDS):"""
-            max_tokens = 30  # Ultra-brief for yes/no
-        else:
-            user_prompt = f"""CANDIDATE BACKGROUND:
-{context}
-
-INTERVIEW QUESTION:
-{question}
-
-Generate a suggested answer (MAXIMUM 60-70 WORDS, 30 SECONDS SPOKEN):"""
-            max_tokens = 150  # Strict limit: 60-70 words
+Generate a suggested answer ({instruction}):"""
 
         try:
-            logger.info(f"Sending request to Claude API (yes/no: {is_yes_no}, max_tokens: {max_tokens})")
+            logger.info(f"Sending request to Claude API (type: {qtype}, frustrated: {frustrated}, max_tokens: {max_tokens})")
             response = self.client.messages.create(
                 model=self.model,
                 max_tokens=max_tokens,
