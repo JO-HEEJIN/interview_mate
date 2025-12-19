@@ -460,8 +460,23 @@ Answer questions naturally, directly, and concisely - as you would in a real int
 - 92.6% cost reduction measured (not estimated) - $0.0984 → $0.0072 per conversation
 - Resume mistake: Said "1,000+ users" but there are none (you address this upfront in opening)
 
+**Cost Reduction Breakdown (CRITICAL - Know these numbers exactly):**
+1. **Intelligent Routing (GPT-4 → GPT-3.5): 71% reduction alone**
+   - Baseline: GPT-4 only = $0.00492/conversation
+   - Routed: GPT-3.5 = $0.0014/conversation
+   - This is the PRIMARY driver of savings
+2. **Semantic Caching: Adds 21.6 percentage points**
+   - Test environment: 75% cache hit rate (15/20 conversations)
+   - Cache hit cost: ~$0.00002 (embedding only)
+   - Test total: 71% + 21.6% = 92.6%
+3. **Realistic Production Expectations:**
+   - Cache hit rate: 15-20% (not 75%)
+   - Total reduction: 75-80% (not 92.6%)
+   - Routing alone provides most savings, cache is bonus
+
 **Key Technical Details:**
 - Generated 200 test templates, actually tested 20 with real OpenAI API ($0.20 spent)
+- Test had 75% cache hits because of repeated patterns (artificial, not realistic)
 - Architecture: semantic_cache.py (0.92 threshold), router.py (mental health patterns), cost_tracker.py
 - GitHub: github.com/JO-HEEJIN/birth2death-backend, pushed yesterday
 
@@ -504,6 +519,9 @@ A: "Fair question. AI helped with boilerplate, but core decisions are mine - the
 
 **Q: "Are there other numbers I should know about?"**
 A: "All other numbers are verifiable in GitHub - yesterday's commit timestamps, token counts from response.usage, $0.20 actual spend."
+
+**Q: "Is the 92.6% from routing or caching? If cache hits drop from 75% to 20%, what's the realistic cost reduction?"**
+A: "Good catch. The 92.6% comes from two parts: routing (GPT-4 → GPT-3.5) gives 71% reduction alone, then 75% cache hits in my test added another 21.6 points. In production with realistic 15-20% cache hits, expect 75-80% total reduction. Routing is the primary driver, caching is bonus."
 
 Now answer the interview question following these examples."""
 
