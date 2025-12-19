@@ -50,9 +50,9 @@ class WhisperService:
         if header[:3] == b'ID3' or header[0] == 0xFF:
             return '.mp3'
 
-        # Default to webm if unknown
-        logger.warning(f"Unknown audio format, header: {header.hex()}, defaulting to .webm")
-        return '.webm'
+        # Return None if unknown, prompting conversion
+        logger.warning(f"Unknown audio format, header: {header.hex()}... defaulting to conversion")
+        return None
 
     def _convert_to_wav(self, input_path: str, output_path: str) -> bool:
         """
@@ -121,11 +121,37 @@ class WhisperService:
         try:
             logger.info(f"Transcribing audio data: {len(audio_data)} bytes, language: {language}")
 
-            # Write accumulated buffer to temp file
-            # The accumulated chunks form a valid WebM file
-            with tempfile.NamedTemporaryFile(suffix='.webm', delete=False) as f:
-                temp_file = f.name
-                f.write(audio_data)
+            # Detect format
+            ext = self._detect_audio_format(audio_data)
+            
+            # If format is unknown, we must convert it
+            if ext is None:
+                logger.info("Format unknown, converting to WAV using ffmpeg")
+                # Save raw data
+                with tempfile.NamedTemporaryFile(suffix='.bin', delete=False) as f:
+                    raw_path = f.name
+                    f.write(audio_data)
+                
+                # Convert to WAV
+                wav_path = raw_path + ".wav"
+                if self._convert_to_wav(raw_path, wav_path):
+                    # Use the converted file
+                    temp_file = wav_path
+                    # Clean up raw file immediately
+                    try:
+                        Path(raw_path).unlink()
+                    except:
+                        pass
+                else:
+                    # Conversion failed, try as webm as last resort
+                    logger.warning("Conversion failed, attempting as .webm")
+                    temp_file = raw_path
+            else:
+                logger.info(f"Detected format: {ext} for {len(audio_data)} bytes")
+                # Write accumulated buffer to temp file
+                with tempfile.NamedTemporaryFile(suffix=ext, delete=False) as f:
+                    temp_file = f.name
+                    f.write(audio_data)
 
             # Interview-specific prompt to guide transcription
             prompt = (
@@ -135,7 +161,7 @@ class WhisperService:
                 "Focus on complete questions only."
             )
 
-            # Transcribe directly (no conversion needed with accumulated buffer)
+            # Transcribe directly
             with open(temp_file, 'rb') as audio_file:
                 response = self.client.audio.transcriptions.create(
                     model="whisper-1",
