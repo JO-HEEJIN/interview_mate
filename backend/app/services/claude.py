@@ -352,19 +352,37 @@ class ClaudeService:
 
         # Use same system prompt as non-streaming
         system_prompt = self._get_system_prompt()
-        user_prompt = f"""CANDIDATE BACKGROUND:
+
+        # Detect yes/no questions and enforce ultra-brief answers
+        question_lower = question.lower()
+        is_yes_no = any(phrase in question_lower for phrase in [
+            "yes or no", "correct?", "is this", "is that", "would you tell"
+        ])
+
+        if is_yes_no:
+            user_prompt = f"""CANDIDATE BACKGROUND:
+{context}
+
+INTERVIEW QUESTION:
+{question}
+
+Generate a suggested answer (CRITICAL: This is a YES/NO question - Answer in MAXIMUM 10 WORDS):"""
+            max_tokens = 30  # Ultra-brief for yes/no
+        else:
+            user_prompt = f"""CANDIDATE BACKGROUND:
 {context}
 
 INTERVIEW QUESTION:
 {question}
 
 Generate a suggested answer (MAXIMUM 60-70 WORDS, 30 SECONDS SPOKEN):"""
+            max_tokens = 150
 
         try:
             # Claude streaming API
             with self.client.messages.stream(
                 model=self.model,
-                max_tokens=150,  # Strict limit: 60-70 words = ~100-120 tokens
+                max_tokens=max_tokens,
                 system=system_prompt,
                 messages=[{"role": "user", "content": user_prompt}]
             ) as stream:
@@ -575,19 +593,37 @@ AI-Generated Code Question Handling:
         context = "\n\n---\n\n".join(context_parts) if context_parts else "No specific context provided."
 
         system_prompt = self._get_system_prompt()
-        user_prompt = f"""CANDIDATE BACKGROUND:
+
+        # Detect yes/no questions and enforce ultra-brief answers
+        question_lower = question.lower()
+        is_yes_no = any(phrase in question_lower for phrase in [
+            "yes or no", "correct?", "is this", "is that", "would you tell"
+        ])
+
+        if is_yes_no:
+            user_prompt = f"""CANDIDATE BACKGROUND:
+{context}
+
+INTERVIEW QUESTION:
+{question}
+
+Generate a suggested answer (CRITICAL: This is a YES/NO question - Answer in MAXIMUM 10 WORDS):"""
+            max_tokens = 30  # Ultra-brief for yes/no
+        else:
+            user_prompt = f"""CANDIDATE BACKGROUND:
 {context}
 
 INTERVIEW QUESTION:
 {question}
 
 Generate a suggested answer (MAXIMUM 60-70 WORDS, 30 SECONDS SPOKEN):"""
+            max_tokens = 150  # Strict limit: 60-70 words
 
         try:
-            logger.info("Sending request to Claude API")
+            logger.info(f"Sending request to Claude API (yes/no: {is_yes_no}, max_tokens: {max_tokens})")
             response = self.client.messages.create(
                 model=self.model,
-                max_tokens=150,  # Strict limit: 60-70 words = ~100-120 tokens
+                max_tokens=max_tokens,
                 system=system_prompt,
                 messages=[
                     {"role": "user", "content": user_prompt}
