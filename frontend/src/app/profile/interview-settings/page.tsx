@@ -68,6 +68,11 @@ export default function InterviewSettingsPage() {
             try {
                 setIsLoading(true);
                 const response = await fetch(`${API_URL}/api/interview-profile/${userId}`);
+
+                if (!response.ok) {
+                    throw new Error(`API request failed with status ${response.status}`);
+                }
+
                 const data = await response.json();
 
                 if (data.has_profile && data.profile) {
@@ -85,7 +90,7 @@ export default function InterviewSettingsPage() {
                 }
             } catch (err) {
                 console.error('Failed to load profile:', err);
-                setError('Failed to load your profile');
+                setError('Failed to load your profile. Please check if backend is running.');
             } finally {
                 setIsLoading(false);
             }
