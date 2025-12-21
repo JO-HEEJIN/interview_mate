@@ -24,7 +24,7 @@ class InterviewProfileCreate(BaseModel):
     technical_stack: Optional[list[str]] = []
     answer_style: Optional[str] = Field(default="balanced", pattern="^(concise|balanced|detailed)$")
     key_strengths: Optional[list[str]] = []
-    custom_system_prompt: Optional[str] = None
+    custom_instructions: Optional[str] = None
 
 
 class InterviewProfileUpdate(BaseModel):
@@ -35,7 +35,7 @@ class InterviewProfileUpdate(BaseModel):
     technical_stack: Optional[list[str]] = None
     answer_style: Optional[str] = Field(default=None, pattern="^(concise|balanced|detailed)$")
     key_strengths: Optional[list[str]] = None
-    custom_system_prompt: Optional[str] = None
+    custom_instructions: Optional[str] = None
 
 
 class InterviewProfileResponse(BaseModel):
@@ -48,7 +48,7 @@ class InterviewProfileResponse(BaseModel):
     technical_stack: list[str]
     answer_style: str
     key_strengths: list[str]
-    custom_system_prompt: Optional[str]
+    custom_instructions: Optional[str]
     created_at: str
     updated_at: str
 
@@ -93,7 +93,7 @@ async def create_interview_profile(user_id: str, profile: InterviewProfileCreate
         "technical_stack": profile.technical_stack or [],
         "answer_style": profile.answer_style or "balanced",
         "key_strengths": profile.key_strengths or [],
-        "custom_system_prompt": profile.custom_system_prompt,
+        "custom_instructions": profile.custom_instructions,
     }
 
     response = supabase.table("user_interview_profiles").insert(data).execute()

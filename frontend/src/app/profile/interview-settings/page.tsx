@@ -35,6 +35,7 @@ export default function InterviewSettingsPage() {
         answer_style: 'balanced' as 'concise' | 'balanced' | 'detailed',
         technical_stack: '',  // Comma-separated
         key_strengths: '',     // Comma-separated
+        custom_instructions: '',  // User-specific answer generation rules
     });
 
     // Check authentication
@@ -92,6 +93,7 @@ export default function InterviewSettingsPage() {
                         answer_style: profile.answer_style || 'balanced',
                         technical_stack: (profile.technical_stack || []).join(', '),
                         key_strengths: (profile.key_strengths || []).join(', '),
+                        custom_instructions: profile.custom_instructions || '',
                     });
                     setHasProfile(true);
                 }
@@ -133,6 +135,7 @@ export default function InterviewSettingsPage() {
                 key_strengths: formData.key_strengths
                     ? formData.key_strengths.split(',').map(s => s.trim()).filter(Boolean)
                     : [],
+                custom_instructions: formData.custom_instructions || null,
             };
 
             const method = hasProfile ? 'PUT' : 'POST';
@@ -350,6 +353,45 @@ export default function InterviewSettingsPage() {
                                     </div>
                                 </label>
                             ))}
+                        </div>
+                    </div>
+
+                    {/* Custom Instructions */}
+                    <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950">
+                        <h2 className="mb-4 text-lg font-medium text-zinc-900 dark:text-zinc-100">
+                            Custom Interview Instructions (Advanced)
+                        </h2>
+
+                        <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-950">
+                            <h3 className="mb-2 font-medium text-blue-900 dark:text-blue-100">
+                                What are Custom Instructions?
+                            </h3>
+                            <p className="text-sm text-blue-800 dark:text-blue-200">
+                                Add specific rules for how AI should generate answers for YOUR interviews.
+                                This makes the system work for any role, not just generic advice.
+                            </p>
+                            <ul className="mt-2 space-y-1 text-sm text-blue-800 dark:text-blue-200">
+                                <li>- Market-specific context (e.g., "For Korea market, consider latency and sovereignty")</li>
+                                <li>- Answer style (e.g., "Be brutally honest, not a cheerleader")</li>
+                                <li>- Domain expertise (e.g., "For healthcare, emphasize HIPAA compliance")</li>
+                                <li>- Competitive positioning (e.g., "When asked about Claude, acknowledge Tokyo region advantage")</li>
+                            </ul>
+                        </div>
+
+                        <div>
+                            <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                                Your Custom Instructions
+                            </label>
+                            <p className="mb-2 text-xs text-zinc-500 dark:text-zinc-400">
+                                These instructions are appended to the base system prompt. Leave blank to use default behavior.
+                            </p>
+                            <textarea
+                                value={formData.custom_instructions}
+                                onChange={(e) => setFormData({ ...formData, custom_instructions: e.target.value })}
+                                placeholder={"Example:\n\nFor Korea market questions:\n- Always acknowledge no Korea region (150-200ms latency)\n- Mention sovereign AI political pressure\n- Suggest hybrid architecture as pragmatic solution\n\nMy answer style:\n- Lead with specifics, not generalities\n- Acknowledge when alternatives might be better\n- Use PREP structure: Point → Reason → Example → Point"}
+                                rows={15}
+                                className="w-full rounded-lg border border-zinc-300 px-3 py-2 font-mono text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                            />
                         </div>
                     </div>
 

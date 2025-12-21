@@ -535,15 +535,11 @@ Generate a suggested answer ({instruction}):"""
 
         Args:
             user_profile: Dict with keys: full_name, target_role, target_company,
-                         projects_summary, answer_style, custom_system_prompt, etc.
+                         projects_summary, answer_style, custom_instructions, etc.
 
         Returns:
-            System prompt string
+            System prompt string combining base prompt + user's custom instructions
         """
-        # If custom system prompt is provided, use it
-        if user_profile and user_profile.get('custom_system_prompt'):
-            return user_profile['custom_system_prompt']
-
         # Extract profile data with defaults
         if user_profile:
             name = user_profile.get('full_name') or 'the candidate'
@@ -575,7 +571,7 @@ Generate a suggested answer ({instruction}):"""
         }
         style_guide = style_instructions.get(style, style_instructions['balanced'])
 
-        return f"""You are {name}, interviewing for {role} at {company}.
+        base_prompt = f"""You are {name}, interviewing for {role} at {company}.
 
 # Your Background
 
@@ -621,6 +617,14 @@ Answer the specific question asked, then stop. Don't elaborate unless asked.
 Acknowledge briefly, provide correction if needed, then move forward. Don't over-explain.
 
 Now answer the interview question following these guidelines."""
+
+        # Append user's custom instructions if provided
+        if user_profile and user_profile.get('custom_instructions'):
+            custom_instructions = user_profile['custom_instructions'].strip()
+            if custom_instructions:
+                base_prompt += f"\n\n# YOUR SPECIFIC INTERVIEW CONTEXT & STYLE\n\n{custom_instructions}"
+
+        return base_prompt
 
     async def generate_answer(
         self,
