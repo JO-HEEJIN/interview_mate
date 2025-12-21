@@ -4,9 +4,11 @@ Anthropic Claude API integration for AI answer generation
 
 import re
 import logging
-from typing import Optional
+from typing import Optional, List
 from difflib import SequenceMatcher
 from anthropic import Anthropic
+from openai import AsyncOpenAI
+from pydantic import BaseModel, Field
 from app.core.config import settings
 
 # 로거 설정
@@ -157,9 +159,21 @@ def detect_question_fast(text: str) -> dict:
     }
 
 
+# Pydantic schemas for OpenAI Structured Outputs
+class QAPairItem(BaseModel):
+    question: str = Field(description="The interview question")
+    answer: str = Field(description="The corresponding answer")
+    question_type: str = Field(description="Type: behavioral, technical, situational, or general")
+
+
+class QAPairList(BaseModel):
+    qa_pairs: List[QAPairItem] = Field(description="List of Q&A pairs extracted from text")
+
+
 class ClaudeService:
     def __init__(self):
         self.client = Anthropic(api_key=settings.ANTHROPIC_API_KEY)
+        self.openai_client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
         self.model = "claude-sonnet-4-20250514"
         # Simple in-memory cache for answers
         # Format: {normalized_question: {"question": original, "answer": generated_answer}}
@@ -683,9 +697,69 @@ TYPE: behavioral/technical/situational/general/none"""
             return {"is_question": False, "question": "", "question_type": "none"}
 
 
-    async def extract_qa_pairs(self, text: str) -> list:
+    async def extract_qa_pairs_openai(self, text: str) -> list:
+        """
+        Extract Q&A pairs from free-form text using OpenAI Structured Outputs.
+
+        PRIMARY METHOD - Uses OpenAI's parse() with Pydantic schemas for 100% valid output.
+        Falls back to Claude Tool Use if OpenAI fails.
+
+        Args:
+            text: Free-form text containing questions and answers (any format)
+
+        Returns:
+            List of dicts with keys: question, answer, question_type, source
+        """
+        logger.info(f"Extracting Q&A pairs from text using OpenAI Structured Outputs ({len(text)} chars)")
+
+        try:
+            completion = await self.openai_client.beta.chat.completions.parse(
+                model="gpt-4o-2024-08-06",
+                messages=[
+                    {"role": "system", "content": "You are an expert at extracting interview Q&A pairs from text. Extract all question-answer pairs regardless of formatting (markdown, code blocks, tables, Q:/A: format, etc.)."},
+                    {"role": "user", "content": f"""Extract all interview Q&A pairs from the following text.
+
+The text may be in any format (markdown headers, code blocks, tables, Q:/A: format, etc.).
+
+Find every question-answer pair and return them in the structured format.
+
+Text to parse:
+
+{text}"""}
+                ],
+                response_format=QAPairList,
+            )
+
+            # Extract parsed data
+            parsed_data = completion.choices[0].message.parsed
+            if not parsed_data or not parsed_data.qa_pairs:
+                logger.warning("No Q&A pairs extracted by OpenAI")
+                return []
+
+            # Convert Pydantic models to dicts and add source field
+            qa_pairs = []
+            for pair in parsed_data.qa_pairs:
+                qa_pairs.append({
+                    "question": pair.question,
+                    "answer": pair.answer,
+                    "question_type": pair.question_type,
+                    "source": "bulk_upload"
+                })
+
+            logger.info(f"Successfully extracted {len(qa_pairs)} Q&A pairs using OpenAI Structured Outputs")
+            return qa_pairs
+
+        except Exception as e:
+            logger.error(f"OpenAI Q&A extraction error: {str(e)}", exc_info=True)
+            logger.warning("Falling back to Claude Tool Use")
+            return await self.extract_qa_pairs_claude(text)
+
+
+    async def extract_qa_pairs_claude(self, text: str) -> list:
         """
         Extract Q&A pairs from free-form text using Claude AI with Tool Use.
+
+        BACKUP METHOD - kept for fallback if OpenAI fails.
 
         Uses Claude's Tool Use feature to guarantee valid JSON output,
         similar to how I understand user intent in conversation.
