@@ -301,14 +301,14 @@ class QAGenerationService:
         if avoid_duplicates:
             dedup_instruction = f"\n\nIMPORTANT: AVOID generating questions similar to these existing ones:\n{', '.join(avoid_duplicates[:10])}"
 
+        additional_context_section = f"ADDITIONAL CONTEXT:\n{additional_context}\n\n" if additional_context else ""
+
         prompt = f"""You are an expert interview coach. Generate {count} high-quality interview Q&A pairs based on this candidate's resume.
 
 RESUME:
 {resume_text}
 
-{f"ADDITIONAL CONTEXT:\n{additional_context}" if additional_context else ""}
-
-INSTRUCTIONS:
+{additional_context_section}INSTRUCTIONS:
 1. Generate {count} Q&A pairs that interviewers would likely ask based on this resume
 2. Mix of behavioral (60%) and technical (40%) questions
 3. Questions should target specific projects, achievements, and skills mentioned
@@ -485,6 +485,10 @@ Generate exactly {count} company-aligned Q&A pairs."""
             logger.warning("No job posting available for job-posting Q&As")
             return []
 
+        dedup_instruction = ""
+        if avoid_duplicates:
+            dedup_instruction = f"\n\nAVOID: {', '.join(avoid_duplicates[:10])}"
+
         prompt = f"""Generate {count} interview Q&A pairs focused on this job posting's requirements.
 
 JOB POSTING:
@@ -498,7 +502,7 @@ INSTRUCTIONS:
 2. Identify potential gaps between resume and job requirements
 3. Create questions that let candidate bridge gaps with transferable skills
 4. Mix technical requirements (50%) and soft skills/qualifications (50%)
-5. Answers should address gaps honestly while highlighting relevant experience{f"\n\nAVOID: {', '.join(avoid_duplicates[:10])}" if avoid_duplicates else ""}
+5. Answers should address gaps honestly while highlighting relevant experience{dedup_instruction}
 
 FOCUS AREAS:
 - Required technical skills/technologies mentioned in JD

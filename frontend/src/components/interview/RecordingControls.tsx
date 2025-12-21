@@ -74,8 +74,8 @@ export function RecordingControls({
                         onClick={onStart}
                         disabled={!isConnected}
                         className={`flex items-center gap-2 rounded-full px-6 py-3 font-medium text-white transition-all transform hover:scale-105 ${isConnected
-                                ? 'bg-red-500 hover:bg-red-600 shadow-lg shadow-red-500/30'
-                                : 'bg-gray-400 cursor-not-allowed'
+                            ? 'bg-red-500 hover:bg-red-600 shadow-lg shadow-red-500/30'
+                            : 'bg-gray-400 cursor-not-allowed'
                             }`}
                         title={isConnected ? 'Start recording' : 'Connecting...'}
                     >
@@ -117,10 +117,10 @@ export function RecordingControls({
 
                 <button
                     onClick={onClear}
-                    className="rounded-full border border-zinc-300 px-4 py-3 text-sm font-medium text-zinc-700 transition-all hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                    className="rounded-full border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 transition-all hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
                     title="Clear session"
                 >
-                    <RotateCcwIcon className="h-4 w-4" />
+                    Clear
                 </button>
             </div>
 
@@ -128,8 +128,8 @@ export function RecordingControls({
             <div className="flex items-center gap-2">
                 <div
                     className={`h-3 w-3 rounded-full transition-all ${isConnected
-                            ? 'bg-green-500 shadow-lg shadow-green-500/50'
-                            : 'bg-red-500 shadow-lg shadow-red-500/50 animate-pulse'
+                        ? 'bg-green-500 shadow-lg shadow-green-500/50'
+                        : 'bg-red-500 shadow-lg shadow-red-500/50 animate-pulse'
                         }`}
                 />
                 <span className="text-sm font-medium text-zinc-600 dark:text-zinc-400">

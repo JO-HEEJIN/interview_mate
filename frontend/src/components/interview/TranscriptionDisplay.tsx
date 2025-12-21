@@ -10,13 +10,17 @@ interface TranscriptionDisplayProps {
     accumulatedText: string;
     isProcessing?: boolean;
     processingState?: 'idle' | 'transcribing' | 'detecting' | 'generating';
+    onGenerateAnswer?: () => void;
+    canGenerate?: boolean;
 }
 
 export function TranscriptionDisplay({
     currentText,
     accumulatedText,
     isProcessing = false,
-    processingState = 'idle'
+    processingState = 'idle',
+    onGenerateAnswer,
+    canGenerate = false
 }: TranscriptionDisplayProps) {
     const hasContent = accumulatedText.length > 0 || currentText.length > 0;
 
@@ -93,13 +97,26 @@ export function TranscriptionDisplay({
             </div>
 
             {hasContent && (
-                <div className="mt-3 flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400">
-                    <span>
+                <div className="mt-3 flex items-center justify-between">
+                    <div className="text-xs text-zinc-500 dark:text-zinc-400">
                         {accumulatedText.split(' ').length + currentText.split(' ').length} words
-                    </span>
-                    <span>
-                        {accumulatedText.length + currentText.length} characters
-                    </span>
+                    </div>
+
+                    {onGenerateAnswer && (
+                        <button
+                            onClick={onGenerateAnswer}
+                            disabled={!canGenerate}
+                            className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all ${canGenerate
+                                    ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-md shadow-blue-500/20'
+                                    : 'bg-zinc-100 text-zinc-400 cursor-not-allowed dark:bg-zinc-800 dark:text-zinc-600'
+                                }`}
+                        >
+                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                            Generate Answer
+                        </button>
+                    )}
                 </div>
             )}
         </div>

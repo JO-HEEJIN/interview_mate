@@ -6,7 +6,7 @@ DO $$
 DECLARE
     v_user_id uuid;
 BEGIN
-    SELECT id INTO v_user_id FROM auth.users WHERE email = 'heejinpark0303@gmail.com';
+    SELECT id INTO v_user_id FROM auth.users WHERE email = 'midmost44@gmail.com';
 
     IF v_user_id IS NULL THEN
         RAISE EXCEPTION 'User not found';

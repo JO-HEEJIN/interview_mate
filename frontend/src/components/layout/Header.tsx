@@ -5,12 +5,40 @@
  */
 
 import { useRouter, usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
 
 export function Header() {
     const router = useRouter();
     const pathname = usePathname();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+    // Check auth status
+    useEffect(() => {
+        const checkAuth = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            setIsLoggedIn(!!session);
+        };
+
+        checkAuth();
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+            (_event, session) => {
+                setIsLoggedIn(!!session);
+            }
+        );
+
+        return () => {
+            subscription.unsubscribe();
+        };
+    }, []);
+
+    // Logout handler
+    const handleLogout = async () => {
+        await supabase.auth.signOut();
+        router.push('/auth/login');
+    };
 
     // Don't show header on auth pages
     const isAuthPage = pathname?.startsWith('/auth');
@@ -20,6 +48,7 @@ export function Header() {
 
     const navLinks = [
         { name: 'Interview', href: '/interview' },
+        { name: 'AI Generate', href: '/profile/context-upload' },
         { name: 'Q&A Pairs', href: '/profile/qa-pairs' },
     ];
 
@@ -46,7 +75,11 @@ export function Header() {
                             href="/"
                             className="flex items-center gap-2 text-xl font-bold text-zinc-900 dark:text-zinc-100"
                         >
-                            <span className="text-2xl">🎤</span>
+                            <img
+                                src="/best.jpg"
+                                alt="InterviewMate"
+                                className="h-8 w-8 rounded-full object-cover"
+                            />
                             <span className="hidden sm:inline">InterviewMate</span>
                         </a>
                     </div>
@@ -68,7 +101,7 @@ export function Header() {
                         ))}
                     </nav>
 
-                    {/* Right: Home button + Mobile menu button */}
+                    {/* Right: Home button + Logout + Mobile menu button */}
                     <div className="flex items-center gap-2">
                         {pathname !== '/' && (
                             <a
@@ -78,8 +111,21 @@ export function Header() {
                                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                                 </svg>
-                                홈
+                                Home
                             </a>
+                        )}
+
+                        {/* Logout button (desktop) */}
+                        {isLoggedIn && (
+                            <button
+                                onClick={handleLogout}
+                                className="hidden md:flex items-center gap-2 rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950"
+                            >
+                                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                </svg>
+                                Logout
+                            </button>
                         )}
 
                         {/* Mobile menu button */}
@@ -125,8 +171,22 @@ export function Header() {
                                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                                     </svg>
-                                    홈으로
+                                    Home
                                 </a>
+                            )}
+                            {isLoggedIn && (
+                                <button
+                                    onClick={() => {
+                                        setIsMenuOpen(false);
+                                        handleLogout();
+                                    }}
+                                    className="flex items-center gap-2 rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950"
+                                >
+                                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                    </svg>
+                                    Logout
+                                </button>
                             )}
                         </nav>
                     </div>

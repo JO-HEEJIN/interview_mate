@@ -21,36 +21,36 @@ export default function Home() {
               Start Interview
             </Link>
             <Link
-              href="/profile/stories"
+              href="/profile/qa-pairs"
               className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-zinc-300 px-8 transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-900 sm:w-auto"
             >
-              Manage STAR Stories
+              Manage Q&A Pairs
             </Link>
           </div>
 
           <div className="mt-8 grid gap-4 text-left sm:grid-cols-3">
             <div className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
               <h3 className="font-semibold text-zinc-900 dark:text-zinc-100">
-                1. Add Your Stories
+                1. Upload Your Context
               </h3>
               <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-                Enter your STAR stories and experience highlights
+                Upload resume, company info, and job posting
               </p>
             </div>
             <div className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
               <h3 className="font-semibold text-zinc-900 dark:text-zinc-100">
-                2. Start Recording
+                2. AI Generates Q&A
               </h3>
               <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-                Record interview questions in real-time
+                AI creates 30+ personalized interview Q&A pairs
               </p>
             </div>
             <div className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
               <h3 className="font-semibold text-zinc-900 dark:text-zinc-100">
-                3. Get Suggestions
+                3. Practice & Ace It
               </h3>
               <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-                AI generates personalized answer suggestions
+                Practice with AI-generated answers and succeed
               </p>
             </div>
           </div>
