@@ -36,8 +36,8 @@ interface QAPair {
     usage_count: number;
 }
 
-const WS_URL = 'ws://localhost:8000/ws/transcribe';
-const API_URL = 'http://localhost:8000';
+const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8000/ws/transcribe';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 export default function PracticePage() {
     const router = useRouter();
