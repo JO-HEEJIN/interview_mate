@@ -136,7 +136,7 @@ app.add_middleware(
 
 app.add_middleware(
     TrustedHostMiddleware,
-    allowed_hosts=["*"] if settings.is_development else ["yourdomain.com"],
+    allowed_hosts=["*"],  # Allow all hosts - CORS handles security
 )
 
 app.add_middleware(
