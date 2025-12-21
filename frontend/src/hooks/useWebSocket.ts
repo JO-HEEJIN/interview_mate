@@ -22,7 +22,7 @@ interface UseWebSocketReturn {
     connect: () => void;
     disconnect: () => void;
     sendAudio: (data: Blob) => void;
-    sendContext: (context: { resume_text: string; star_stories: any[]; talking_points: any[]; qa_pairs?: any[] }) => void;
+    sendContext: (context: { user_id?: string; resume_text: string; star_stories: any[]; talking_points: any[]; qa_pairs?: any[] }) => void;
     requestAnswer: (question: string, question_type?: string) => void;
     clearSession: () => void;
     finalizeAudio: () => void;
