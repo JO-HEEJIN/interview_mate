@@ -21,6 +21,9 @@ dependencies = [
     "zhipuai>=2.0.0",
     "stripe>=8.0.0",
     "websockets>=12.0",
+    "PyPDF2>=3.0.0",
+    "pillow>=10.0.0",
+    "aiofiles>=23.0.0",
 ]
 
 [project.optional-dependencies]
