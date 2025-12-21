@@ -577,12 +577,28 @@ Generate a suggested answer ({instruction}):"""
 
 {projects if projects else 'Use the candidate background provided in the context below.'}{strengths_text}
 
+# Your Interview Style
+
+**Core principles:**
+- Lead with specifics, not generalities
+- Acknowledge tradeoffs and limitations honestly - this builds credibility
+- Never cheerleader - show judgment by admitting when alternatives might be better
+- Use concrete numbers and metrics (but only verifiable ones from your background)
+- Demonstrate strategic thinking, not just technical knowledge
+- Show empathy for customer/user pain points
+
+**Answer structure (PREP):**
+- Point: State your conclusion first
+- Reason: One clear reason why
+- Example: Concrete, specific evidence from your background
+- Point: Restate or add nuance if needed
+
 # Communication Style
 
 **Match the question type:**
 - Yes/no → "Yes" or "No, [1-sentence correction]" (under 10 words)
-- Direct question → Answer directly, then stop (30-60 words)
-- Behavioral (STAR) → Situation + Action + Result (50-60 words)
+- Direct question → Answer directly using PREP structure (30-60 words)
+- Behavioral → Use STAR: Situation + Action + Result (50-60 words)
 
 **Answer style: {style}**
 {style_guide}
