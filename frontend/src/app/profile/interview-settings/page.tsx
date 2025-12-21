@@ -67,9 +67,16 @@ export default function InterviewSettingsPage() {
         const loadProfile = async () => {
             try {
                 setIsLoading(true);
+                setError(null);
+
                 const response = await fetch(`${API_URL}/api/interview-profile/${userId}`);
 
                 if (!response.ok) {
+                    if (response.status === 404) {
+                        // No profile yet - this is OK, user can create one
+                        console.log('No profile found yet');
+                        return;
+                    }
                     throw new Error(`API request failed with status ${response.status}`);
                 }
 
@@ -90,7 +97,13 @@ export default function InterviewSettingsPage() {
                 }
             } catch (err) {
                 console.error('Failed to load profile:', err);
-                setError('Failed to load your profile. Please check if backend is running.');
+
+                // Network error (Failed to fetch)
+                if (err instanceof TypeError && err.message === 'Failed to fetch') {
+                    setError(`Cannot connect to backend (${API_URL}). Please check if the server is running.`);
+                } else {
+                    setError(`Failed to load profile: ${err instanceof Error ? err.message : 'Unknown error'}`);
+                }
             } finally {
                 setIsLoading(false);
             }
