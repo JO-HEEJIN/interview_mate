@@ -242,15 +242,16 @@ export default function PracticePage() {
 
     // Send context when connected
     useEffect(() => {
-        if (isConnected && contextLoaded) {
+        if (isConnected && contextLoaded && userId) {
             sendContext({
+                user_id: userId,
                 resume_text: '',
                 star_stories: starStories,
                 talking_points: [],
                 qa_pairs: qaPairs
             });
         }
-    }, [isConnected, contextLoaded, starStories, qaPairs, sendContext]);
+    }, [isConnected, contextLoaded, userId, starStories, qaPairs, sendContext]);
 
     // Session timer
     useEffect(() => {

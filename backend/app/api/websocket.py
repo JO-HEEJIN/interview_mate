@@ -176,6 +176,8 @@ async def websocket_transcribe(websocket: WebSocket):
 
     # Session state
     language = "en"
+    user_id = None
+    user_profile = None  # Interview profile for personalized prompts
     user_context = {
         "resume_text": "",
         "star_stories": [],
@@ -297,7 +299,8 @@ async def websocket_transcribe(websocket: WebSocket):
                                 resume_text=user_context["resume_text"],
                                 star_stories=user_context["star_stories"],
                                 talking_points=user_context["talking_points"],
-                                format="bullet"  # Bullet point format for real-time interview
+                                format="bullet",  # Bullet point format for real-time interview
+                                user_profile=user_profile
                             ):
                                 await manager.send_json(websocket, {
                                     "type": "answer_stream_chunk",
@@ -383,11 +386,33 @@ async def websocket_transcribe(websocket: WebSocket):
                             })
 
                         elif msg_type == "context":
+                            nonlocal user_id, user_profile
+
                             # Update user context
                             user_context["resume_text"] = data.get("resume_text", "")
                             user_context["star_stories"] = data.get("star_stories", [])
                             user_context["talking_points"] = data.get("talking_points", [])
                             user_context["qa_pairs"] = data.get("qa_pairs", [])
+
+                            # Extract user_id if provided
+                            received_user_id = data.get("user_id")
+                            if received_user_id and received_user_id != user_id:
+                                user_id = received_user_id
+
+                                # Load interview profile
+                                try:
+                                    supabase = get_supabase_client()
+                                    profile_response = supabase.table("user_interview_profiles").select("*").eq("user_id", user_id).execute()
+
+                                    if profile_response.data and len(profile_response.data) > 0:
+                                        user_profile = profile_response.data[0]
+                                        logger.info(f"Loaded interview profile for user {user_id}: {user_profile.get('full_name', 'N/A')}")
+                                    else:
+                                        logger.info(f"No interview profile found for user {user_id}, using defaults")
+                                        user_profile = None
+                                except Exception as e:
+                                    logger.error(f"Failed to load interview profile: {e}", exc_info=True)
+                                    user_profile = None
 
                             # OPTIMIZATION (Phase 1.1): Build Q&A index for fast lookup
                             # This takes <1ms and enables O(1) exact matching + faster similarity search
@@ -401,7 +426,8 @@ async def websocket_transcribe(websocket: WebSocket):
                             )
                             await manager.send_json(websocket, {
                                 "type": "context_ack",
-                                "message": "Context updated"
+                                "message": "Context updated",
+                                "has_profile": user_profile is not None
                             })
 
                         elif msg_type == "clear":
@@ -471,7 +497,8 @@ async def websocket_transcribe(websocket: WebSocket):
                                         resume_text=user_context["resume_text"],
                                         star_stories=user_context["star_stories"],
                                         talking_points=user_context["talking_points"],
-                                        format="bullet"  # Bullet point format for real-time interview
+                                        format="bullet",  # Bullet point format for real-time interview
+                                        user_profile=user_profile
                                     ):
                                         await manager.send_json(websocket, {
                                             "type": "answer_stream_chunk",

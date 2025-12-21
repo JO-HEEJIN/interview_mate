@@ -324,7 +324,8 @@ class ClaudeService:
         resume_text: str = "",
         star_stories: list = None,
         talking_points: list = None,
-        format: str = "paragraph"
+        format: str = "paragraph",
+        user_profile: Optional[dict] = None
     ):
         """
         Generate streaming answer with Claude API (REAL-TIME DISPLAY).
@@ -365,7 +366,7 @@ class ClaudeService:
         context = "\n\n---\n\n".join(context_parts) if context_parts else "No specific context provided."
 
         # Use same system prompt as non-streaming
-        system_prompt = self._get_system_prompt()
+        system_prompt = self._get_system_prompt(user_profile)
 
         # Detect question type and frustration level
         context_info = self._detect_question_context(question)
@@ -460,8 +461,79 @@ Generate a suggested answer ({instruction}):"""
             "instruction": instruction
         }
 
-    def _get_system_prompt(self) -> str:
-        """Get the system prompt (extracted for reuse)"""
+    def _get_system_prompt(self, user_profile: Optional[dict] = None) -> str:
+        """
+        Generate system prompt from user profile.
+
+        Args:
+            user_profile: Dict with keys: full_name, target_role, target_company,
+                         projects_summary, answer_style, custom_system_prompt, etc.
+
+        Returns:
+            System prompt string
+        """
+        # If custom system prompt is provided, use it
+        if user_profile and user_profile.get('custom_system_prompt'):
+            return user_profile['custom_system_prompt']
+
+        # Extract profile data with defaults
+        if user_profile:
+            name = user_profile.get('full_name') or 'the candidate'
+            role = user_profile.get('target_role') or 'your target role'
+            company = user_profile.get('target_company') or 'the company'
+            projects = user_profile.get('projects_summary') or ''
+            style = user_profile.get('answer_style', 'balanced')
+            strengths = user_profile.get('key_strengths', [])
+        else:
+            # Default fallback (for backward compatibility)
+            name = 'the candidate'
+            role = 'your target role'
+            company = 'the company'
+            projects = ''
+            style = 'balanced'
+            strengths = []
+
+        # Build strengths section
+        strengths_text = ''
+        if strengths:
+            strengths_list = '\n'.join([f"- {s}" for s in strengths])
+            strengths_text = f"\n\n**Key Strengths to Emphasize:**\n{strengths_list}"
+
+        # Style-specific instructions
+        style_instructions = {
+            'concise': '- Be extremely concise and direct\n- Prefer bullet points over paragraphs\n- Maximum 30 words for most answers',
+            'balanced': '- Balance detail with brevity\n- Use 30-60 words for most answers\n- Provide context but stay focused',
+            'detailed': '- Provide comprehensive explanations\n- Use 60-100 words when appropriate\n- Include relevant context and examples'
+        }
+        style_guide = style_instructions.get(style, style_instructions['balanced'])
+
+        return f"""You are {name}, interviewing for {role} at {company}.
+
+# Your Background
+
+{projects if projects else 'Use the candidate background provided in the context below.'}{strengths_text}
+
+# Communication Style
+
+**Match the question type:**
+- Yes/no → "Yes" or "No, [1-sentence correction]" (under 10 words)
+- Direct question → Answer directly, then stop (30-60 words)
+- Behavioral (STAR) → Situation + Action + Result (50-60 words)
+
+**Answer style: {style}**
+{style_guide}
+
+**Core rules:**
+1. Answer ONLY what's asked - don't volunteer extra info
+2. Be honest and precise with numbers
+3. If caught in error, admit it briefly and move on
+4. One metric per answer, concrete over abstract
+5. Use specific examples from your background/projects
+
+Now answer the interview question following these guidelines."""
+
+    def _get_default_system_prompt_legacy(self) -> str:
+        """Legacy system prompt (Heejin Jo specific) - kept for reference"""
         return """You are Heejin Jo, interviewing for OpenAI Solutions Architect role.
 
 Answer questions naturally, directly, and concisely - as you would in a real interview.
@@ -545,7 +617,8 @@ Now answer the interview question following these examples."""
         resume_text: str = "",
         star_stories: list = None,
         talking_points: list = None,
-        use_cache: bool = True
+        use_cache: bool = True,
+        user_profile: Optional[dict] = None
     ) -> str:
         """
         Generate an interview answer based on question and user context.
@@ -594,7 +667,7 @@ Now answer the interview question following these examples."""
 
         context = "\n\n---\n\n".join(context_parts) if context_parts else "No specific context provided."
 
-        system_prompt = self._get_system_prompt()
+        system_prompt = self._get_system_prompt(user_profile)
 
         # Detect question type and frustration level
         context_info = self._detect_question_context(question)
