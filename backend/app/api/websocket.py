@@ -495,6 +495,7 @@ async def websocket_transcribe(websocket: WebSocket):
                                         resume_text=user_context["resume_text"],
                                         star_stories=user_context["star_stories"],
                                         talking_points=user_context["talking_points"],
+                                        qa_pairs=user_context["qa_pairs"],  # Pass Q&A pairs for reference
                                         format="bullet",  # Bullet point format for real-time interview
                                         user_profile=user_profile
                                     ):

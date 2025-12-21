@@ -29,10 +29,43 @@ def normalize_question(question: str) -> str:
 
 def calculate_similarity(str1: str, str2: str) -> float:
     """
-    Calculate similarity ratio between two strings.
+    Calculate similarity ratio between two strings with intelligent matching.
+
+    Uses multiple strategies:
+    1. Exact substring matching (if shorter string is in longer string)
+    2. Token-based overlap (shared words / total words)
+    3. Sequence matching (difflib)
+
     Returns a value between 0 and 1, where 1 is identical.
     """
-    return SequenceMatcher(None, str1, str2).ratio()
+    # Strategy 1: Check if one is a substring of the other
+    if str1 in str2 or str2 in str1:
+        return 0.95  # Very high match if one contains the other
+
+    # Strategy 2: Token-based overlap (good for "tell me about yourself" vs "tell me a bit about yourself")
+    tokens1 = set(str1.split())
+    tokens2 = set(str2.split())
+
+    if tokens1 and tokens2:
+        intersection = tokens1 & tokens2
+        union = tokens1 | tokens2
+        jaccard = len(intersection) / len(union)
+
+        # Also calculate containment (smaller set contained in larger)
+        smaller = min(tokens1, tokens2, key=len)
+        larger = max(tokens1, tokens2, key=len)
+        containment = len(smaller & larger) / len(smaller) if smaller else 0
+
+        # Use max of jaccard and containment
+        token_similarity = max(jaccard, containment)
+    else:
+        token_similarity = 0.0
+
+    # Strategy 3: Sequence matching (original approach)
+    sequence_similarity = SequenceMatcher(None, str1, str2).ratio()
+
+    # Return the maximum similarity from all strategies
+    return max(token_similarity, sequence_similarity)
 
 
 # Phase 1.2: Pattern-based question detection
