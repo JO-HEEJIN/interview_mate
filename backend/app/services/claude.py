@@ -384,11 +384,17 @@ INTERVIEW QUESTION:
 Generate a suggested answer ({instruction}):"""
 
         try:
-            # Claude streaming API
+            # Claude streaming API with prompt caching
             with self.client.messages.stream(
                 model=self.model,
                 max_tokens=max_tokens,
-                system=system_prompt,
+                system=[
+                    {
+                        "type": "text",
+                        "text": system_prompt,
+                        "cache_control": {"type": "ephemeral"}  # Enable prompt caching
+                    }
+                ],
                 messages=[{"role": "user", "content": user_prompt}]
             ) as stream:
                 for text in stream.text_stream:
@@ -626,7 +632,13 @@ Generate a suggested answer ({instruction}):"""
             response = self.client.messages.create(
                 model=self.model,
                 max_tokens=max_tokens,
-                system=system_prompt,
+                system=[
+                    {
+                        "type": "text",
+                        "text": system_prompt,
+                        "cache_control": {"type": "ephemeral"}  # Enable prompt caching for 90% cost reduction
+                    }
+                ],
                 messages=[
                     {"role": "user", "content": user_prompt}
                 ]
