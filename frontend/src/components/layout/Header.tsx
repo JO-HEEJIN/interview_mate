@@ -19,7 +19,7 @@ export function Header() {
     }
 
     const navLinks = [
-        { name: 'Practice', href: '/practice' },
+        { name: 'Interview', href: '/interview' },
         { name: 'Q&A Pairs', href: '/profile/qa-pairs' },
     ];
 

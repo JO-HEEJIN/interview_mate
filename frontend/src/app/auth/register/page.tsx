@@ -1,11 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
-import bcrypt from 'bcryptjs';
 
 export default function RegisterPage() {
     const router = useRouter();
@@ -43,11 +41,8 @@ export default function RegisterPage() {
         }
 
         try {
-            // Hash the password
-            const passwordHash = await bcrypt.hash(formData.password, 10);
-
             // Create user in Supabase Auth
-            const { data: authData, error: authError } = await supabase.auth.signUp({
+            const { data, error: authError } = await supabase.auth.signUp({
                 email: formData.email,
                 password: formData.password,
                 options: {
@@ -63,34 +58,31 @@ export default function RegisterPage() {
                 return;
             }
 
-            if (authData.user) {
-                // Update profile with password hash for credentials login
-                await supabase.from('profiles').update({
-                    password_hash: passwordHash,
-                }).eq('id', authData.user.id);
+            // If email confirmation is required, show message
+            if (data?.user && !data.session) {
+                router.push('/auth/login?message=Check your email to confirm your account');
+                return;
             }
 
-            // Sign in the user
-            const result = await signIn('credentials', {
-                email: formData.email,
-                password: formData.password,
-                redirect: false,
-            });
-
-            if (result?.error) {
-                // Registration successful, redirect to login
-                router.push('/auth/login?registered=true');
-            } else {
-                router.push('/dashboard');
-            }
+            // Registration successful, redirect to interview page
+            router.push('/interview');
         } catch (err) {
             setError('An error occurred. Please try again.');
             setLoading(false);
         }
     };
 
-    const handleOAuthSignIn = (provider: string) => {
-        signIn(provider, { callbackUrl: '/dashboard' });
+    const handleOAuthSignIn = async (provider: 'google' | 'github') => {
+        const { error } = await supabase.auth.signInWithOAuth({
+            provider,
+            options: {
+                redirectTo: `${window.location.origin}/interview`,
+            },
+        });
+
+        if (error) {
+            setError(error.message);
+        }
     };
 
     return (

@@ -15,10 +15,10 @@ export default function Home() {
 
           <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
             <Link
-              href="/practice"
+              href="/interview"
               className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-zinc-900 px-8 text-white transition-colors hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200 sm:w-auto"
             >
-              Start Practice
+              Start Interview
             </Link>
             <Link
               href="/profile/stories"

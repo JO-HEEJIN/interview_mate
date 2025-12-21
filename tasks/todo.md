@@ -510,27 +510,27 @@ Enable users to pre-upload expected interview Q&A pairs for instant answers duri
 
 ### Tasks
 
-- [ ] 1. Fix authentication issues
-  - [ ] 1.1 Add SessionProvider to fix next-auth error
-  - [ ] 1.2 Switch Q&A pairs page from next-auth to Supabase auth
+- [x] 1. Fix authentication issues
+  - [x] 1.1 Add SessionProvider to fix next-auth error
+  - [x] 1.2 Switch Q&A pairs page from next-auth to Supabase auth
 
-- [ ] 2. Simplify navigation
-  - [ ] 2.1 Remove STAR Stories from header navigation
+- [x] 2. Simplify navigation
+  - [x] 2.1 Remove STAR Stories from header navigation
 
-- [ ] 3. Implement robust Q&A parsing
-  - [ ] 3.1 Replace JSON-based parsing with Claude Tool Use API
-  - [ ] 3.2 Handle any input format (markdown, code blocks, tables)
-  - [ ] 3.3 Test with 30 Q&A hiring manager interview script
+- [x] 3. Implement robust Q&A parsing
+  - [x] 3.1 Replace JSON-based parsing with Claude Tool Use API
+  - [x] 3.2 Handle any input format (markdown, code blocks, tables)
+  - [x] 3.3 Test with 30 Q&A hiring manager interview script
 
-- [ ] 4. Add usage tracking for Q&A pairs
-  - [ ] 4.1 Create increment_qa_usage helper function
-  - [ ] 4.2 Call increment when Q&A matched in practice
-  - [ ] 4.3 Update usage_count and last_used_at fields
+- [x] 4. Add usage tracking for Q&A pairs
+  - [x] 4.1 Create increment_qa_usage helper function
+  - [x] 4.2 Call increment when Q&A matched in practice
+  - [x] 4.3 Update usage_count and last_used_at fields
 
-- [ ] 5. Git workflow
-  - [ ] 5.1 Review all changes
-  - [ ] 5.2 Create clean commit message
-  - [ ] 5.3 Push to GitHub
+- [x] 5. Git workflow
+  - [x] 5.1 Review all changes
+  - [x] 5.2 Create clean commit message
+  - [x] 5.3 Push to GitHub
 
 - [ ] 6. Consider UX improvements
   - [ ] 6.1 Evaluate renaming "Practice" page to more intuitive name
@@ -571,5 +571,67 @@ Enable users to pre-upload expected interview Q&A pairs for instant answers duri
 - Consider page rename for better UX
 
 ### Review Section
-(To be completed after git commit and push)
+
+**Commit:** 51fff4b - "Add Q&A pairs bulk upload with usage tracking"
+
+**Changes Summary:**
+
+1. **Claude Tool Use Implementation (claude.py)**
+   - Replaced JSON prompt-based parsing with Tool Use API
+   - Defined schema with input_schema for guaranteed valid output
+   - Handles any format: markdown headers, code blocks, tables
+   - Increased max_tokens to 8192 for large Q&A lists
+   - Successfully parsed 30 Q&A pairs from markdown format
+
+2. **Usage Tracking (websocket.py)**
+   - Added increment_qa_usage() helper function
+   - Increments usage_count when Q&A matched during practice
+   - Updates last_used_at timestamp
+   - Background task execution (non-blocking)
+   - Triggered in two locations: auto-detection and manual answer generation
+
+3. **Q&A Pairs API (qa_pairs.py - new)**
+   - GET /api/qa-pairs/{user_id} - List all pairs
+   - POST /api/qa-pairs/{user_id} - Create single pair
+   - POST /api/qa-pairs/{user_id}/bulk-parse - Parse with Claude Tool Use
+   - POST /api/qa-pairs/{user_id}/bulk-upload - Bulk upload parsed pairs
+   - PUT /api/qa-pairs/{qa_pair_id} - Update pair
+   - DELETE /api/qa-pairs/{qa_pair_id} - Delete pair
+
+4. **Authentication Fix (providers.tsx, qa-pairs/page.tsx)**
+   - Added SessionProvider wrapper to fix next-auth error
+   - Migrated Q&A pairs page from next-auth to Supabase auth
+   - Fixed login redirect loop issue
+   - Consistent auth pattern with practice page
+
+5. **Navigation Cleanup (Header.tsx - new)**
+   - Created reusable Header component
+   - Removed STAR Stories link
+   - Simplified to: Practice + Q&A Pairs
+   - Added back button and home navigation
+
+6. **Database Schema (002_qa_pairs.sql)**
+   - Created qa_pairs table with proper indexes
+   - Fields: question, answer, question_type, source, usage_count, last_used_at
+   - RLS policies for user isolation
+
+**Impact:**
+- Users can now upload expected interview Q&A pairs in any format
+- Instant answers when questions match (< 200ms vs 2-3s generation)
+- Usage tracking shows which questions actually get asked
+- Simplified navigation focuses on core features
+
+**Testing Results:**
+- Tool Use parsing: 30/30 Q&A pairs extracted successfully
+- Q&A pairs page: Loading and display working
+- Authentication: No more redirect loop
+- Pending: Live test of usage count increment during practice
+
+**Known Issues:**
+- None currently
+
+**Next Steps:**
+- Test usage count increment in live practice session
+- Consider renaming "Practice" to more intuitive name for real interviews
+- Potentially implement OpenAI Structured Outputs as alternative to Claude Tool Use
 
