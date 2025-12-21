@@ -22,12 +22,14 @@ class QAPairCreate(BaseModel):
     answer: str
     question_type: str  # behavioral, technical, situational, general
     source: str = "manual"
+    question_variations: Optional[List[str]] = []  # Alternative question phrasings
 
 
 class QAPairUpdate(BaseModel):
     question: Optional[str] = None
     answer: Optional[str] = None
     question_type: Optional[str] = None
+    question_variations: Optional[List[str]] = None  # Update variations
 
 
 class QAPairResponse(BaseModel):
@@ -41,6 +43,7 @@ class QAPairResponse(BaseModel):
     last_used_at: Optional[str]
     created_at: str
     updated_at: str
+    question_variations: Optional[List[str]] = []  # Alternative question phrasings
 
 
 class BulkParseRequest(BaseModel):
@@ -91,6 +94,7 @@ async def create_qa_pair(
             "answer": qa_pair.answer,
             "question_type": qa_pair.question_type,
             "source": qa_pair.source,
+            "question_variations": qa_pair.question_variations or [],
         }
 
         result = supabase.table("qa_pairs").insert(data).execute()
@@ -148,6 +152,7 @@ async def bulk_upload_qa_pairs(
                 "answer": pair.answer,
                 "question_type": pair.question_type,
                 "source": pair.source,
+                "question_variations": pair.question_variations or [],
             }
             for pair in qa_pairs
         ]

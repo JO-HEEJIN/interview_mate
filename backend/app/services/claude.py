@@ -284,21 +284,31 @@ class ClaudeService:
         Args:
             qa_pairs: List of Q&A pair dicts from database
 
-        Performance: O(n) where n = number of Q&A pairs
+        Performance: O(n*m) where n = number of Q&A pairs, m = avg variations per pair
         This runs once when context is loaded, enabling O(1) exact match
         and faster similarity matching afterward.
         """
         self._qa_index.clear()
         self._qa_pairs_list = qa_pairs
 
+        total_entries = 0
         for qa_pair in qa_pairs:
+            # Index main question
             question = qa_pair.get("question", "")
             normalized = normalize_question(question)
-
-            # Store normalized question → original Q&A pair
             self._qa_index[normalized] = qa_pair
+            total_entries += 1
 
-        logger.info(f"✓ Built Q&A index with {len(self._qa_index)} entries (took <1ms)")
+            # Index all question variations
+            variations = qa_pair.get("question_variations", [])
+            if variations:
+                for variation in variations:
+                    if variation and variation.strip():
+                        normalized_var = normalize_question(variation)
+                        self._qa_index[normalized_var] = qa_pair
+                        total_entries += 1
+
+        logger.info(f"Built Q&A index with {total_entries} entries from {len(qa_pairs)} Q&A pairs (including variations)")
 
     def find_matching_qa_pair_fast(self, question: str) -> Optional[dict]:
         """
@@ -955,6 +965,7 @@ Text to parse:
     def find_matching_qa_pair(self, question: str, qa_pairs: list) -> Optional[dict]:
         """
         Find a matching Q&A pair from user's uploaded pairs using semantic matching.
+        Checks both main question and question variations.
 
         Args:
             question: The detected interview question
@@ -971,19 +982,34 @@ Text to parse:
 
         best_match = None
         best_similarity = 0.0
+        matched_text = ""
 
         for qa_pair in qa_pairs:
+            # Check main question
             qa_question = qa_pair.get("question", "")
             normalized_qa = normalize_question(qa_question)
-
             similarity = calculate_similarity(normalized_q, normalized_qa)
 
             if similarity > best_similarity:
                 best_similarity = similarity
                 best_match = qa_pair
+                matched_text = qa_question
+
+            # Check all question variations
+            variations = qa_pair.get("question_variations", [])
+            if variations:
+                for variation in variations:
+                    if variation and variation.strip():
+                        normalized_var = normalize_question(variation)
+                        var_similarity = calculate_similarity(normalized_q, normalized_var)
+
+                        if var_similarity > best_similarity:
+                            best_similarity = var_similarity
+                            best_match = qa_pair
+                            matched_text = variation
 
         if best_similarity >= threshold:
-            logger.info(f"Found matching Q&A pair ({best_similarity:.2%}): '{question}' ~ '{best_match['question']}'")
+            logger.info(f"Found matching Q&A pair ({best_similarity:.2%}): '{question}' ~ '{matched_text}'")
             return best_match
         else:
             logger.info(f"No matching Q&A pair found (best: {best_similarity:.2%})")
