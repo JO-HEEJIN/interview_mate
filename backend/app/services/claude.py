@@ -685,65 +685,99 @@ TYPE: behavioral/technical/situational/general/none"""
 
     async def extract_qa_pairs(self, text: str) -> list:
         """
-        Extract Q&A pairs from free-form text using Claude AI.
+        Extract Q&A pairs from free-form text using Claude AI with Tool Use.
+
+        Uses Claude's Tool Use feature to guarantee valid JSON output,
+        similar to how I understand user intent in conversation.
 
         Args:
-            text: Free-form text containing questions and answers
+            text: Free-form text containing questions and answers (any format)
 
         Returns:
             List of dicts with keys: question, answer, question_type, source
         """
         logger.info(f"Extracting Q&A pairs from text ({len(text)} chars)")
 
-        system_prompt = """You are a Q&A extraction assistant. Parse the provided text and extract interview questions and their answers.
-
-Return ONLY a JSON array of objects with this exact structure:
-[
-  {
-    "question": "the interview question",
-    "answer": "the corresponding answer",
-    "question_type": "behavioral/technical/situational/general"
-  }
-]
-
-Rules:
-- Extract ALL question-answer pairs you find
-- Clean up questions and answers (remove extra whitespace, fix typos if obvious)
-- Classify each question appropriately
-- If text has no clear Q&A pairs, return empty array []
-- Return ONLY valid JSON, no other text"""
+        # Define tool schema for structured extraction
+        tools = [{
+            "name": "save_qa_pairs",
+            "description": "Save extracted interview Q&A pairs. Use this to store all question-answer pairs you find in the text, regardless of formatting (markdown, code blocks, tables, etc.).",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "qa_pairs": {
+                        "type": "array",
+                        "description": "Array of all Q&A pairs found in the text",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "question": {
+                                    "type": "string",
+                                    "description": "The interview question (cleaned up, no Q: prefix, no markdown headers)"
+                                },
+                                "answer": {
+                                    "type": "string",
+                                    "description": "The corresponding answer (cleaned up, no A: prefix, no code block markers)"
+                                },
+                                "question_type": {
+                                    "type": "string",
+                                    "enum": ["behavioral", "technical", "situational", "general"],
+                                    "description": "Type of question: behavioral (tell me about, describe), technical (how does X work, explain), situational (what would you do), general (other)"
+                                }
+                            },
+                            "required": ["question", "answer", "question_type"]
+                        }
+                    }
+                },
+                "required": ["qa_pairs"]
+            }
+        }]
 
         try:
-            logger.info("Sending Q&A extraction request to Claude API")
+            logger.info("Sending Q&A extraction request with Tool Use")
             response = self.client.messages.create(
                 model=self.model,
-                max_tokens=4096,
-                system=system_prompt,
-                messages=[
-                    {"role": "user", "content": text}
-                ]
+                max_tokens=8192,
+                tools=tools,
+                messages=[{
+                    "role": "user",
+                    "content": f"""Extract all interview Q&A pairs from the following text.
+
+The text may be in any format (markdown headers, code blocks, tables, Q:/A: format, etc.).
+
+Find every question-answer pair and use the save_qa_pairs tool to save them.
+
+Text to parse:
+
+{text}"""
+                }]
             )
 
-            result_text = response.content[0].text.strip()
-            logger.info(f"Q&A extraction response: {result_text[:200]}...")
+            # Find tool use block in response
+            tool_use_block = None
+            for block in response.content:
+                if block.type == "tool_use" and block.name == "save_qa_pairs":
+                    tool_use_block = block
+                    break
 
-            # Parse JSON response
-            import json
-            qa_pairs = json.loads(result_text)
+            if not tool_use_block:
+                logger.error("No tool_use block found in response")
+                logger.error(f"Response content: {response.content}")
+                return []
+
+            # Extract structured data from tool call
+            qa_pairs = tool_use_block.input.get("qa_pairs", [])
 
             # Add source field
             for pair in qa_pairs:
                 pair["source"] = "bulk_upload"
 
-            logger.info(f"Extracted {len(qa_pairs)} Q&A pairs")
+            logger.info(f"Successfully extracted {len(qa_pairs)} Q&A pairs using Tool Use")
             return qa_pairs
 
-        except json.JSONDecodeError as e:
-            logger.error(f"Failed to parse JSON response: {e}")
-            logger.error(f"Raw response: {result_text}")
-            return []
         except Exception as e:
             logger.error(f"Q&A extraction error: {str(e)}", exc_info=True)
+            logger.error(f"Full response: {response if 'response' in locals() else 'No response'}")
             return []
 
     def find_matching_qa_pair(self, question: str, qa_pairs: list) -> Optional[dict]:

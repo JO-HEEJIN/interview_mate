@@ -20,7 +20,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.status import HTTP_500_INTERNAL_SERVER_ERROR
 
 from app.core.config import settings
-from app.api import websocket, profile, interview
+from app.api import websocket, profile, interview, qa_pairs
 
 # Setup logging using existing config
 logger = logging.getLogger(__name__)
@@ -232,6 +232,11 @@ app.include_router(
 app.include_router(
     interview.router,
     tags=["interview"],
+)
+
+app.include_router(
+    qa_pairs.router,
+    tags=["qa-pairs"],
 )
 
 

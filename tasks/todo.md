@@ -501,3 +501,75 @@ To test the optimizations:
 - Track pre-filter effectiveness and adjust question word list if needed
 - Monitor Whisper prompt effectiveness and refine if necessary
 
+---
+
+## Session Work: Q&A Upload and Usage Tracking (Dec 21, 2025)
+
+### Objective
+Enable users to pre-upload expected interview Q&A pairs for instant answers during practice sessions, with usage tracking to monitor which questions get asked.
+
+### Tasks
+
+- [ ] 1. Fix authentication issues
+  - [ ] 1.1 Add SessionProvider to fix next-auth error
+  - [ ] 1.2 Switch Q&A pairs page from next-auth to Supabase auth
+
+- [ ] 2. Simplify navigation
+  - [ ] 2.1 Remove STAR Stories from header navigation
+
+- [ ] 3. Implement robust Q&A parsing
+  - [ ] 3.1 Replace JSON-based parsing with Claude Tool Use API
+  - [ ] 3.2 Handle any input format (markdown, code blocks, tables)
+  - [ ] 3.3 Test with 30 Q&A hiring manager interview script
+
+- [ ] 4. Add usage tracking for Q&A pairs
+  - [ ] 4.1 Create increment_qa_usage helper function
+  - [ ] 4.2 Call increment when Q&A matched in practice
+  - [ ] 4.3 Update usage_count and last_used_at fields
+
+- [ ] 5. Git workflow
+  - [ ] 5.1 Review all changes
+  - [ ] 5.2 Create clean commit message
+  - [ ] 5.3 Push to GitHub
+
+- [ ] 6. Consider UX improvements
+  - [ ] 6.1 Evaluate renaming "Practice" page to more intuitive name
+
+### Files Modified
+
+**Backend:**
+- `app/services/claude.py` - Tool Use implementation for Q&A extraction
+- `app/api/websocket.py` - Usage count tracking
+- `app/core/supabase.py` - Import added to websocket
+
+**Frontend:**
+- `src/components/providers.tsx` - Added SessionProvider wrapper
+- `src/components/layout/Header.tsx` - Removed STAR Stories link
+- `src/app/profile/qa-pairs/page.tsx` - Switched to Supabase auth
+
+### Technical Details
+
+**Tool Use Implementation:**
+- Replaced prompt-based JSON extraction with Claude Tool Use
+- Defined schema for guaranteed valid JSON output
+- Handles markdown headers, code blocks, tables automatically
+- Max tokens increased to 8192 for large Q&A lists
+
+**Usage Tracking:**
+- Background task (non-blocking) to increment usage_count
+- Updates both usage_count and last_used_at timestamp
+- Triggered when Q&A pair matched during practice session
+
+### Testing Completed
+- Successfully parsed 30 Q&A pairs from markdown format
+- Verified Q&A pairs display in UI
+- Confirmed Tool Use returns valid structured data
+
+### Pending
+- Test usage count increment during practice session
+- Verify "Used 0 times" updates to "Used 1 times" after matching
+- Consider page rename for better UX
+
+### Review Section
+(To be completed after git commit and push)
+

@@ -9,11 +9,39 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from app.services.deepgram_service import deepgram_service
 from app.services.claude import claude_service, detect_question_fast
 from app.services.llm_service import llm_service
+from app.core.supabase import get_supabase_client
 
 # 로거 설정
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+
+async def increment_qa_usage(qa_pair_id: str):
+    """Increment usage count for a Q&A pair when it's used in practice"""
+    try:
+        supabase = get_supabase_client()
+
+        # Fetch current usage count
+        result = supabase.table("qa_pairs").select("usage_count").eq("id", qa_pair_id).execute()
+
+        if not result.data:
+            logger.warning(f"Q&A pair {qa_pair_id} not found for usage increment")
+            return
+
+        current_count = result.data[0].get("usage_count", 0)
+        new_count = current_count + 1
+
+        # Update usage count and last_used_at
+        supabase.table("qa_pairs").update({
+            "usage_count": new_count,
+            "last_used_at": "now()"
+        }).eq("id", qa_pair_id).execute()
+
+        logger.info(f"Q&A pair {qa_pair_id} usage incremented: {current_count} → {new_count}")
+
+    except Exception as e:
+        logger.error(f"Failed to increment Q&A usage: {e}", exc_info=True)
 
 
 class ConnectionManager:
@@ -237,13 +265,19 @@ async def websocket_transcribe(websocket: WebSocket):
 
                         if matched_qa:
                             # 3a. Return uploaded answer (instant)
-                            logger.info(f"Using uploaded Q&A pair (ID: {matched_qa.get('id')})")
+                            qa_pair_id = matched_qa.get("id")
+                            logger.info(f"Using uploaded Q&A pair (ID: {qa_pair_id})")
+
+                            # Increment usage count in background
+                            if qa_pair_id:
+                                asyncio.create_task(increment_qa_usage(qa_pair_id))
+
                             await manager.send_json(websocket, {
                                 "type": "answer",
                                 "question": question,
                                 "answer": matched_qa["answer"],
                                 "source": "uploaded",
-                                "qa_pair_id": matched_qa.get("id"),
+                                "qa_pair_id": qa_pair_id,
                                 "is_streaming": False
                             })
                         else:
@@ -406,6 +440,11 @@ async def websocket_transcribe(websocket: WebSocket):
 
                                 if matched_qa:
                                     # 3a. Return uploaded answer (instant)
+                                    qa_pair_id = matched_qa.get("id")
+
+                                    # Increment usage count in background
+                                    if qa_pair_id:
+                                        asyncio.create_task(increment_qa_usage(qa_pair_id))
                                     logger.info(f"Using uploaded Q&A pair (ID: {matched_qa.get('id')})")
                                     await manager.send_json(websocket, {
                                         "type": "answer",
