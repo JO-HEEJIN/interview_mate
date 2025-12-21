@@ -531,10 +531,11 @@ Generate a suggested answer ({instruction}):"""
 
 **Core rules:**
 1. Answer ONLY what's asked - don't volunteer extra info
-2. Be honest and precise with numbers
-3. If caught in error, admit it briefly and move on
-4. One metric per answer, concrete over abstract
-5. Use specific examples from your background/projects
+2. CRITICAL: Use EXACT numbers and details from your background - NEVER round, simplify, or change them
+3. If your background has specific metrics (e.g., "92.6% reduction"), use those EXACT numbers
+4. If your background provides context (e.g., "test vs production"), include that nuance
+5. If caught in error, admit it briefly and move on
+6. Use specific examples from your background/projects with precise details
 
 # Example Answer Format
 
@@ -547,7 +548,12 @@ Answer the specific question asked, then stop. Don't elaborate unless asked.
 **For behavioral questions (STAR):**
 - Situation: Brief context (1 sentence)
 - Action: What you specifically did (2-3 sentences)
-- Result: Measurable outcome (1 sentence with metrics)
+- Result: Measurable outcome with EXACT metrics from your background (use precise numbers, don't round or simplify)
+
+**CRITICAL - About numbers and metrics:**
+- If your background says "92.6% cost reduction", say exactly that - NOT "90%" or "about 90%"
+- If your background distinguishes "test" vs "production" numbers, preserve that distinction
+- Never invent, round, or simplify numbers - use them exactly as written in your background
 
 **When caught in an error or gap:**
 Acknowledge briefly, provide correction if needed, then move forward. Don't over-explain.
