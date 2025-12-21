@@ -421,26 +421,6 @@ export default function PracticePage() {
                     </div>
                 </div>
 
-                {/* Context Status */}
-                {contextLoaded && (
-                    <div className="mt-6 space-y-3">
-                        <div className="rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-950">
-                            <p className="text-sm text-green-700 dark:text-green-300">
-                                {starStories.length > 0
-                                    ? `${starStories.length} STAR stories loaded for personalized answers`
-                                    : 'No STAR stories found. Add some at /profile/stories for personalized answers'}
-                            </p>
-                        </div>
-                        {qaPairs.length > 0 && (
-                            <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-950">
-                                <p className="text-sm text-blue-700 dark:text-blue-300">
-                                    {qaPairs.length} Q&A pairs ready for instant answers ⚡
-                                </p>
-                            </div>
-                        )}
-                    </div>
-                )}
-
                 {/* Instructions */}
                 <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-950">
                     <h3 className="mb-2 font-medium text-blue-900 dark:text-blue-100">
