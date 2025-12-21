@@ -5,8 +5,8 @@
  */
 
 import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
 
 interface StarStory {
     id: string;
@@ -22,8 +22,8 @@ interface StarStory {
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 export default function StarStoriesPage() {
-    const { data: session, status } = useSession();
     const router = useRouter();
+    const [userId, setUserId] = useState<string | null>(null);
     const [stories, setStories] = useState<StarStory[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -40,24 +40,41 @@ export default function StarStoriesPage() {
         tags: '',
     });
 
-    // Redirect if not authenticated
+    // Check authentication on mount
     useEffect(() => {
-        if (status === 'unauthenticated') {
-            router.push('/auth/login');
-        }
-    }, [status, router]);
+        const checkAuth = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+                router.push('/auth/login');
+                return;
+            }
+            setUserId(session.user.id);
+        };
+        checkAuth();
+
+        // Listen for auth changes
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            if (!session) {
+                router.push('/auth/login');
+            } else {
+                setUserId(session.user.id);
+            }
+        });
+
+        return () => subscription.unsubscribe();
+    }, [router]);
 
     // Fetch stories
     useEffect(() => {
-        if (session?.user?.id) {
+        if (userId) {
             fetchStories();
         }
-    }, [session]);
+    }, [userId]);
 
     const fetchStories = async () => {
         try {
             setIsLoading(true);
-            const response = await fetch(`${API_URL}/api/profile/star-stories/${session?.user?.id}`);
+            const response = await fetch(`${API_URL}/api/profile/star-stories/${userId}`);
             const data = await response.json();
             setStories(data.stories || []);
         } catch (err) {
@@ -89,7 +106,7 @@ export default function StarStoriesPage() {
                 });
             } else {
                 // Create
-                await fetch(`${API_URL}/api/profile/star-stories/${session?.user?.id}`, {
+                await fetch(`${API_URL}/api/profile/star-stories/${userId}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(storyData),
@@ -143,7 +160,7 @@ export default function StarStoriesPage() {
         setIsCreating(false);
     };
 
-    if (status === 'loading' || isLoading) {
+    if (!userId || isLoading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-black">
                 <div className="text-zinc-500">Loading...</div>
