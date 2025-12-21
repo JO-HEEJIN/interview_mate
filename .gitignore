@@ -85,3 +85,5 @@ docs/.doctrees/
 
 # Claude
 .claude/
+.vercel
+.env*.local

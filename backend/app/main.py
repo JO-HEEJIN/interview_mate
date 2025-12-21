@@ -318,7 +318,7 @@ async def detailed_health_check():
     api_checks = {
         "openai": bool(settings.OPENAI_API_KEY),
         "anthropic": bool(settings.ANTHROPIC_API_KEY),
-        "supabase": bool(settings.SUPABASE_URL and settings.SUPABASE_SERVICE_KEY),
+        "supabase": bool(settings.SUPABASE_URL and settings.SUPABASE_SERVICE_ROLE_KEY),
     }
     
     for service, configured in api_checks.items():

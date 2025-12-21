@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     # Database
     DATABASE_URL: str = ""
     SUPABASE_URL: str = ""
-    SUPABASE_SERVICE_KEY: str = ""
+    SUPABASE_SERVICE_ROLE_KEY: str = ""
     SUPABASE_ANON_KEY: str = ""
     
     # OpenAI
@@ -217,22 +217,21 @@ class Settings(BaseSettings):
     def validate_required_settings(self) -> None:
         """Validate that required settings are present"""
         required_settings = []
-        
+
         if self.is_production:
             required_settings.extend([
                 "SECRET_KEY",
-                "DATABASE_URL",
                 "SUPABASE_URL",
-                "SUPABASE_SERVICE_KEY",
+                "SUPABASE_SERVICE_ROLE_KEY",
                 "OPENAI_API_KEY",
                 "ANTHROPIC_API_KEY",
             ])
-        
+
         missing_settings = []
         for setting in required_settings:
             if not getattr(self, setting):
                 missing_settings.append(setting)
-        
+
         if missing_settings:
             raise ValueError(f"Missing required settings: {', '.join(missing_settings)}")
     
