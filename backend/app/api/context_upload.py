@@ -360,7 +360,152 @@ async def delete_context(
         logger.error(f"Failed to delete context: {e}", exc_info=True)
         raise HTTPException(500, f"Failed to delete context: {str(e)}")
 
-# Note: Q&A generation endpoints will be added after qa_generation_service.py is implemented
-# - POST /{user_id}/generate-qa
-# - POST /{user_id}/generate-incremental
-# - GET /{user_id}/generation-status/{batch_id}
+@router.post("/{user_id}/generate-qa")
+async def generate_qa_pairs(
+    user_id: str
+):
+    """
+    Generate initial 30 Q&A pairs from all uploaded contexts.
+
+    Requires resume at minimum. Generates:
+    - 18 resume-based Q&As (behavioral + technical)
+    - 7 company-aligned Q&As (if company info available)
+    - 5 job-posting Q&As (if job posting available)
+    - 5 general Q&As
+
+    Args:
+        user_id: User ID
+
+    Returns:
+        Batch ID, generated count, category breakdown, Q&A pairs
+
+    Raises:
+        400: Resume required
+        500: Generation failed
+    """
+    logger.info(f"Q&A generation requested for user {user_id}")
+
+    try:
+        # Import here to avoid circular dependency
+        from app.services.qa_generation_service import qa_generation_service
+
+        # Check if resume exists
+        supabase = get_supabase_client()
+        resume_check = supabase.table("user_contexts") \
+            .select("id") \
+            .eq("user_id", user_id) \
+            .eq("context_type", "resume") \
+            .execute()
+
+        if not resume_check.data:
+            raise HTTPException(
+                400,
+                "Resume is required before generating Q&A pairs. Please upload your resume first."
+            )
+
+        # Start generation
+        logger.info(f"Starting Q&A generation for user {user_id}")
+        result = await qa_generation_service.generate_initial_qa_batch(user_id)
+
+        logger.info(f"✅ Generated {result['generated_count']} Q&A pairs for user {user_id}")
+
+        return result
+
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    except Exception as e:
+        logger.error(f"Q&A generation failed: {e}", exc_info=True)
+        raise HTTPException(500, f"Q&A generation failed: {str(e)}")
+
+
+@router.post("/{user_id}/generate-incremental")
+async def generate_incremental_qa(
+    user_id: str,
+    new_context_ids: Optional[List[str]] = None
+):
+    """
+    Generate 10 additional Q&A pairs after new context is added.
+
+    Generates:
+    - 5 resume-based Q&As
+    - 2 company-aligned Q&As (if company info available)
+    - 2 job-posting Q&As (if job posting available)
+    - 1 general Q&A
+
+    Avoids duplicating existing questions.
+
+    Args:
+        user_id: User ID
+        new_context_ids: IDs of newly added contexts (optional)
+
+    Returns:
+        Batch ID, generated count, Q&A pairs
+
+    Raises:
+        500: Generation failed
+    """
+    logger.info(f"Incremental Q&A generation requested for user {user_id}")
+
+    try:
+        # Import here to avoid circular dependency
+        from app.services.qa_generation_service import qa_generation_service
+
+        # Start incremental generation
+        result = await qa_generation_service.generate_incremental_qa_batch(
+            user_id,
+            new_context_ids
+        )
+
+        logger.info(f"✅ Generated {result['generated_count']} incremental Q&A pairs")
+
+        return result
+
+    except Exception as e:
+        logger.error(f"Incremental Q&A generation failed: {e}", exc_info=True)
+        raise HTTPException(500, f"Incremental Q&A generation failed: {str(e)}")
+
+
+@router.get("/{user_id}/generation-status/{batch_id}")
+async def get_generation_status(
+    user_id: str,
+    batch_id: str
+):
+    """
+    Get status of Q&A generation batch.
+
+    Args:
+        user_id: User ID
+        batch_id: Batch ID to check
+
+    Returns:
+        Batch status including progress, count, errors
+
+    Raises:
+        404: Batch not found
+        500: Database query failed
+    """
+    logger.info(f"Generation status check for batch {batch_id}")
+
+    try:
+        supabase = get_supabase_client()
+
+        result = supabase.table("generation_batches") \
+            .select("*") \
+            .eq("id", batch_id) \
+            .eq("user_id", user_id) \
+            .execute()
+
+        if not result.data:
+            raise HTTPException(404, "Generation batch not found")
+
+        logger.info(f"Batch {batch_id} status: {result.data[0]['status']}")
+
+        return result.data[0]
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to get generation status: {e}", exc_info=True)
+        raise HTTPException(500, f"Failed to get generation status: {str(e)}")
