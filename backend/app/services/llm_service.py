@@ -47,6 +47,7 @@ class LLMService:
         resume_text: str = "",
         star_stories: list = None,
         talking_points: list = None,
+        qa_pairs: list = None,
         format: str = "bullet",
         user_profile: Optional[dict] = None
     ) -> AsyncIterator[str]:
@@ -69,14 +70,14 @@ class LLMService:
             if hasattr(self.primary_service, 'generate_answer_stream'):
                 logger.info(f"Using primary service: {self.primary_service.__class__.__name__}")
                 async for chunk in self.primary_service.generate_answer_stream(
-                    question, resume_text, star_stories, talking_points, format, user_profile=user_profile
+                    question, resume_text, star_stories, talking_points, qa_pairs, format, user_profile=user_profile
                 ):
                     yield chunk
             else:
                 # Primary service doesn't support streaming, use non-streaming method
                 logger.info(f"Primary service doesn't support streaming, using non-streaming")
                 answer = await self.primary_service.generate_answer(
-                    question, resume_text, star_stories, talking_points, user_profile=user_profile
+                    question, resume_text, star_stories, talking_points, qa_pairs, user_profile=user_profile
                 )
                 yield answer
 
@@ -89,7 +90,7 @@ class LLMService:
                 try:
                     # Silently switch to backup service (no user-facing message)
                     answer = await self.fallback_service.generate_answer(
-                        question, resume_text, star_stories, talking_points, user_profile=user_profile
+                        question, resume_text, star_stories, talking_points, qa_pairs, user_profile=user_profile
                     )
                     yield answer
 
@@ -106,6 +107,7 @@ class LLMService:
         resume_text: str = "",
         star_stories: list = None,
         talking_points: list = None,
+        qa_pairs: list = None,
         format: str = "bullet",
         user_profile: Optional[dict] = None
     ) -> str:
@@ -132,14 +134,14 @@ class LLMService:
                     # GLM service - use format parameter
                     chunks = []
                     async for chunk in self.primary_service.generate_answer_stream(
-                        question, resume_text, star_stories, talking_points, format, user_profile=user_profile
+                        question, resume_text, star_stories, talking_points, qa_pairs, format, user_profile=user_profile
                     ):
                         chunks.append(chunk)
                     return "".join(chunks)
                 else:
                     # Claude service - no format parameter
                     return await self.primary_service.generate_answer(
-                        question, resume_text, star_stories, talking_points, user_profile=user_profile
+                        question, resume_text, star_stories, talking_points, qa_pairs, user_profile=user_profile
                     )
             else:
                 raise Exception("Primary service doesn't support generate_answer")
@@ -152,7 +154,7 @@ class LLMService:
                 logger.info(f"Falling back to: {self.fallback_service.__class__.__name__}")
                 try:
                     return await self.fallback_service.generate_answer(
-                        question, resume_text, star_stories, talking_points, user_profile=user_profile
+                        question, resume_text, star_stories, talking_points, qa_pairs, user_profile=user_profile
                     )
                 except Exception as fallback_error:
                     logger.error(f"Fallback service also failed: {str(fallback_error)}")

@@ -324,6 +324,7 @@ class ClaudeService:
         resume_text: str = "",
         star_stories: list = None,
         talking_points: list = None,
+        qa_pairs: list = None,
         format: str = "paragraph",
         user_profile: Optional[dict] = None
     ):
@@ -335,6 +336,7 @@ class ClaudeService:
             resume_text: User's resume content
             star_stories: List of STAR stories
             talking_points: List of key talking points
+            qa_pairs: List of prepared Q&A pairs
             format: "bullet" or "paragraph" (for compatibility)
 
         Yields:
@@ -342,6 +344,15 @@ class ClaudeService:
         """
         star_stories = star_stories or []
         talking_points = talking_points or []
+        qa_pairs = qa_pairs or []
+
+        # Check for matching Q&A pair first
+        matching_qa = self.find_matching_qa_pair(question, qa_pairs)
+        if matching_qa:
+            logger.info(f"Using prepared Q&A pair for streaming question: '{question}'")
+            # Yield the prepared answer directly (simulate streaming)
+            yield matching_qa['answer']
+            return
 
         logger.info(f"Streaming answer for: '{question}'")
 
@@ -362,6 +373,14 @@ class ClaudeService:
         if talking_points:
             points_text = "\n".join([f"- {p.get('content', '')}" for p in talking_points])
             context_parts.append(f"KEY TALKING POINTS:\n{points_text}")
+
+        # Add Q&A pairs as reference
+        if qa_pairs:
+            qa_text = "\n\n".join([
+                f"Q: {qa.get('question', '')}\nA: {qa.get('answer', '')}"
+                for qa in qa_pairs[:5]  # Include top 5 Q&A pairs as reference
+            ])
+            context_parts.append(f"PREPARED Q&A PAIRS (use as reference if relevant):\n{qa_text}")
 
         context = "\n\n---\n\n".join(context_parts) if context_parts else "No specific context provided."
 
@@ -566,6 +585,7 @@ Now answer the interview question following these guidelines."""
         resume_text: str = "",
         star_stories: list = None,
         talking_points: list = None,
+        qa_pairs: list = None,
         use_cache: bool = True,
         user_profile: Optional[dict] = None
     ) -> str:
@@ -577,21 +597,30 @@ Now answer the interview question following these guidelines."""
             resume_text: User's resume content
             star_stories: List of STAR stories
             talking_points: List of key talking points
+            qa_pairs: List of prepared Q&A pairs
 
         Returns:
             Generated answer suggestion
         """
         star_stories = star_stories or []
         talking_points = talking_points or []
+        qa_pairs = qa_pairs or []
 
-        # Check cache first if enabled
+        # Check for matching Q&A pair first
+        matching_qa = self.find_matching_qa_pair(question, qa_pairs)
+        if matching_qa:
+            logger.info(f"Using prepared Q&A pair for question: '{question}'")
+            # Return the prepared answer directly
+            return matching_qa['answer']
+
+        # Check cache if no Q&A match
         if use_cache:
             cached_answer = self._get_cached_answer(question)
             if cached_answer:
                 return cached_answer
 
         logger.info(f"Generating answer for question: '{question}'")
-        logger.info(f"Context: resume={len(resume_text)} chars, stories={len(star_stories)}, points={len(talking_points)}")
+        logger.info(f"Context: resume={len(resume_text)} chars, stories={len(star_stories)}, points={len(talking_points)}, qa_pairs={len(qa_pairs)}")
 
         # Build context
         context_parts = []
@@ -613,6 +642,14 @@ Now answer the interview question following these guidelines."""
         if talking_points:
             points_text = "\n".join([f"- {p.get('content', '')}" for p in talking_points])
             context_parts.append(f"KEY TALKING POINTS:\n{points_text}")
+
+        # Add Q&A pairs as reference (even if no exact match, Claude can use them as examples)
+        if qa_pairs:
+            qa_text = "\n\n".join([
+                f"Q: {qa.get('question', '')}\nA: {qa.get('answer', '')}"
+                for qa in qa_pairs[:5]  # Include top 5 Q&A pairs as reference
+            ])
+            context_parts.append(f"PREPARED Q&A PAIRS (use as reference if relevant):\n{qa_text}")
 
         context = "\n\n---\n\n".join(context_parts) if context_parts else "No specific context provided."
 
