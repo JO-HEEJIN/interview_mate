@@ -87,6 +87,7 @@ export default function PracticePage() {
             setTemporaryAnswer(answer);
             setIsGenerating(true);
             setProcessingState('generating');
+            setAccumulatedText('');  // Clear when answer generation starts
         },
         onAnswer: (question, answer, source) => {
             setAnswers(prev => [{
@@ -113,6 +114,7 @@ export default function PracticePage() {
             setTemporaryAnswer(null);
             setIsGenerating(true);
             setProcessingState('generating');
+            setAccumulatedText('');  // Clear immediately when answer generation starts
         },
         onAnswerStreamChunk: (chunk) => {
             streamingAnswerRef.current += chunk;
