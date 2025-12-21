@@ -20,6 +20,7 @@ interface QAPair {
     last_used_at: string | null;
     created_at: string;
     updated_at: string;
+    question_variations?: string[];  // Alternative question phrasings
 }
 
 interface ParsedQAPair {
@@ -27,6 +28,7 @@ interface ParsedQAPair {
     answer: string;
     question_type: string;
     source: string;
+    question_variations?: string[];
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -52,7 +54,11 @@ export default function QAPairsPage() {
         question: '',
         answer: '',
         question_type: 'general',
+        question_variations: [] as string[],
     });
+
+    // New variation input
+    const [newVariation, setNewVariation] = useState('');
 
     // Check authentication on mount
     useEffect(() => {
@@ -169,6 +175,7 @@ export default function QAPairsPage() {
             answer: formData.answer,
             question_type: formData.question_type,
             source: 'manual',
+            question_variations: formData.question_variations,
         };
 
         try {
@@ -215,6 +222,7 @@ export default function QAPairsPage() {
             question: pair.question,
             answer: pair.answer,
             question_type: pair.question_type,
+            question_variations: pair.question_variations || [],
         });
         setIsCreating(true);
         setShowBulkUpload(false);
@@ -225,9 +233,28 @@ export default function QAPairsPage() {
             question: '',
             answer: '',
             question_type: 'general',
+            question_variations: [],
         });
+        setNewVariation('');
         setEditingPair(null);
         setIsCreating(false);
+    };
+
+    const addVariation = () => {
+        if (newVariation.trim() && !formData.question_variations.includes(newVariation.trim())) {
+            setFormData({
+                ...formData,
+                question_variations: [...formData.question_variations, newVariation.trim()],
+            });
+            setNewVariation('');
+        }
+    };
+
+    const removeVariation = (index: number) => {
+        setFormData({
+            ...formData,
+            question_variations: formData.question_variations.filter((_, i) => i !== index),
+        });
     };
 
     const getQuestionTypeColor = (type: string) => {
@@ -441,6 +468,60 @@ export default function QAPairsPage() {
                                     className="w-full rounded-lg border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
                                     required
                                 />
+                            </div>
+
+                            <div>
+                                <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                                    Question Variations (Optional)
+                                </label>
+                                <p className="mb-2 text-xs text-zinc-500 dark:text-zinc-400">
+                                    Add alternative phrasings to improve matching (e.g., "What if CTO wants Claude?" for "CTO says they'll use Claude")
+                                </p>
+
+                                {formData.question_variations.length > 0 && (
+                                    <div className="mb-2 flex flex-wrap gap-2">
+                                        {formData.question_variations.map((variation, index) => (
+                                            <span
+                                                key={index}
+                                                className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-3 py-1 text-sm text-blue-700 dark:bg-blue-900 dark:text-blue-300"
+                                            >
+                                                {variation}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeVariation(index)}
+                                                    className="ml-1 hover:text-blue-900 dark:hover:text-blue-100"
+                                                >
+                                                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                    </svg>
+                                                </button>
+                                            </span>
+                                        ))}
+                                    </div>
+                                )}
+
+                                <div className="flex gap-2">
+                                    <input
+                                        type="text"
+                                        value={newVariation}
+                                        onChange={(e) => setNewVariation(e.target.value)}
+                                        onKeyPress={(e) => {
+                                            if (e.key === 'Enter') {
+                                                e.preventDefault();
+                                                addVariation();
+                                            }
+                                        }}
+                                        placeholder="Enter alternative question phrasing..."
+                                        className="flex-1 rounded-lg border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={addVariation}
+                                        className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                                    >
+                                        Add
+                                    </button>
+                                </div>
                             </div>
 
                             <div className="flex gap-2">
