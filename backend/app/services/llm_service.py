@@ -87,9 +87,7 @@ class LLMService:
             if self.fallback_service:
                 logger.info(f"Falling back to: {self.fallback_service.__class__.__name__}")
                 try:
-                    yield "\n\n[Switched to backup service]\n\n"
-
-                    # Claude doesn't have streaming yet, use non-streaming
+                    # Silently switch to backup service (no user-facing message)
                     answer = await self.fallback_service.generate_answer(
                         question, resume_text, star_stories, talking_points, user_profile=user_profile
                     )
