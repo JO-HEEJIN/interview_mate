@@ -54,7 +54,7 @@ CREATE TABLE IF NOT EXISTS public.session_messages (
     examples_used JSONB DEFAULT '[]', -- ["Project A", "Leadership at Company X", ...]
 
     -- Timing
-    timestamp TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    message_timestamp TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     sequence_number INTEGER, -- Order in conversation
 
     -- Quality/feedback
@@ -70,7 +70,7 @@ CREATE INDEX IF NOT EXISTS idx_interview_sessions_status ON public.interview_ses
 CREATE INDEX IF NOT EXISTS idx_interview_sessions_started ON public.interview_sessions(started_at DESC);
 
 CREATE INDEX IF NOT EXISTS idx_session_messages_session ON public.session_messages(session_id);
-CREATE INDEX IF NOT EXISTS idx_session_messages_timestamp ON public.session_messages(timestamp);
+CREATE INDEX IF NOT EXISTS idx_session_messages_timestamp ON public.session_messages(message_timestamp);
 CREATE INDEX IF NOT EXISTS idx_session_messages_role ON public.session_messages(role);
 
 -- RLS Policies
@@ -96,7 +96,7 @@ RETURNS TABLE (
     message_type VARCHAR(50),
     content TEXT,
     examples_used JSONB,
-    timestamp TIMESTAMP WITH TIME ZONE
+    message_timestamp TIMESTAMP WITH TIME ZONE
 ) AS $$
 BEGIN
     RETURN QUERY
@@ -105,10 +105,10 @@ BEGIN
         sm.message_type,
         sm.content,
         sm.examples_used,
-        sm.timestamp
+        sm.message_timestamp
     FROM public.session_messages sm
     WHERE sm.session_id = session_id_param
-    ORDER BY sm.sequence_number, sm.timestamp;
+    ORDER BY sm.sequence_number, sm.message_timestamp;
 END;
 $$ LANGUAGE plpgsql STABLE;
 

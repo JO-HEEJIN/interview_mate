@@ -49,7 +49,9 @@ class LLMService:
         talking_points: list = None,
         qa_pairs: list = None,
         format: str = "bullet",
-        user_profile: Optional[dict] = None
+        user_profile: Optional[dict] = None,
+        session_history: list = None,
+        examples_used: list = None
     ) -> AsyncIterator[str]:
         """
         Generate streaming answer with automatic failover.
@@ -59,8 +61,11 @@ class LLMService:
             resume_text: User's resume content
             star_stories: List of STAR stories
             talking_points: List of key talking points
+            qa_pairs: List of Q&A pairs for RAG
             format: "bullet" for bullet points, "paragraph" for full text
             user_profile: User's interview profile settings
+            session_history: Previous Q&A in this session for context
+            examples_used: Examples already used in session to avoid repetition
 
         Yields:
             str: Text chunks as they're generated
@@ -69,9 +74,27 @@ class LLMService:
             # Try primary service
             if hasattr(self.primary_service, 'generate_answer_stream'):
                 logger.info(f"Using primary service: {self.primary_service.__class__.__name__}")
-                async for chunk in self.primary_service.generate_answer_stream(
-                    question, resume_text, star_stories, talking_points, qa_pairs, format, user_profile=user_profile
-                ):
+
+                # Build kwargs dynamically to support services with different signatures
+                kwargs = {
+                    "question": question,
+                    "resume_text": resume_text,
+                    "star_stories": star_stories,
+                    "talking_points": talking_points,
+                    "qa_pairs": qa_pairs,
+                    "format": format,
+                    "user_profile": user_profile
+                }
+
+                # Add session parameters only if the service supports them (Claude does, GLM doesn't)
+                import inspect
+                sig = inspect.signature(self.primary_service.generate_answer_stream)
+                if "session_history" in sig.parameters:
+                    kwargs["session_history"] = session_history
+                if "examples_used" in sig.parameters:
+                    kwargs["examples_used"] = examples_used
+
+                async for chunk in self.primary_service.generate_answer_stream(**kwargs):
                     yield chunk
             else:
                 # Primary service doesn't support streaming, use non-streaming method
