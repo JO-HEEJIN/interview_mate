@@ -73,7 +73,9 @@ class LLMService:
         try:
             # Try primary service
             if hasattr(self.primary_service, 'generate_answer_stream'):
-                logger.info(f"Using primary service: {self.primary_service.__class__.__name__}")
+                logger.info(f"🚀 Using primary service: {self.primary_service.__class__.__name__}")
+                logger.info(f"📝 Question: '{question[:100]}...'")
+                logger.info(f"🔢 Passing {len(qa_pairs or [])} Q&A pairs, user_profile: {user_profile is not None}")
 
                 # Build kwargs dynamically to support services with different signatures
                 kwargs = {

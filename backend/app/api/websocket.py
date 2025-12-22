@@ -398,6 +398,11 @@ async def websocket_transcribe(websocket: WebSocket):
                             "source": "generated"
                         })
 
+                        # Debug logging
+                        logger.info(f"🔍 Starting answer generation for: '{question}'")
+                        logger.info(f"📊 Context: {len(user_context.get('qa_pairs', []))} Q&A pairs, user_id: {user_profile.get('id')}")
+                        logger.info(f"🎯 Session: {session_id}, history: {len(session_history)} messages, examples: {len(session_examples)} used")
+
                         # Stream answer chunks in real-time with RAG
                         generated_answer = ""
                         async for chunk in llm_service.generate_answer_stream(
