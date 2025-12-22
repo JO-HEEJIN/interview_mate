@@ -211,12 +211,13 @@ class DecomposedQueries(BaseModel):
 
 
 class ClaudeService:
-    def __init__(self, supabase: Optional[Client] = None):
+    def __init__(self, supabase: Optional[Client] = None, qdrant_service=None):
         self.client = Anthropic(api_key=settings.ANTHROPIC_API_KEY)
         self.openai_client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
         self.model = "claude-sonnet-4-20250514"
 
-        # Initialize embedding service for semantic similarity (proper implementation)
+        # Initialize vector search service (prefer Qdrant over pgvector)
+        self.qdrant_service = qdrant_service
         self.embedding_service = get_embedding_service(supabase) if supabase else None
         self.semantic_threshold = 0.80  # 80% cosine similarity threshold
 
@@ -327,12 +328,26 @@ Examples:
             for sub_q in sub_questions:
                 logger.warning(f"RAG_SEARCH: Searching for sub-question: '{sub_q}'")
 
-                matches = await self.embedding_service.find_similar_qa_pairs(
-                    user_id=user_id,
-                    query_text=sub_q,
-                    similarity_threshold=0.75,  # Lower threshold to get more candidates
-                    max_results=3  # Top 3 for each sub-question
-                )
+                # Use Qdrant if available (faster, no format bugs), fallback to embedding_service
+                search_service = self.qdrant_service or self.embedding_service
+
+                if self.qdrant_service:
+                    logger.info("RAG_SEARCH: Using Qdrant for vector search")
+                    matches = await search_service.search_similar_qa_pairs(
+                        query_text=sub_q,
+                        user_id=user_id,
+                        similarity_threshold=0.75,
+                        limit=3
+                    )
+                else:
+                    logger.info("RAG_SEARCH: Using pgvector for vector search")
+                    matches = await search_service.find_similar_qa_pairs(
+                        user_id=user_id,
+                        query_text=sub_q,
+                        similarity_threshold=0.75,
+                        max_results=3
+                    )
+
                 logger.warning(f"RAG_SEARCH: Found {len(matches)} matches for sub-question '{sub_q}'")
 
                 for match in matches:
@@ -1435,7 +1450,17 @@ def get_claude_service(supabase: Optional[Client] = None) -> ClaudeService:
     """Get or create singleton Claude service instance"""
     global _claude_service
     if _claude_service is None:
-        _claude_service = ClaudeService(supabase)
+        # Initialize Qdrant service if configured
+        qdrant_service = None
+        if settings.QDRANT_URL:
+            from app.services.qdrant_service import QdrantService
+            qdrant_service = QdrantService(
+                qdrant_url=settings.QDRANT_URL,
+                openai_api_key=settings.OPENAI_API_KEY
+            )
+            logger.info("Initialized ClaudeService with Qdrant for vector search")
+
+        _claude_service = ClaudeService(supabase, qdrant_service)
     return _claude_service
 
 # For backward compatibility

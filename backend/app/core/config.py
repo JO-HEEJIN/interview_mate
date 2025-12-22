@@ -101,6 +101,10 @@ class Settings(BaseSettings):
     DEEPGRAM_API_KEY: str = ""
     TRANSCRIPTION_SERVICE: str = "deepgram"  # "deepgram" or "whisper"
     DEEPGRAM_MODEL: str = "flux"  # "flux" or "nova-3"
+
+    # Qdrant (Vector Search)
+    QDRANT_URL: str = ""  # e.g., "http://qdrant:6333" (Railway internal) or "https://qdrant.railway.app"
+    QDRANT_API_KEY: Optional[str] = None  # Optional for local/Railway internal
     
     # File Storage
     UPLOAD_DIR: str = "uploads"
