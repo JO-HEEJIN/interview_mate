@@ -546,7 +546,7 @@ Examples:
         examples_used = examples_used or []
 
         # RAG APPROACH: Find multiple relevant Q&A pairs
-        user_id = user_profile.get('id') if user_profile else None
+        user_id = user_profile.get('user_id') if user_profile else None  # FIX: Use 'user_id' not 'id'
         relevant_qa_pairs = []
 
         logger.warning(f"RAG_DEBUG: user_id={user_id}, embedding_service={self.embedding_service is not None}")
@@ -892,7 +892,7 @@ Now answer the interview question following these guidelines."""
 
         # RAG APPROACH: Find multiple relevant Q&A pairs for complex questions
         # This handles compound questions like "Introduce yourself AND tell me why OpenAI"
-        user_id = user_profile.get('id') if user_profile else None
+        user_id = user_profile.get('user_id') if user_profile else None  # FIX: Use 'user_id' not 'id'
         relevant_qa_pairs = []
 
         if user_id and self.embedding_service:

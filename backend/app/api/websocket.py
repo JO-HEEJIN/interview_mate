@@ -412,7 +412,7 @@ async def websocket_transcribe(websocket: WebSocket):
                         logger.warning("=" * 80)
                         logger.warning(f"RAG_DEBUG: Starting answer generation for question: {question}")
                         logger.warning(f"RAG_DEBUG: Context has {len(user_context.get('qa_pairs', []))} Q&A pairs")
-                        logger.warning(f"RAG_DEBUG: user_id={user_profile.get('id')}")
+                        logger.warning(f"RAG_DEBUG: user_id={user_profile.get('user_id') if user_profile else 'None'}")
                         logger.warning("=" * 80)
 
                         # Stream answer chunks in real-time with RAG
