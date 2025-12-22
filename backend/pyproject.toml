@@ -24,6 +24,8 @@ dependencies = [
     "PyPDF2>=3.0.0",
     "pillow>=10.0.0",
     "aiofiles>=23.0.0",
+    "pgvector>=0.2.0",
+    "numpy>=1.24.0",
 ]
 
 [project.optional-dependencies]

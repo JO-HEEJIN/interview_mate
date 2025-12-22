@@ -249,3 +249,44 @@ async def increment_usage(
     except Exception as e:
         logger.error(f"Error incrementing usage: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/{user_id}/generate-embeddings")
+async def generate_embeddings_for_user(
+    user_id: str,
+    supabase: Client = Depends(get_supabase_client)
+):
+    """
+    Generate OpenAI embeddings for all Q&A pairs that don't have embeddings yet.
+
+    This endpoint enables semantic similarity matching for Q&A pairs.
+    Call this after:
+    - Bulk uploading new Q&A pairs
+    - Creating/updating individual Q&A pairs
+    - Migrating from old string-matching to semantic matching
+
+    Returns:
+        {
+            "success_count": int,  # Number of embeddings generated
+            "failed_count": int,   # Number of failures
+            "total_processed": int
+        }
+    """
+    try:
+        # Import here to avoid circular dependency
+        from app.services.embedding_service import get_embedding_service
+
+        embedding_service = get_embedding_service(supabase)
+
+        logger.info(f"Starting embedding generation for user: {user_id}")
+        success_count, failed_count = await embedding_service.update_embeddings_for_user(user_id)
+
+        return {
+            "success_count": success_count,
+            "failed_count": failed_count,
+            "total_processed": success_count + failed_count
+        }
+
+    except Exception as e:
+        logger.error(f"Error generating embeddings: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))

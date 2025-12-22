@@ -320,7 +320,16 @@ export default function PracticePage() {
 
     // Handle regenerate
     const handleRegenerate = useCallback((question: string) => {
+        // Clear previous answer immediately for fast UI response
+        setTemporaryAnswer(null);
+        setStreamingAnswer('');
+        setStreamingQuestion('');
+        streamingAnswerRef.current = '';
+        streamingQuestionRef.current = '';
+
+        // Start new generation
         setIsGenerating(true);
+        setProcessingState('generating');
         requestAnswer(question);
     }, [requestAnswer]);
 

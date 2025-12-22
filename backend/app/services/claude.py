@@ -1,5 +1,5 @@
 """
-Anthropic Claude API integration for AI answer generation
+Anthropic Claude API integration for AI answer generation with semantic similarity matching
 """
 
 import re
@@ -10,6 +10,8 @@ from anthropic import Anthropic
 from openai import AsyncOpenAI
 from pydantic import BaseModel, Field
 from app.core.config import settings
+from app.services.embedding_service import EmbeddingService, get_embedding_service
+from supabase import Client
 
 # 로거 설정
 logger = logging.getLogger(__name__)
@@ -204,10 +206,15 @@ class QAPairList(BaseModel):
 
 
 class ClaudeService:
-    def __init__(self):
+    def __init__(self, supabase: Optional[Client] = None):
         self.client = Anthropic(api_key=settings.ANTHROPIC_API_KEY)
         self.openai_client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
         self.model = "claude-sonnet-4-20250514"
+
+        # Initialize embedding service for semantic similarity (proper implementation)
+        self.embedding_service = get_embedding_service(supabase) if supabase else None
+        self.semantic_threshold = 0.80  # 80% cosine similarity threshold
+
         # Simple in-memory cache for answers
         # Format: {normalized_question: {"question": original, "answer": generated_answer}}
         self._answer_cache = {}
@@ -219,7 +226,7 @@ class ClaudeService:
         self._qa_index = {}
         self._qa_pairs_list = []  # Original list for similarity fallback
 
-        logger.info("Claude service initialized with semantic caching")
+        logger.info("Claude service initialized with OpenAI Embeddings and Anthropic Prompt Caching")
 
     def _get_cached_answer(self, question: str) -> Optional[str]:
         """
@@ -389,8 +396,8 @@ class ClaudeService:
         talking_points = talking_points or []
         qa_pairs = qa_pairs or []
 
-        # Check for matching Q&A pair first
-        matching_qa = self.find_matching_qa_pair(question, qa_pairs)
+        # Check for matching Q&A pair first (using semantic similarity with OpenAI Embeddings)
+        matching_qa = await self.find_matching_qa_pair(question, qa_pairs, user_profile.get('id') if user_profile else None)
         if matching_qa:
             logger.info(f"Using prepared Q&A pair for streaming question: '{question}'")
             # Yield the prepared answer directly (simulate streaming)
@@ -669,8 +676,8 @@ Now answer the interview question following these guidelines."""
         talking_points = talking_points or []
         qa_pairs = qa_pairs or []
 
-        # Check for matching Q&A pair first
-        matching_qa = self.find_matching_qa_pair(question, qa_pairs)
+        # Check for matching Q&A pair first (using semantic similarity with OpenAI Embeddings)
+        matching_qa = await self.find_matching_qa_pair(question, qa_pairs, user_profile.get('id') if user_profile else None)
         if matching_qa:
             logger.info(f"Using prepared Q&A pair for question: '{question}'")
             # Return the prepared answer directly
@@ -982,30 +989,116 @@ Text to parse:
             logger.error(f"Full response: {response if 'response' in locals() else 'No response'}")
             return []
 
-    def find_matching_qa_pair(self, question: str, qa_pairs: list) -> Optional[dict]:
+    async def find_matching_qa_pair(self, question: str, qa_pairs: list, user_id: Optional[str] = None) -> Optional[dict]:
         """
-        Find a matching Q&A pair from user's uploaded pairs using semantic matching.
-        Checks both main question and question variations.
+        Find a matching Q&A pair using PROPER semantic similarity with OpenAI Embeddings.
+
+        This replaces the old string-matching approach with real semantic similarity.
+
+        Performance:
+        - Uses cosine similarity on OpenAI embeddings (1536 dimensions)
+        - Checks both main question and question variations
+        - Falls back to string matching if embeddings unavailable
 
         Args:
             question: The detected interview question
             qa_pairs: List of user's Q&A pairs (dicts with question, answer, etc.)
+            user_id: User ID for database-backed semantic search (optional)
 
         Returns:
-            Matching Q&A pair dict if found (similarity >= 85%), None otherwise
+            Matching Q&A pair dict if found (similarity >= 80%), None otherwise
         """
         if not qa_pairs:
             return None
 
+        # Strategy 1: Use database-backed semantic search if user_id and embedding_service available
+        if user_id and self.embedding_service:
+            try:
+                logger.info(f"Using OpenAI Embeddings for semantic search (user: {user_id})")
+                match = await self.embedding_service.get_best_match(
+                    user_id=user_id,
+                    query_text=question,
+                    similarity_threshold=self.semantic_threshold
+                )
+
+                if match:
+                    logger.info(
+                        f"✓ Found semantic match (OpenAI Embeddings, {match.get('similarity', 0.0):.2%}): "
+                        f"'{question}' ~ '{match.get('question', '')[:50]}...'"
+                    )
+                    return match
+
+            except Exception as e:
+                logger.error(f"Semantic search failed, falling back to string matching: {str(e)}")
+
+        # Strategy 2: Fallback to in-memory semantic matching with embeddings
+        if self.embedding_service:
+            try:
+                logger.info("Using in-memory OpenAI Embeddings for semantic matching")
+
+                # Generate embedding for query
+                query_embedding = await self.embedding_service.generate_embedding(question)
+                if not query_embedding:
+                    raise Exception("Failed to generate query embedding")
+
+                best_match = None
+                best_similarity = 0.0
+                matched_text = ""
+
+                for qa_pair in qa_pairs:
+                    # Check main question
+                    qa_question = qa_pair.get("question", "")
+                    qa_embedding = await self.embedding_service.generate_embedding(qa_question)
+
+                    if qa_embedding:
+                        similarity = self.embedding_service.calculate_cosine_similarity(
+                            query_embedding, qa_embedding
+                        )
+
+                        if similarity > best_similarity:
+                            best_similarity = similarity
+                            best_match = qa_pair
+                            matched_text = qa_question
+
+                    # Check question variations
+                    variations = qa_pair.get("question_variations", [])
+                    if variations:
+                        for variation in variations:
+                            if variation and variation.strip():
+                                var_embedding = await self.embedding_service.generate_embedding(variation)
+                                if var_embedding:
+                                    var_similarity = self.embedding_service.calculate_cosine_similarity(
+                                        query_embedding, var_embedding
+                                    )
+
+                                    if var_similarity > best_similarity:
+                                        best_similarity = var_similarity
+                                        best_match = qa_pair
+                                        matched_text = variation
+
+                if best_similarity >= self.semantic_threshold:
+                    logger.info(
+                        f"✓ Found semantic match (in-memory, {best_similarity:.2%}): "
+                        f"'{question}' ~ '{matched_text}'"
+                    )
+                    return best_match
+                else:
+                    logger.info(f"No semantic match found (best: {best_similarity:.2%})")
+                    return None
+
+            except Exception as e:
+                logger.error(f"In-memory semantic matching failed: {str(e)}")
+
+        # Strategy 3: Fallback to old string-based matching (deprecated but kept for safety)
+        logger.warning("Using deprecated string matching - embeddings unavailable")
         normalized_q = normalize_question(question)
-        threshold = 0.85  # 85% similarity threshold
+        threshold = 0.85
 
         best_match = None
         best_similarity = 0.0
         matched_text = ""
 
         for qa_pair in qa_pairs:
-            # Check main question
             qa_question = qa_pair.get("question", "")
             normalized_qa = normalize_question(qa_question)
             similarity = calculate_similarity(normalized_q, normalized_qa)
@@ -1015,7 +1108,6 @@ Text to parse:
                 best_match = qa_pair
                 matched_text = qa_question
 
-            # Check all question variations
             variations = qa_pair.get("question_variations", [])
             if variations:
                 for variation in variations:
@@ -1029,10 +1121,10 @@ Text to parse:
                             matched_text = variation
 
         if best_similarity >= threshold:
-            logger.info(f"Found matching Q&A pair ({best_similarity:.2%}): '{question}' ~ '{matched_text}'")
+            logger.info(f"Found match (string-based, {best_similarity:.2%}): '{question}' ~ '{matched_text}'")
             return best_match
         else:
-            logger.info(f"No matching Q&A pair found (best: {best_similarity:.2%})")
+            logger.info(f"No match found (best: {best_similarity:.2%})")
             return None
 
     def get_temporary_answer(self, question_type: str) -> str:
@@ -1055,4 +1147,15 @@ Text to parse:
         return temporary_answers.get(question_type, temporary_answers["general"])
 
 
+# Singleton instance (will be initialized with supabase client)
+_claude_service: Optional[ClaudeService] = None
+
+def get_claude_service(supabase: Optional[Client] = None) -> ClaudeService:
+    """Get or create singleton Claude service instance"""
+    global _claude_service
+    if _claude_service is None:
+        _claude_service = ClaudeService(supabase)
+    return _claude_service
+
+# For backward compatibility
 claude_service = ClaudeService()
