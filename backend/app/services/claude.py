@@ -10,7 +10,6 @@ from anthropic import Anthropic
 from openai import AsyncOpenAI
 from pydantic import BaseModel, Field
 from app.core.config import settings
-from app.services.embedding_service import EmbeddingService, get_embedding_service
 from supabase import Client
 
 # 로거 설정
@@ -216,9 +215,8 @@ class ClaudeService:
         self.openai_client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
         self.model = "claude-sonnet-4-20250514"
 
-        # Initialize vector search service (prefer Qdrant over pgvector)
+        # Initialize vector search service (Qdrant only)
         self.qdrant_service = qdrant_service
-        self.embedding_service = get_embedding_service(supabase) if supabase else None
         self.semantic_threshold = 0.80  # 80% cosine similarity threshold
 
         # Simple in-memory cache for answers
@@ -311,8 +309,8 @@ Examples:
         Returns:
             List of relevant Q&A pairs with similarity scores, sorted by relevance
         """
-        if not self.embedding_service:
-            logger.warning("Embedding service not available for semantic search")
+        if not self.qdrant_service:
+            logger.warning("Qdrant service not available for semantic search")
             return []
 
         try:
@@ -324,29 +322,17 @@ Examples:
             all_matches = []
             seen_ids = set()
 
-            # Step 2: Search for each sub-question
+            # Step 2: Search for each sub-question using Qdrant
             for sub_q in sub_questions:
                 logger.warning(f"RAG_SEARCH: Searching for sub-question: '{sub_q}'")
 
-                # Use Qdrant if available (faster, no format bugs), fallback to embedding_service
-                search_service = self.qdrant_service or self.embedding_service
-
-                if self.qdrant_service:
-                    logger.info("RAG_SEARCH: Using Qdrant for vector search")
-                    matches = await search_service.search_similar_qa_pairs(
-                        query_text=sub_q,
-                        user_id=user_id,
-                        similarity_threshold=0.75,
-                        limit=3
-                    )
-                else:
-                    logger.info("RAG_SEARCH: Using pgvector for vector search")
-                    matches = await search_service.find_similar_qa_pairs(
-                        user_id=user_id,
-                        query_text=sub_q,
-                        similarity_threshold=0.75,
-                        max_results=3
-                    )
+                logger.info("RAG_SEARCH: Using Qdrant for vector search")
+                matches = await self.qdrant_service.search_similar_qa_pairs(
+                    query_text=sub_q,
+                    user_id=user_id,
+                    similarity_threshold=0.75,
+                    limit=3
+                )
 
                 logger.warning(f"RAG_SEARCH: Found {len(matches)} matches for sub-question '{sub_q}'")
 
@@ -567,9 +553,9 @@ Examples:
         user_id = user_profile.get('user_id') if user_profile else None  # FIX: Use 'user_id' not 'id'
         relevant_qa_pairs = []
 
-        logger.warning(f"RAG_DEBUG: user_id={user_id}, embedding_service={self.embedding_service is not None}")
+        logger.warning(f"RAG_DEBUG: user_id={user_id}, qdrant_service={self.qdrant_service is not None}")
 
-        if user_id and self.embedding_service:
+        if user_id and self.qdrant_service:
             logger.warning("RAG_DEBUG: Entering RAG code path - calling find_relevant_qa_pairs")
             relevant_qa_pairs = await self.find_relevant_qa_pairs(
                 question=question,
@@ -913,7 +899,7 @@ Now answer the interview question following these guidelines."""
         user_id = user_profile.get('user_id') if user_profile else None  # FIX: Use 'user_id' not 'id'
         relevant_qa_pairs = []
 
-        if user_id and self.embedding_service:
+        if user_id and self.qdrant_service:
             relevant_qa_pairs = await self.find_relevant_qa_pairs(
                 question=question,
                 user_id=user_id,
@@ -1307,85 +1293,7 @@ Text to parse:
         if not qa_pairs:
             return None
 
-        # Strategy 1: Use database-backed semantic search if user_id and embedding_service available
-        if user_id and self.embedding_service:
-            try:
-                logger.info(f"Using OpenAI Embeddings for semantic search (user: {user_id})")
-                match = await self.embedding_service.get_best_match(
-                    user_id=user_id,
-                    query_text=question,
-                    similarity_threshold=self.semantic_threshold
-                )
-
-                if match:
-                    logger.info(
-                        f"✓ Found semantic match (OpenAI Embeddings, {match.get('similarity', 0.0):.2%}): "
-                        f"'{question}' ~ '{match.get('question', '')[:50]}...'"
-                    )
-                    return match
-
-            except Exception as e:
-                logger.error(f"Semantic search failed, falling back to string matching: {str(e)}")
-
-        # Strategy 2: Fallback to in-memory semantic matching with embeddings
-        if self.embedding_service:
-            try:
-                logger.info("Using in-memory OpenAI Embeddings for semantic matching")
-
-                # Generate embedding for query
-                query_embedding = await self.embedding_service.generate_embedding(question)
-                if not query_embedding:
-                    raise Exception("Failed to generate query embedding")
-
-                best_match = None
-                best_similarity = 0.0
-                matched_text = ""
-
-                for qa_pair in qa_pairs:
-                    # Check main question
-                    qa_question = qa_pair.get("question", "")
-                    qa_embedding = await self.embedding_service.generate_embedding(qa_question)
-
-                    if qa_embedding:
-                        similarity = self.embedding_service.calculate_cosine_similarity(
-                            query_embedding, qa_embedding
-                        )
-
-                        if similarity > best_similarity:
-                            best_similarity = similarity
-                            best_match = qa_pair
-                            matched_text = qa_question
-
-                    # Check question variations
-                    variations = qa_pair.get("question_variations", [])
-                    if variations:
-                        for variation in variations:
-                            if variation and variation.strip():
-                                var_embedding = await self.embedding_service.generate_embedding(variation)
-                                if var_embedding:
-                                    var_similarity = self.embedding_service.calculate_cosine_similarity(
-                                        query_embedding, var_embedding
-                                    )
-
-                                    if var_similarity > best_similarity:
-                                        best_similarity = var_similarity
-                                        best_match = qa_pair
-                                        matched_text = variation
-
-                if best_similarity >= self.semantic_threshold:
-                    logger.info(
-                        f"✓ Found semantic match (in-memory, {best_similarity:.2%}): "
-                        f"'{question}' ~ '{matched_text}'"
-                    )
-                    return best_match
-                else:
-                    logger.info(f"No semantic match found (best: {best_similarity:.2%})")
-                    return None
-
-            except Exception as e:
-                logger.error(f"In-memory semantic matching failed: {str(e)}")
-
-        # Strategy 3: Fallback to old string-based matching (deprecated but kept for safety)
+        # Fallback to string-based matching (when Qdrant unavailable)
         logger.warning("Using deprecated string matching - embeddings unavailable")
         normalized_q = normalize_question(question)
         threshold = 0.85
