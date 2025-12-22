@@ -387,12 +387,6 @@ Examples:
 
             for matches in search_results:
                 for match in matches:
-                    # Mark very high similarity matches as "exact"
-                    if match.get('similarity', 0) > 0.92:
-                        match['is_exact_match'] = True
-                    else:
-                        match['is_exact_match'] = False
-
                     # Deduplicate by ID
                     if match['id'] not in seen_ids:
                         all_matches.append(match)
@@ -411,7 +405,6 @@ Examples:
             for i, match in enumerate(top_matches, 1):
                 logger.info(
                     f"  {i}. [{match.get('similarity', 0):.2%}] "
-                    f"{'EXACT' if match.get('is_exact_match') else 'SIMILAR'}: "
                     f"{match.get('question', '')[:60]}..."
                 )
 
