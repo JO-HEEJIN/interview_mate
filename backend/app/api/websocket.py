@@ -354,6 +354,17 @@ async def websocket_transcribe(websocket: WebSocket):
 
                         logger.info(f"Complete question detected: '{question}' ({question_type})")
 
+                        # NEW: Save question to session
+                        if session_id:
+                            await save_session_message(
+                                session_id=session_id,
+                                role="interviewer",
+                                message_type="question",
+                                content=question,
+                                question_type=question_type,
+                                source="detected"
+                            )
+
                         await manager.send_json(websocket, {
                             "type": "question_detected",
                             "question": question,
@@ -389,9 +400,26 @@ async def websocket_transcribe(websocket: WebSocket):
                                 "qa_pair_id": qa_pair_id,
                                 "is_streaming": False
                             })
+
+                            # NEW: Save uploaded answer to session
+                            if session_id:
+                                await save_session_message(
+                                    session_id=session_id,
+                                    role="candidate",
+                                    message_type="answer",
+                                    content=matched_qa["answer"],
+                                    question_type=question_type,
+                                    source="uploaded"
+                                )
+
                         else:
                             # 3b. Generate with streaming LLM (Phase 1.3)
                             logger.info("No matching Q&A found, generating with streaming LLM")
+
+                            # NEW: Get session history and examples for context
+                            session_history = await get_session_history(session_id) if session_id else []
+                            session_examples = await get_session_examples(session_id) if session_id else []
+                            logger.info(f"Using session context: {len(session_history)} messages, {len(session_examples)} examples used")
 
                             # Signal streaming start
                             await manager.send_json(websocket, {
@@ -401,20 +429,53 @@ async def websocket_transcribe(websocket: WebSocket):
                             })
 
                             # Stream answer chunks in real-time
+                            generated_answer = ""
                             async for chunk in llm_service.generate_answer_stream(
                                 question=question,
                                 resume_text=user_context["resume_text"],
                                 star_stories=user_context["star_stories"],
                                 talking_points=user_context["talking_points"],
                                 format="bullet",  # Bullet point format for real-time interview
-                                user_profile=user_profile
+                                user_profile=user_profile,
+                                session_history=session_history,
+                                examples_used=session_examples
                             ):
+                                generated_answer += chunk
                                 await manager.send_json(websocket, {
                                     "type": "answer_stream_chunk",
                                     "question": question,
                                     "chunk": chunk,
                                     "source": "generated"
                                 })
+
+                            # NEW: Extract examples and save generated answer to session
+                            if session_id and generated_answer:
+                                # Extract examples from answer
+                                import re
+                                new_examples = []
+                                example_patterns = re.findall(
+                                    r'(?:Project|at|working on|led|built)\s+([A-Z][A-Za-z0-9\s]{2,30})',
+                                    generated_answer
+                                )
+                                for match in example_patterns:
+                                    cleaned = match.strip()
+                                    if len(cleaned) > 3 and cleaned not in session_examples:
+                                        new_examples.append(cleaned)
+
+                                logger.info(f"Extracted {len(new_examples)} new examples: {new_examples}")
+
+                                await save_session_message(
+                                    session_id=session_id,
+                                    role="candidate",
+                                    message_type="answer",
+                                    content=generated_answer,
+                                    question_type=question_type,
+                                    source="ai_generated",
+                                    examples_used=new_examples
+                                )
+
+                                # Update local tracking
+                                session_examples_used.extend(new_examples)
 
                             # Signal streaming end
                             await manager.send_json(websocket, {
@@ -519,6 +580,12 @@ async def websocket_transcribe(websocket: WebSocket):
                                     logger.error(f"Failed to load interview profile: {e}", exc_info=True)
                                     user_profile = None
 
+                                # NEW: Create interview session for memory tracking
+                                if not session_id:
+                                    session_id = await create_interview_session(user_id, "Interview Practice")
+                                    if session_id:
+                                        logger.info(f"Created session {session_id} for user {user_id}")
+
                             # OPTIMIZATION (Phase 1.1): Build Q&A index for fast lookup
                             # This takes <1ms and enables O(1) exact matching + faster similarity search
                             if user_context["qa_pairs"]:
@@ -536,6 +603,12 @@ async def websocket_transcribe(websocket: WebSocket):
                             })
 
                         elif msg_type == "clear":
+                            # NEW: End current session before clearing
+                            if session_id:
+                                await end_interview_session(session_id)
+                                session_id = None
+                                session_examples_used = []
+
                             # Clear accumulated text, answer cache, and Q&A index
                             accumulated_text = ""
                             audio_chunk_count = 0
@@ -589,6 +662,10 @@ async def websocket_transcribe(websocket: WebSocket):
                                     # 3b. Generate with streaming LLM (Phase 1.3)
                                     logger.info("No matching Q&A found, generating with streaming LLM")
 
+                                    # NEW: Get session history and examples
+                                    session_history = await get_session_history(session_id) if session_id else []
+                                    session_examples = await get_session_examples(session_id) if session_id else []
+
                                     # Signal streaming start
                                     await manager.send_json(websocket, {
                                         "type": "answer_stream_start",
@@ -597,6 +674,7 @@ async def websocket_transcribe(websocket: WebSocket):
                                     })
 
                                     # Stream answer chunks in real-time
+                                    generated_answer = ""
                                     async for chunk in llm_service.generate_answer_stream(
                                         question=question,
                                         resume_text=user_context["resume_text"],
@@ -604,14 +682,41 @@ async def websocket_transcribe(websocket: WebSocket):
                                         talking_points=user_context["talking_points"],
                                         qa_pairs=user_context["qa_pairs"],  # Pass Q&A pairs for reference
                                         format="bullet",  # Bullet point format for real-time interview
-                                        user_profile=user_profile
+                                        user_profile=user_profile,
+                                        session_history=session_history,
+                                        examples_used=session_examples
                                     ):
+                                        generated_answer += chunk
                                         await manager.send_json(websocket, {
                                             "type": "answer_stream_chunk",
                                             "question": question,
                                             "chunk": chunk,
                                             "source": "generated"
                                         })
+
+                                    # NEW: Save answer with extracted examples
+                                    if session_id and generated_answer:
+                                        import re
+                                        new_examples = []
+                                        example_patterns = re.findall(
+                                            r'(?:Project|at|working on|led|built)\s+([A-Z][A-Za-z0-9\s]{2,30})',
+                                            generated_answer
+                                        )
+                                        for match in example_patterns:
+                                            cleaned = match.strip()
+                                            if len(cleaned) > 3 and cleaned not in session_examples:
+                                                new_examples.append(cleaned)
+
+                                        await save_session_message(
+                                            session_id=session_id,
+                                            role="candidate",
+                                            message_type="answer",
+                                            content=generated_answer,
+                                            question_type=question_type,
+                                            source="ai_generated",
+                                            examples_used=new_examples
+                                        )
+                                        session_examples_used.extend(new_examples)
 
                                     # Signal streaming end
                                     await manager.send_json(websocket, {
@@ -642,6 +747,11 @@ async def websocket_transcribe(websocket: WebSocket):
     except Exception as e:
         logger.error(f"WebSocket error: {str(e)}", exc_info=True)
     finally:
+        # NEW: End session on disconnect
+        if session_id:
+            await end_interview_session(session_id)
+            logger.info(f"Ended session {session_id} on disconnect")
+
         # Deepgram connection is automatically closed by context manager
         manager.disconnect(websocket)
         logger.info("WebSocket session ended")
