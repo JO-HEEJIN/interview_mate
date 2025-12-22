@@ -328,10 +328,23 @@ class DeepgramStreamingService:
 
                                     # Break if too many consecutive failures
                                     if consecutive_timeouts >= max_consecutive_timeouts:
-                                        logger.error(
+                                        error_msg = (
                                             f"❌ {max_consecutive_timeouts} consecutive failures, "
                                             "Deepgram connection unstable. Stopping converter."
                                         )
+                                        logger.error(error_msg)
+
+                                        # Notify WebSocket handler of fatal error
+                                        if self._on_error:
+                                            try:
+                                                # Schedule error callback in event loop
+                                                asyncio.run_coroutine_threadsafe(
+                                                    self._on_error("FATAL: Network connection to Deepgram failed. Please refresh and try again."),
+                                                    self._loop
+                                                )
+                                            except Exception as e:
+                                                logger.error(f"Failed to call error callback: {e}")
+
                                         break
 
                             except Exception as send_err:

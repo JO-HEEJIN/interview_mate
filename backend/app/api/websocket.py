@@ -483,10 +483,21 @@ async def websocket_transcribe(websocket: WebSocket):
     # Deepgram error callback
     async def on_error(error: str):
         logger.error(f"Deepgram error: {error}")
+
+        # Send error to client
         await manager.send_json(websocket, {
             "type": "error",
-            "message": f"Transcription error: {error}"
+            "message": f"Transcription error: {error}",
+            "fatal": error.startswith("FATAL:")  # Mark fatal errors
         })
+
+        # Close WebSocket on fatal errors
+        if error.startswith("FATAL:"):
+            logger.error("Fatal Deepgram error detected, closing WebSocket connection")
+            try:
+                await websocket.close(code=1011, reason="Deepgram connection failed")
+            except Exception as e:
+                logger.error(f"Error closing WebSocket: {e}")
 
     # Connect to Deepgram using context manager
     try:
