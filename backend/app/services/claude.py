@@ -614,10 +614,21 @@ Examples:
             )
             logger.warning(f"RAG_DEBUG: Found {len(relevant_qa_pairs)} relevant Q&A pairs")
 
-            # If we found exactly one perfect match, use it directly
-            if len(relevant_qa_pairs) == 1 and relevant_qa_pairs[0].get('is_exact_match'):
-                logger.info(f"Using single exact match Q&A pair for streaming question: '{question}'")
-                yield relevant_qa_pairs[0]['answer']
+            # DEBUG: Log what we got back
+            if relevant_qa_pairs:
+                logger.warning(f"RAG_DEBUG: relevant_qa_pairs[0] similarity: {relevant_qa_pairs[0].get('similarity', 'NO_SIMILARITY_KEY')}")
+                logger.warning(f"RAG_DEBUG: relevant_qa_pairs[0] question: {relevant_qa_pairs[0].get('question', '')[:80]}")
+
+            # If we found a good match (>= 62% similarity), use the stored answer directly
+            # No need to generate a new answer when we already have a prepared one
+            if relevant_qa_pairs and relevant_qa_pairs[0].get('similarity', 0) >= 0.62:
+                best_match = relevant_qa_pairs[0]
+                similarity = best_match.get('similarity', 0)
+                logger.info(
+                    f"Using stored Q&A answer (similarity: {similarity:.1%}) for streaming question: '{question}' "
+                    f"Matched: '{best_match.get('question', '')[:80]}...'"
+                )
+                yield best_match['answer']
                 return
 
         logger.info(f"Streaming RAG answer for: '{question}'")
