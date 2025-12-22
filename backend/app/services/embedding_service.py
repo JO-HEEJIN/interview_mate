@@ -153,9 +153,11 @@ class EmbeddingService:
             True if successful, False otherwise
         """
         try:
-            # Supabase Python client automatically converts list to pgvector format
+            # Format embedding as pgvector string (no spaces after commas)
+            embedding_str = '[' + ','.join(map(str, embedding)) + ']'
+
             response = self.supabase.table('qa_pairs').update({
-                'question_embedding': embedding,
+                'question_embedding': embedding_str,
                 'embedding_model': self.model,
                 'embedding_created_at': 'now()'
             }).eq('id', qa_pair_id).execute()
@@ -197,13 +199,16 @@ class EmbeddingService:
                 logger.warning("Failed to generate query embedding")
                 return []
 
-            # Supabase Python client automatically converts list to pgvector format
+            # Format embedding as pgvector string (no spaces after commas)
+            # Must match the format used when storing: [0.1,0.2,0.3] not [0.1, 0.2, 0.3]
+            embedding_str = '[' + ','.join(map(str, query_embedding)) + ']'
+
             # Use the database function to find similar Q&A pairs
             response = self.supabase.rpc(
                 'find_similar_qa_pairs',
                 {
                     'user_id_param': user_id,
-                    'query_embedding': query_embedding,
+                    'query_embedding': embedding_str,
                     'similarity_threshold': similarity_threshold,
                     'max_results': max_results
                 }
