@@ -69,7 +69,7 @@ async def save_session_message(
             "source": source,
             "examples_used": examples_used or [],
             "sequence_number": sequence_number,
-            "timestamp": datetime.utcnow().isoformat()
+            "message_timestamp": datetime.utcnow().isoformat()
         }
 
         supabase.table("session_messages").insert(data).execute()
