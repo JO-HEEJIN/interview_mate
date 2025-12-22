@@ -11,8 +11,9 @@ Strategy options:
 import logging
 from typing import Optional, AsyncIterator
 from app.core.config import settings
-from app.services.claude import claude_service
+from app.services.claude import get_claude_service
 from app.services.glm_service import glm_service
+from app.core.supabase import get_supabase_client
 
 logger = logging.getLogger(__name__)
 
@@ -23,11 +24,15 @@ class LLMService:
         self.primary_service = None
         self.fallback_service = None
 
+        # Initialize Claude service with Supabase for RAG
+        supabase = get_supabase_client()
+        claude_service = get_claude_service(supabase)
+
         # Configure based on strategy
         if self.strategy == "claude":
             self.primary_service = claude_service
             self.fallback_service = None
-            logger.info("LLM strategy: Claude only")
+            logger.info("LLM strategy: Claude only (with RAG)")
         elif self.strategy == "glm":
             self.primary_service = glm_service
             self.fallback_service = None
