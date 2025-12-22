@@ -741,8 +741,24 @@ async def websocket_transcribe(websocket: WebSocket):
 
     except WebSocketDisconnect:
         logger.info(f"WebSocket disconnected after {audio_chunk_count} chunks, {total_audio_bytes} total bytes")
+    except asyncio.TimeoutError:
+        logger.error("TIMEOUT: Deepgram connection timed out", exc_info=True)
+        try:
+            await manager.send_json(websocket, {
+                "type": "error",
+                "message": "Connection timeout - please refresh and try again"
+            })
+        except:
+            pass
     except Exception as e:
-        logger.error(f"WebSocket error: {str(e)}", exc_info=True)
+        logger.error(f"WebSocket error: {type(e).__name__}: {str(e)}", exc_info=True)
+        try:
+            await manager.send_json(websocket, {
+                "type": "error",
+                "message": f"Connection error: {str(e)}"
+            })
+        except:
+            pass
     finally:
         # NEW: End session on disconnect
         if session_id:
