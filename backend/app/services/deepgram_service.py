@@ -263,6 +263,8 @@ class DeepgramStreamingService:
             # Read in chunks (2560 bytes = 160ms at 16kHz mono s16le)
             chunk_size = 2560
             total_sent = 0
+            consecutive_timeouts = 0
+            max_consecutive_timeouts = 5  # Break if 5 timeouts in a row
 
             logger.info("🔄 FFmpeg converter loop started")
 
@@ -290,12 +292,25 @@ class DeepgramStreamingService:
                                 self._loop
                             )
                             # Wait with longer timeout to handle network latency
-                            # Increased from 0.5s to 2.0s to prevent spurious failures
-                            future.result(timeout=2.0)
+                            # Increased from 0.5s to 2.0s, then to 5.0s for long questions
+                            future.result(timeout=5.0)
                             logger.debug(f"✅ Sent {len(data)} bytes to Deepgram")
+                            consecutive_timeouts = 0  # Reset counter on success
                         except TimeoutError:
-                            logger.warning(f"⚠️ Timeout sending to Deepgram (network slow?), continuing...")
-                            # Don't break - continue with next chunk
+                            consecutive_timeouts += 1
+                            logger.warning(
+                                f"⚠️ Timeout sending to Deepgram (network slow?) "
+                                f"[{consecutive_timeouts}/{max_consecutive_timeouts}]"
+                            )
+
+                            # Break if too many consecutive timeouts
+                            if consecutive_timeouts >= max_consecutive_timeouts:
+                                logger.error(
+                                    f"❌ {max_consecutive_timeouts} consecutive timeouts, "
+                                    "connection likely broken. Stopping converter."
+                                )
+                                break
+                            # Otherwise continue with next chunk
                         except Exception as send_err:
                             logger.error(f"❌ Failed to send to Deepgram: {send_err}")
                             # Check if connection is still valid
