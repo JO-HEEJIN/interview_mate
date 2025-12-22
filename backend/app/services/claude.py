@@ -2,6 +2,7 @@
 Anthropic Claude API integration for AI answer generation with semantic similarity matching
 """
 
+import asyncio
 import re
 import logging
 from typing import Optional, List
@@ -240,23 +241,33 @@ class ClaudeService:
         "Introduce yourself and tell me why you're the right fit"
         -> ["Tell me about yourself", "Why are you the right fit for this role?"]
 
-        Uses OpenAI Structured Outputs for reliable parsing.
+        Uses OpenAI Structured Outputs with timeout and heuristic fallback.
 
         Args:
             question: The potentially complex interview question
 
         Returns:
-            List of atomic sub-questions (or single-item list if already simple)
+            List of atomic sub-questions (max 3, or single-item list if already simple)
         """
-        try:
-            logger.info(f"Decomposing question: '{question}'")
+        import re
 
-            completion = await self.openai_client.beta.chat.completions.parse(
-                model="gpt-4o-2024-08-06",
-                messages=[
-                    {
-                        "role": "system",
-                        "content": """You are an expert at analyzing interview questions.
+        def heuristic_split(q: str) -> List[str]:
+            """Simple heuristic: split on conjunctions"""
+            # Split on common conjunctions
+            parts = re.split(r'\s+(?:and|however|also|but)\s+', q, flags=re.IGNORECASE)
+            return [p.strip() for p in parts if p.strip()]
+
+        try:
+            logger.info(f"Decomposing question ({len(question)} chars): '{question[:80]}...'")
+
+            # Add 10s timeout to prevent hanging
+            async with asyncio.timeout(10.0):
+                completion = await self.openai_client.beta.chat.completions.parse(
+                    model="gpt-4o-2024-08-06",
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": """You are an expert at analyzing interview questions.
 
 Your task: Break down complex interview questions into simple, standalone sub-questions.
 
@@ -265,26 +276,38 @@ Rules:
 2. If the question asks about MULTIPLE things, separate them into atomic questions
 3. Keep the original tone and context
 4. Don't add questions that weren't asked
+5. Maximum 3 sub-questions
 
 Examples:
 - "Tell me about yourself" -> ["Tell me about yourself"]
 - "Introduce yourself and explain why you want this role" -> ["Tell me about yourself", "Why do you want this role?"]
 - "Describe your leadership experience and how you handle conflict" -> ["Describe your leadership experience", "How do you handle conflict?"]
 """
-                    },
-                    {"role": "user", "content": f"Decompose this question: {question}"}
-                ],
-                response_format=DecomposedQueries,
-            )
+                        },
+                        {"role": "user", "content": f"Decompose this question: {question}"}
+                    ],
+                    response_format=DecomposedQueries,
+                )
 
-            queries = completion.choices[0].message.parsed.queries
-            logger.info(f"Decomposed into {len(queries)} sub-questions: {queries}")
-            return queries
+                queries = completion.choices[0].message.parsed.queries
+
+                # Limit to max 3 sub-questions
+                if len(queries) > 3:
+                    logger.warning(f"Truncating {len(queries)} sub-questions to 3")
+                    queries = queries[:3]
+
+                logger.info(f"Decomposed into {len(queries)} sub-questions")
+                return queries
+
+        except asyncio.TimeoutError:
+            logger.warning("Decomposition timed out (10s), using heuristic split")
+            queries = heuristic_split(question)
+            return queries[:3] if len(queries) > 3 else queries
 
         except Exception as e:
-            logger.error(f"Question decomposition failed: {str(e)}")
-            # Fallback: return original question as single-item list
-            return [question]
+            logger.error(f"Question decomposition failed: {str(e)}, using heuristic")
+            queries = heuristic_split(question)
+            return queries[:3] if len(queries) > 3 else (queries if queries else [question])
 
     async def find_relevant_qa_pairs(
         self,
@@ -319,30 +342,50 @@ Examples:
             sub_questions = await self.decompose_question(question)
             logger.warning(f"RAG_SEARCH: Decomposed into {len(sub_questions)} sub-questions: {sub_questions}")
 
+            # Step 2: PARALLEL searches using asyncio.gather
+            async def search_one(sub_q: str, index: int) -> List[dict]:
+                """Search for one sub-question with timeout and error handling"""
+                try:
+                    logger.warning(f"RAG_SEARCH: [{index+1}/{len(sub_questions)}] Searching for: '{sub_q[:60]}...'")
+
+                    # Add 5s timeout per search
+                    async with asyncio.timeout(5.0):
+                        matches = await self.qdrant_service.search_similar_qa_pairs(
+                            query_text=sub_q,
+                            user_id=user_id,
+                            similarity_threshold=0.60,
+                            limit=3
+                        )
+
+                    logger.warning(f"RAG_SEARCH: [{index+1}/{len(sub_questions)}] Found {len(matches)} matches")
+
+                    # Log similarity scores
+                    for match in matches:
+                        logger.warning(
+                            f"RAG_SEARCH: Match - Q: '{match.get('question', '')[:80]}...' "
+                            f"Similarity: {match.get('similarity', 0):.4f}"
+                        )
+
+                    return matches
+
+                except asyncio.TimeoutError:
+                    logger.warning(f"RAG_SEARCH: Search timed out (5s) for: '{sub_q[:60]}...'")
+                    return []
+                except Exception as e:
+                    logger.error(f"RAG_SEARCH: Search failed for '{sub_q[:60]}...': {e}")
+                    return []
+
+            # Run all searches in PARALLEL
+            logger.info(f"RAG_SEARCH: Starting {len(sub_questions)} parallel searches")
+            search_results = await asyncio.gather(
+                *[search_one(sq, i) for i, sq in enumerate(sub_questions)]
+            )
+
+            # Step 3: Deduplicate and merge results from all searches
             all_matches = []
             seen_ids = set()
 
-            # Step 2: Search for each sub-question using Qdrant
-            for sub_q in sub_questions:
-                logger.warning(f"RAG_SEARCH: Searching for sub-question: '{sub_q}'")
-
-                logger.info("RAG_SEARCH: Using Qdrant for vector search")
-                matches = await self.qdrant_service.search_similar_qa_pairs(
-                    query_text=sub_q,
-                    user_id=user_id,
-                    similarity_threshold=0.60,
-                    limit=3
-                )
-
-                logger.warning(f"RAG_SEARCH: Found {len(matches)} matches for sub-question '{sub_q}'")
-
-                # Log similarity scores
-                for match in matches:
-                    logger.warning(
-                        f"RAG_SEARCH: Match - Q: '{match.get('question', '')[:80]}...' "
-                        f"Similarity: {match.get('similarity', 0):.4f}"
-                    )
-
+            for matches in search_results:
                 for match in matches:
                     # Mark very high similarity matches as "exact"
                     if match.get('similarity', 0) > 0.92:
@@ -355,7 +398,7 @@ Examples:
                         all_matches.append(match)
                         seen_ids.add(match['id'])
 
-            # Step 3: Sort by similarity (highest first) and limit results
+            # Step 4: Sort by similarity (highest first) and limit results
             all_matches.sort(key=lambda x: x.get('similarity', 0), reverse=True)
             top_matches = all_matches[:max_total_results]
 
