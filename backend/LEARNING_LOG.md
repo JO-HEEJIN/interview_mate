@@ -737,6 +737,354 @@ This bug was a **classic case of ambiguous naming**:
 
 ---
 
+# Session 2.5: Semantic Search Returns 0 Results (ONGOING - 2025-12-22)
+
+## Problem Statement
+**Issue**: After fixing the user_id bug, RAG still finds 0 relevant Q&A pairs despite:
+- ✓ Correct user_id (`23a71126...`)
+- ✓ Embeddings exist in database (147 pairs, all have embeddings)
+- ✓ Question decomposition works (splits into 2 sub-questions)
+- ✗ Semantic search returns 0 matches for each sub-question
+
+**Critical Failure**:
+```
+Query: "Introduce yourself"
+Expected: Should match "Tell me about yourself" (semantically identical)
+Actual: Found 0 matches
+```
+
+---
+
+## Investigation Progress
+
+### Step 1: Verify Embeddings Exist
+**Query**:
+```sql
+SELECT
+    COUNT(*) as total_qa_pairs,
+    COUNT(question_embedding) as qa_with_embeddings
+FROM qa_pairs
+WHERE user_id = '23a71126-dac8-4cea-b0a3-ff69fb9b2131';
+```
+
+**Result**: ✓ All 147 Q&A pairs have embeddings
+
+**Sample Check**:
+```sql
+SELECT id, question,
+       question_embedding IS NOT NULL as has_embedding,
+       LENGTH(question_embedding::text) as embedding_length
+FROM qa_pairs
+WHERE user_id = '23a71126...'
+LIMIT 5;
+```
+
+**Result**:
+```json
+[
+  {
+    "question": "Tell me about a time you had to learn something quickly...",
+    "has_embedding": true,
+    "embedding_length": 19224
+  },
+  {
+    "question": "What do you see as the biggest challenges...",
+    "has_embedding": true,
+    "embedding_length": 19202
+  }
+]
+```
+
+✓ Embeddings are populated and have reasonable length (~19KB text representation)
+
+---
+
+### Step 2: Add RAG Search Logging
+**Added Detailed Logs** in `app/services/claude.py`:
+```python
+logger.warning(f"RAG_SEARCH: Decomposing question: '{question}'")
+logger.warning(f"RAG_SEARCH: Decomposed into {len(sub_questions)} sub-questions")
+logger.warning(f"RAG_SEARCH: Searching for sub-question: '{sub_q}'")
+logger.warning(f"RAG_SEARCH: Found {len(matches)} matches for sub-question")
+```
+
+**Logs Showed**:
+```
+RAG_SEARCH: Decomposing question: 'Could you start by introducing yourself...'
+RAG_SEARCH: Decomposed into 2 sub-questions:
+  ['Introduce yourself',
+   'Why do you believe you are the right person...']
+RAG_SEARCH: Searching for sub-question: 'Introduce yourself'
+RAG_SEARCH: Found 0 matches for sub-question 'Introduce yourself'
+RAG_SEARCH: Searching for sub-question: 'Why do you believe...'
+RAG_SEARCH: Found 0 matches for sub-question 'Why do you believe...'
+```
+
+**Analysis**:
+- ✓ Question decomposition works correctly
+- ✓ Search is being called for each sub-question
+- ✗ `embedding_service.find_similar_qa_pairs()` returns empty list for ALL queries
+
+---
+
+### Step 3: Verify Database Function Exists
+**Query**:
+```sql
+SELECT routine_name, routine_type
+FROM information_schema.routines
+WHERE routine_name = 'find_similar_qa_pairs';
+```
+
+**Result**: ✓ Function exists
+
+**Function Definition**:
+```sql
+CREATE OR REPLACE FUNCTION public.find_similar_qa_pairs(
+    user_id_param uuid,
+    query_embedding vector,  -- ← Takes VECTOR type
+    similarity_threshold double precision DEFAULT 0.80,
+    max_results integer DEFAULT 5
+)
+RETURNS TABLE(id uuid, question text, answer text, question_type varchar, similarity double precision)
+AS $$
+BEGIN
+    RETURN QUERY
+    SELECT
+        qa.id,
+        qa.question,
+        qa.answer,
+        qa.question_type,
+        1 - (qa.question_embedding <=> query_embedding) AS similarity
+    FROM public.qa_pairs qa
+    WHERE qa.user_id = user_id_param
+        AND qa.question_embedding IS NOT NULL
+        AND 1 - (qa.question_embedding <=> query_embedding) >= similarity_threshold
+    ORDER BY qa.question_embedding <=> query_embedding
+    LIMIT max_results;
+END;
+$$ LANGUAGE plpgsql STABLE;
+```
+
+**Analysis**:
+- ✓ Function uses pgvector `<=>` operator (cosine distance)
+- ✓ Filters by user_id
+- ✓ Filters by similarity threshold (0.75 in our calls)
+- Function definition looks CORRECT
+
+---
+
+### Step 4: Identify Potential Issue - Embedding Format
+**Code in `app/services/embedding_service.py` line 203**:
+```python
+# Generate embedding for query
+query_embedding = await self.generate_embedding(query_text)
+if not query_embedding:
+    return []
+
+# Convert to string format for pgvector
+embedding_str = str(query_embedding)  # ← SUSPICIOUS!
+
+# Use the database function
+response = self.supabase.rpc(
+    'find_similar_qa_pairs',
+    {
+        'user_id_param': user_id,
+        'query_embedding': embedding_str,  # ← Passing STRING
+        'similarity_threshold': similarity_threshold,
+        'max_results': max_results
+    }
+).execute()
+```
+
+**Problem Hypothesis**:
+- `str(query_embedding)` converts list to string: `"[0.1, 0.2, 0.3, ...]"`
+- Database function expects `vector` type
+- Format mismatch might cause:
+  1. Silent type conversion failure
+  2. All similarity scores below threshold
+  3. Query returning no results
+
+**Status**: NEEDS VERIFICATION
+- Need to check what format embeddings are stored in
+- Need to verify query_embedding format matches stored format
+- Need to test with manual SQL query
+
+---
+
+## Current Hypothesis
+
+**Root Cause**: Embedding format mismatch between:
+1. How embeddings are STORED in database (during generation)
+2. How query embedding is PASSED to search function (during search)
+
+**Evidence**:
+- Semantic search SHOULD find "Introduce yourself" when searching for "Tell me about yourself"
+- These phrases have nearly identical embeddings in any embedding model
+- Finding 0 results suggests the search itself is broken, not the similarity scores
+
+**Next Steps**:
+1. Check embedding storage format in database
+2. Check if `str(query_embedding)` creates compatible format
+3. Test manual SQL query with hardcoded embedding
+4. Fix format mismatch if found
+
+---
+
+## Lessons (Preliminary)
+
+### 1. Verify Integration Points Between Systems
+**Pattern**: When System A (Python) calls System B (PostgreSQL), verify data format compatibility
+
+**Our Case**:
+- Python: Generates embedding as `List[float]`
+- Converts to string: `str([0.1, 0.2, ...])` → `"[0.1, 0.2, ...]"`
+- PostgreSQL: Expects `vector` type
+- Format mismatch = silent failure
+
+**Prevention**:
+```python
+# BAD: Implicit string conversion
+embedding_str = str(query_embedding)
+supabase.rpc('function', {'param': embedding_str})
+
+# GOOD: Explicit format validation
+embedding_vector = format_for_pgvector(query_embedding)
+assert validate_vector_format(embedding_vector)
+supabase.rpc('function', {'param': embedding_vector})
+```
+
+### 2. Test Integration Points Explicitly
+**Missing Test**:
+```python
+async def test_embedding_search_integration():
+    """Verify embeddings can be searched end-to-end"""
+    # Generate embedding
+    query_embedding = await embedding_service.generate_embedding("test query")
+
+    # Store a test Q&A with embedding
+    test_qa = await create_test_qa_pair(
+        question="test query",
+        embedding=query_embedding
+    )
+
+    # Search for it
+    results = await embedding_service.find_similar_qa_pairs(
+        user_id=test_user.id,
+        query_text="test query",
+        similarity_threshold=0.5  # Low threshold for testing
+    )
+
+    # Should find the exact match!
+    assert len(results) > 0
+    assert results[0]['id'] == test_qa.id
+    assert results[0]['similarity'] > 0.95  # Near-perfect match
+```
+
+### 3. Semantic Search Should Find Obvious Matches
+**Sanity Check**: If searching for "introduce yourself" finds 0 results when "tell me about yourself" exists, the search is BROKEN.
+
+**Prevention**: Add smoke test:
+```python
+@pytest.mark.integration
+async def test_semantic_search_finds_synonyms():
+    """Verify semantic search works for synonym queries"""
+    # Create Q&A: "Tell me about yourself"
+    await create_qa_pair(
+        question="Tell me about yourself",
+        answer="I am...",
+        user_id=user.id
+    )
+
+    # Search with synonym: "Introduce yourself"
+    results = await embedding_service.find_similar_qa_pairs(
+        user_id=user.id,
+        query_text="Introduce yourself",
+        similarity_threshold=0.75
+    )
+
+    # MUST find the match!
+    assert len(results) > 0, "Semantic search failed to find obvious synonym"
+    assert results[0]['similarity'] > 0.85, f"Similarity too low: {results[0]['similarity']}"
+```
+
+---
+
+## Technical Debt (Additional)
+
+### 5. No Integration Tests for Embedding Search
+**Issue**: We have embeddings in production, but never tested if search actually works
+
+**Current State**:
+- Unit tests for embedding generation: ✓
+- Unit tests for database queries: ✓
+- Integration test for END-TO-END search: ❌
+
+**Consequence**: System deployed with broken search that no one noticed until manual testing
+
+### 6. Silent Failures in Search Pipeline
+**Issue**: When `find_similar_qa_pairs` returns `[]`, we don't know WHY:
+- No embeddings?
+- Wrong format?
+- Below threshold?
+- Database error?
+
+**Better Approach**:
+```python
+async def find_similar_qa_pairs(...):
+    # Generate embedding
+    query_embedding = await self.generate_embedding(query_text)
+    if not query_embedding:
+        logger.error(f"Failed to generate embedding for: {query_text}")
+        return []
+
+    logger.debug(f"Generated {len(query_embedding)}-dim embedding for: {query_text[:50]}")
+
+    # Call database
+    response = self.supabase.rpc('find_similar_qa_pairs', {...}).execute()
+
+    if not response.data:
+        # WHY did we find nothing?
+        logger.warning(
+            f"Found 0 results for '{query_text}' "
+            f"(threshold: {similarity_threshold}). Possible causes: "
+            f"1) No Q&A pairs for user, "
+            f"2) All below threshold, "
+            f"3) Embedding format mismatch"
+        )
+
+    return response.data
+```
+
+---
+
+## Status: ONGOING
+
+**Blocked On**: Need to verify embedding format in database
+
+**Next Query**:
+```sql
+SELECT
+    id,
+    question,
+    pg_typeof(question_embedding) as embedding_type,
+    vector_dims(question_embedding) as dimensions,
+    question_embedding::text AS embedding_sample
+FROM qa_pairs
+WHERE user_id = '23a71126-dac8-4cea-b0a3-ff69fb9b2131'
+    AND question_embedding IS NOT NULL
+LIMIT 1;
+```
+
+This will tell us:
+1. What PostgreSQL type the embedding is
+2. How many dimensions it has
+3. What format it's stored in
+
+Then we can compare with what we're passing in the search query.
+
+---
+
 *Last Updated: 2025-12-22*
 *Session 1: RAG Initialization & Embeddings*
 *Session 2: WebSocket & User ID Mismatch*
+*Session 2.5: Semantic Search Returns 0 Results (ONGOING)*
