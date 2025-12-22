@@ -8,7 +8,7 @@ import logging
 from datetime import datetime
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from app.services.deepgram_service import deepgram_service
-from app.services.claude import claude_service, detect_question_fast
+from app.services.claude import get_claude_service, detect_question_fast
 from app.services.llm_service import llm_service
 from app.core.supabase import get_supabase_client
 
@@ -276,6 +276,9 @@ async def websocket_transcribe(websocket: WebSocket):
         - {"type": "error", "message": "..."}
     """
     await manager.connect(websocket)
+
+    # Initialize Claude service with Qdrant support
+    claude_service = get_claude_service()
 
     # Session state
     language = "en"

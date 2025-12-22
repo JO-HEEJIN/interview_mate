@@ -197,10 +197,11 @@ async def bulk_parse_qa_pairs(
     """
     try:
         # Import here to avoid circular dependency
-        from app.services.claude import claude_service
+        from app.services.claude import get_claude_service
 
         # Use OpenAI Structured Outputs to extract Q&A pairs from free-form text
         # Falls back to Claude Tool Use if OpenAI fails
+        claude_service = get_claude_service()
         parsed_pairs = await claude_service.extract_qa_pairs_openai(request.text)
 
         return {

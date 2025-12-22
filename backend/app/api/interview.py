@@ -5,7 +5,7 @@ REST API endpoints for interview assistance
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional
-from app.services.claude import claude_service
+from app.services.claude import get_claude_service
 
 router = APIRouter(prefix="/api/interview", tags=["interview"])
 
@@ -41,6 +41,7 @@ async def generate_answer(request: GenerateAnswerRequest):
     if not request.question.strip():
         raise HTTPException(status_code=400, detail="Question cannot be empty")
 
+    claude_service = get_claude_service()
     answer = await claude_service.generate_answer(
         question=request.question,
         resume_text=request.resume_text or "",
@@ -62,6 +63,7 @@ async def detect_question(request: DetectQuestionRequest):
     if not request.transcription.strip():
         raise HTTPException(status_code=400, detail="Transcription cannot be empty")
 
+    claude_service = get_claude_service()
     result = await claude_service.detect_question(request.transcription)
 
     return DetectQuestionResponse(

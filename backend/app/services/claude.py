@@ -1466,6 +1466,3 @@ def get_claude_service(supabase: Optional[Client] = None) -> ClaudeService:
 
         _claude_service = ClaudeService(supabase, qdrant_service)
     return _claude_service
-
-# For backward compatibility
-claude_service = ClaudeService()
