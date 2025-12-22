@@ -399,9 +399,11 @@ async def websocket_transcribe(websocket: WebSocket):
                         })
 
                         # Debug logging
-                        logger.info(f"🔍 Starting answer generation for: '{question}'")
-                        logger.info(f"📊 Context: {len(user_context.get('qa_pairs', []))} Q&A pairs, user_id: {user_profile.get('id')}")
-                        logger.info(f"🎯 Session: {session_id}, history: {len(session_history)} messages, examples: {len(session_examples)} used")
+                        logger.warning("=" * 80)
+                        logger.warning(f"RAG_DEBUG: Starting answer generation for question: {question}")
+                        logger.warning(f"RAG_DEBUG: Context has {len(user_context.get('qa_pairs', []))} Q&A pairs")
+                        logger.warning(f"RAG_DEBUG: user_id={user_profile.get('id')}")
+                        logger.warning("=" * 80)
 
                         # Stream answer chunks in real-time with RAG
                         generated_answer = ""
