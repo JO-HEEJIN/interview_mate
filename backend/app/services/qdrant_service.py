@@ -5,6 +5,7 @@ Handles all vector similarity search using Qdrant
 
 import logging
 from typing import List, Dict, Optional, Tuple
+from openai import AsyncOpenAI
 from qdrant_client import QdrantClient
 from qdrant_client.models import (
     Distance,
@@ -14,7 +15,6 @@ from qdrant_client.models import (
     FieldCondition,
     MatchValue
 )
-from app.services.openai_service import OpenAIService
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +32,7 @@ class QdrantService:
 
     COLLECTION_NAME = "qa_pairs"
     VECTOR_SIZE = 1536  # OpenAI text-embedding-3-small
+    EMBEDDING_MODEL = "text-embedding-3-small"
 
     def __init__(self, qdrant_url: str, openai_api_key: str):
         """
@@ -42,7 +43,7 @@ class QdrantService:
             openai_api_key: OpenAI API key for generating embeddings
         """
         self.client = QdrantClient(url=qdrant_url)
-        self.openai_service = OpenAIService(openai_api_key)
+        self.openai_client = AsyncOpenAI(api_key=openai_api_key)
         self.ensure_collection_exists()
 
     def ensure_collection_exists(self):
@@ -60,6 +61,28 @@ class QdrantService:
                 )
             )
             logger.info(f"Collection '{self.COLLECTION_NAME}' created successfully")
+
+    async def _generate_embedding(self, text: str) -> Optional[List[float]]:
+        """
+        Generate embedding vector for text using OpenAI API
+
+        Args:
+            text: Input text to embed
+
+        Returns:
+            List of floats representing the embedding vector, or None if failed
+        """
+        try:
+            response = await self.openai_client.embeddings.create(
+                model=self.EMBEDDING_MODEL,
+                input=text
+            )
+            embedding = response.data[0].embedding
+            return embedding
+
+        except Exception as e:
+            logger.error(f"Error generating embedding: {e}", exc_info=True)
+            return None
 
     async def upsert_qa_pair(
         self,
@@ -87,7 +110,7 @@ class QdrantService:
         try:
             # Generate embedding if not provided
             if embedding is None:
-                embedding = await self.openai_service.create_embedding(question)
+                embedding = await self._generate_embedding(question)
                 if not embedding:
                     logger.error(f"Failed to generate embedding for Q&A {qa_id}")
                     return False
@@ -219,7 +242,7 @@ class QdrantService:
         """
         try:
             # Generate embedding for query
-            query_embedding = await self.openai_service.create_embedding(query_text)
+            query_embedding = await self._generate_embedding(query_text)
             if not query_embedding:
                 logger.warning(f"Failed to generate embedding for query: {query_text}")
                 return []
