@@ -559,7 +559,12 @@ async def websocket_transcribe(websocket: WebSocket):
 
                             # Extract user_id if provided
                             received_user_id = data.get("user_id")
+                            logger.warning(f"CONTEXT_DEBUG: Received user_id from frontend: {received_user_id}")
+                            logger.warning(f"CONTEXT_DEBUG: Current user_id in WebSocket: {user_id}")
+                            logger.warning(f"CONTEXT_DEBUG: Full context message keys: {list(data.keys())}")
+
                             if received_user_id and received_user_id != user_id:
+                                logger.warning(f"CONTEXT_DEBUG: Switching user_id from {user_id} to {received_user_id}")
                                 user_id = received_user_id
 
                                 # Load interview profile
