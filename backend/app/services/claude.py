@@ -316,14 +316,16 @@ Examples:
 
         try:
             # Step 1: Decompose question into atomic sub-questions
+            logger.warning(f"RAG_SEARCH: Decomposing question: '{question}'")
             sub_questions = await self.decompose_question(question)
+            logger.warning(f"RAG_SEARCH: Decomposed into {len(sub_questions)} sub-questions: {sub_questions}")
 
             all_matches = []
             seen_ids = set()
 
             # Step 2: Search for each sub-question
             for sub_q in sub_questions:
-                logger.info(f"Searching for sub-question: '{sub_q}'")
+                logger.warning(f"RAG_SEARCH: Searching for sub-question: '{sub_q}'")
 
                 matches = await self.embedding_service.find_similar_qa_pairs(
                     user_id=user_id,
@@ -331,6 +333,7 @@ Examples:
                     similarity_threshold=0.75,  # Lower threshold to get more candidates
                     max_results=3  # Top 3 for each sub-question
                 )
+                logger.warning(f"RAG_SEARCH: Found {len(matches)} matches for sub-question '{sub_q}'")
 
                 for match in matches:
                     # Mark very high similarity matches as "exact"
