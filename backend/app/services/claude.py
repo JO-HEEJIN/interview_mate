@@ -336,6 +336,13 @@ Examples:
 
                 logger.warning(f"RAG_SEARCH: Found {len(matches)} matches for sub-question '{sub_q}'")
 
+                # Log similarity scores
+                for match in matches:
+                    logger.warning(
+                        f"RAG_SEARCH: Match - Q: '{match.get('question', '')[:80]}...' "
+                        f"Similarity: {match.get('similarity', 0):.4f}"
+                    )
+
                 for match in matches:
                     # Mark very high similarity matches as "exact"
                     if match.get('similarity', 0) > 0.92:
