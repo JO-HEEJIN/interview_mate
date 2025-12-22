@@ -205,6 +205,11 @@ class QAPairList(BaseModel):
     qa_pairs: List[QAPairItem] = Field(description="List of Q&A pairs extracted from text")
 
 
+class DecomposedQueries(BaseModel):
+    """Pydantic model for decomposing complex questions into atomic sub-questions"""
+    queries: List[str] = Field(description="List of atomic sub-questions derived from the complex question")
+
+
 class ClaudeService:
     def __init__(self, supabase: Optional[Client] = None):
         self.client = Anthropic(api_key=settings.ANTHROPIC_API_KEY)
@@ -227,6 +232,140 @@ class ClaudeService:
         self._qa_pairs_list = []  # Original list for similarity fallback
 
         logger.info("Claude service initialized with OpenAI Embeddings and Anthropic Prompt Caching")
+
+    async def decompose_question(self, question: str) -> List[str]:
+        """
+        Decompose a complex interview question into simpler, atomic sub-questions.
+
+        This is critical for handling compound questions like:
+        "Introduce yourself and tell me why you're the right fit"
+        -> ["Tell me about yourself", "Why are you the right fit for this role?"]
+
+        Uses OpenAI Structured Outputs for reliable parsing.
+
+        Args:
+            question: The potentially complex interview question
+
+        Returns:
+            List of atomic sub-questions (or single-item list if already simple)
+        """
+        try:
+            logger.info(f"Decomposing question: '{question}'")
+
+            completion = await self.openai_client.beta.chat.completions.parse(
+                model="gpt-4o-2024-08-06",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": """You are an expert at analyzing interview questions.
+
+Your task: Break down complex interview questions into simple, standalone sub-questions.
+
+Rules:
+1. If the question asks about ONE thing, return it as-is in a single-item list
+2. If the question asks about MULTIPLE things, separate them into atomic questions
+3. Keep the original tone and context
+4. Don't add questions that weren't asked
+
+Examples:
+- "Tell me about yourself" -> ["Tell me about yourself"]
+- "Introduce yourself and explain why you want this role" -> ["Tell me about yourself", "Why do you want this role?"]
+- "Describe your leadership experience and how you handle conflict" -> ["Describe your leadership experience", "How do you handle conflict?"]
+"""
+                    },
+                    {"role": "user", "content": f"Decompose this question: {question}"}
+                ],
+                response_format=DecomposedQueries,
+            )
+
+            queries = completion.choices[0].message.parsed.queries
+            logger.info(f"Decomposed into {len(queries)} sub-questions: {queries}")
+            return queries
+
+        except Exception as e:
+            logger.error(f"Question decomposition failed: {str(e)}")
+            # Fallback: return original question as single-item list
+            return [question]
+
+    async def find_relevant_qa_pairs(
+        self,
+        question: str,
+        user_id: str,
+        max_total_results: int = 5
+    ) -> List[dict]:
+        """
+        Find multiple relevant Q&A pairs for a potentially complex question.
+
+        This is the KEY method that enables multi-intent handling:
+        1. Decompose question into sub-questions
+        2. Search for each sub-question using semantic similarity
+        3. Deduplicate and rank results
+        4. Return top N most relevant Q&A pairs
+
+        Args:
+            question: The user's question (may be complex/compound)
+            user_id: User ID for database search
+            max_total_results: Maximum number of Q&A pairs to return
+
+        Returns:
+            List of relevant Q&A pairs with similarity scores, sorted by relevance
+        """
+        if not self.embedding_service:
+            logger.warning("Embedding service not available for semantic search")
+            return []
+
+        try:
+            # Step 1: Decompose question into atomic sub-questions
+            sub_questions = await self.decompose_question(question)
+
+            all_matches = []
+            seen_ids = set()
+
+            # Step 2: Search for each sub-question
+            for sub_q in sub_questions:
+                logger.info(f"Searching for sub-question: '{sub_q}'")
+
+                matches = await self.embedding_service.find_similar_qa_pairs(
+                    user_id=user_id,
+                    query_text=sub_q,
+                    similarity_threshold=0.75,  # Lower threshold to get more candidates
+                    max_results=3  # Top 3 for each sub-question
+                )
+
+                for match in matches:
+                    # Mark very high similarity matches as "exact"
+                    if match.get('similarity', 0) > 0.92:
+                        match['is_exact_match'] = True
+                    else:
+                        match['is_exact_match'] = False
+
+                    # Deduplicate by ID
+                    if match['id'] not in seen_ids:
+                        all_matches.append(match)
+                        seen_ids.add(match['id'])
+
+            # Step 3: Sort by similarity (highest first) and limit results
+            all_matches.sort(key=lambda x: x.get('similarity', 0), reverse=True)
+            top_matches = all_matches[:max_total_results]
+
+            logger.info(
+                f"Found {len(top_matches)} relevant Q&A pairs for '{question}' "
+                f"(from {len(sub_questions)} sub-questions)"
+            )
+
+            # Log matches for debugging
+            for i, match in enumerate(top_matches, 1):
+                logger.info(
+                    f"  {i}. [{match.get('similarity', 0):.2%}] "
+                    f"{'EXACT' if match.get('is_exact_match') else 'SIMILAR'}: "
+                    f"{match.get('question', '')[:60]}..."
+                )
+
+            return top_matches
+
+        except Exception as e:
+            logger.error(f"Error finding relevant Q&A pairs: {str(e)}", exc_info=True)
+            return []
 
     def _get_cached_answer(self, question: str) -> Optional[str]:
         """
@@ -383,6 +522,8 @@ class ClaudeService:
         """
         Generate streaming answer with Claude API (REAL-TIME DISPLAY).
 
+        Uses RAG approach for complex questions (same as generate_answer).
+
         Args:
             question: The interview question
             resume_text: User's resume content
@@ -400,15 +541,29 @@ class ClaudeService:
         talking_points = talking_points or []
         qa_pairs = qa_pairs or []
 
-        # Check for matching Q&A pair first (using semantic similarity with OpenAI Embeddings)
-        matching_qa = await self.find_matching_qa_pair(question, qa_pairs, user_profile.get('id') if user_profile else None)
-        if matching_qa:
-            logger.info(f"Using prepared Q&A pair for streaming question: '{question}'")
-            # Yield the prepared answer directly (simulate streaming)
-            yield matching_qa['answer']
-            return
+        # Initialize session tracking
+        session_history = session_history or []
+        examples_used = examples_used or []
 
-        logger.info(f"Streaming answer for: '{question}'")
+        # RAG APPROACH: Find multiple relevant Q&A pairs
+        user_id = user_profile.get('id') if user_profile else None
+        relevant_qa_pairs = []
+
+        if user_id and self.embedding_service:
+            relevant_qa_pairs = await self.find_relevant_qa_pairs(
+                question=question,
+                user_id=user_id,
+                max_total_results=5
+            )
+
+            # If we found exactly one perfect match, use it directly
+            if len(relevant_qa_pairs) == 1 and relevant_qa_pairs[0].get('is_exact_match'):
+                logger.info(f"Using single exact match Q&A pair for streaming question: '{question}'")
+                yield relevant_qa_pairs[0]['answer']
+                return
+
+        logger.info(f"Streaming RAG answer for: '{question}'")
+        logger.info(f"Found {len(relevant_qa_pairs)} relevant Q&A pairs for synthesis")
 
         # Build context (same as non-streaming)
         context_parts = []
@@ -428,13 +583,28 @@ class ClaudeService:
             points_text = "\n".join([f"- {p.get('content', '')}" for p in talking_points])
             context_parts.append(f"KEY TALKING POINTS:\n{points_text}")
 
-        # Add Q&A pairs as reference
-        if qa_pairs:
+        # RAG: Add relevant Q&A pairs found via semantic search
+        if relevant_qa_pairs:
             qa_text = "\n\n".join([
-                f"Q: {qa.get('question', '')}\nA: {qa.get('answer', '')}"
-                for qa in qa_pairs[:5]  # Include top 5 Q&A pairs as reference
+                f"Q: {qa.get('question', '')}\n"
+                f"A: {qa.get('answer', '')}\n"
+                f"(Similarity: {qa.get('similarity', 0):.1%})"
+                for qa in relevant_qa_pairs[:5]
             ])
-            context_parts.append(f"PREPARED Q&A PAIRS (use as reference if relevant):\n{qa_text}")
+            context_parts.append(f"RELEVANT PREPARED ANSWERS (combine and adapt as needed):\n{qa_text}")
+
+        # Add session history (to avoid repeating same examples)
+        if session_history:
+            history_text = "\n\n".join([
+                f"{'Interviewer' if msg.get('role') == 'interviewer' else 'You'}: {msg.get('content', '')}"
+                for msg in session_history[-5:]  # Last 5 exchanges
+            ])
+            context_parts.append(f"SESSION HISTORY (previous questions/answers in this interview):\n{history_text}")
+
+        # Add examples already used (CRITICAL: avoid repetition)
+        if examples_used:
+            examples_text = "\n- ".join(examples_used)
+            context_parts.append(f"EXAMPLES ALREADY USED IN THIS SESSION (DO NOT REPEAT):\n- {examples_text}")
 
         context = "\n\n---\n\n".join(context_parts) if context_parts else "No specific context provided."
 
@@ -448,11 +618,34 @@ class ClaudeService:
         max_tokens = context_info["max_tokens"]
         instruction = context_info["instruction"]
 
+        # Add instruction about avoiding repetition if examples were used
+        repetition_warning = ""
+        if examples_used:
+            repetition_warning = f"\n\n🚨 CRITICAL: You have already used these examples/stories in this session:\n- {chr(10).join(['- ' + ex for ex in examples_used])}\n\nYou MUST use DIFFERENT examples or stories this time. DO NOT repeat the same examples."
+
+        # Add RAG synthesis instruction if we found multiple relevant Q&A pairs
+        rag_instruction = ""
+        if len(relevant_qa_pairs) > 1:
+            rag_instruction = f"""
+
+🎯 RAG SYNTHESIS MODE:
+The question may be asking about MULTIPLE things. I've found {len(relevant_qa_pairs)} relevant prepared answers above.
+
+Your task:
+1. Identify what parts of the question each prepared answer addresses
+2. Combine relevant information from multiple answers into ONE cohesive response
+3. Adapt the tone and structure to match the question
+4. Keep the response concise (follow the word limit: {instruction})
+
+Do NOT simply concatenate the answers - synthesize them intelligently."""
+
         user_prompt = f"""CANDIDATE BACKGROUND:
 {context}
 
 INTERVIEW QUESTION:
 {question}
+{repetition_warning}
+{rag_instruction}
 
 Generate a suggested answer ({instruction}):"""
 
@@ -668,6 +861,11 @@ Now answer the interview question following these guidelines."""
         """
         Generate an interview answer based on question and user context.
 
+        Uses RAG (Retrieval Augmented Generation) approach:
+        1. Decompose complex questions into sub-questions
+        2. Find multiple relevant Q&A pairs (not just one)
+        3. Synthesize answer combining multiple prepared answers
+
         Args:
             question: The interview question detected
             resume_text: User's resume content
@@ -688,20 +886,31 @@ Now answer the interview question following these guidelines."""
         session_history = session_history or []
         examples_used = examples_used or []
 
-        # Check for matching Q&A pair first (using semantic similarity with OpenAI Embeddings)
-        matching_qa = await self.find_matching_qa_pair(question, qa_pairs, user_profile.get('id') if user_profile else None)
-        if matching_qa:
-            logger.info(f"Using prepared Q&A pair for question: '{question}'")
-            # Return the prepared answer directly (no new examples used)
-            return (matching_qa['answer'], [])
+        # RAG APPROACH: Find multiple relevant Q&A pairs for complex questions
+        # This handles compound questions like "Introduce yourself AND tell me why OpenAI"
+        user_id = user_profile.get('id') if user_profile else None
+        relevant_qa_pairs = []
 
-        # Check cache if no Q&A match
-        if use_cache:
+        if user_id and self.embedding_service:
+            relevant_qa_pairs = await self.find_relevant_qa_pairs(
+                question=question,
+                user_id=user_id,
+                max_total_results=5  # Get up to 5 relevant Q&A pairs
+            )
+
+            # If we found exactly one perfect match (>92% similarity), use it directly
+            if len(relevant_qa_pairs) == 1 and relevant_qa_pairs[0].get('is_exact_match'):
+                logger.info(f"Using single exact match Q&A pair for question: '{question}'")
+                return (relevant_qa_pairs[0]['answer'], [])
+
+        # Check cache if no exact match
+        if use_cache and not relevant_qa_pairs:
             cached_answer = self._get_cached_answer(question)
             if cached_answer:
                 return (cached_answer, [])  # Return tuple for consistency
 
-        logger.info(f"Generating answer for question: '{question}'")
+        logger.info(f"Generating RAG answer for question: '{question}'")
+        logger.info(f"Found {len(relevant_qa_pairs)} relevant Q&A pairs for synthesis")
         logger.info(f"Context: resume={len(resume_text)} chars, stories={len(star_stories)}, points={len(talking_points)}, qa_pairs={len(qa_pairs)}")
 
         # Build context
@@ -725,13 +934,16 @@ Now answer the interview question following these guidelines."""
             points_text = "\n".join([f"- {p.get('content', '')}" for p in talking_points])
             context_parts.append(f"KEY TALKING POINTS:\n{points_text}")
 
-        # Add Q&A pairs as reference (even if no exact match, Claude can use them as examples)
-        if qa_pairs:
+        # RAG: Add relevant Q&A pairs found via semantic search
+        if relevant_qa_pairs:
+            # Include top relevant Q&A pairs as context for synthesis
             qa_text = "\n\n".join([
-                f"Q: {qa.get('question', '')}\nA: {qa.get('answer', '')}"
-                for qa in qa_pairs[:5]  # Include top 5 Q&A pairs as reference
+                f"Q: {qa.get('question', '')}\n"
+                f"A: {qa.get('answer', '')}\n"
+                f"(Similarity: {qa.get('similarity', 0):.1%})"
+                for qa in relevant_qa_pairs[:5]  # Top 5 most relevant
             ])
-            context_parts.append(f"PREPARED Q&A PAIRS (use as reference if relevant):\n{qa_text}")
+            context_parts.append(f"RELEVANT PREPARED ANSWERS (combine and adapt as needed):\n{qa_text}")
 
         # Add session history (to avoid repeating same examples)
         if session_history:
@@ -762,12 +974,29 @@ Now answer the interview question following these guidelines."""
         if examples_used:
             repetition_warning = f"\n\n🚨 CRITICAL: You have already used these examples/stories in this session:\n- {chr(10).join(['- ' + ex for ex in examples_used])}\n\nYou MUST use DIFFERENT examples or stories this time. DO NOT repeat the same examples."
 
+        # Add RAG synthesis instruction if we found multiple relevant Q&A pairs
+        rag_instruction = ""
+        if len(relevant_qa_pairs) > 1:
+            rag_instruction = f"""
+
+🎯 RAG SYNTHESIS MODE:
+The question may be asking about MULTIPLE things. I've found {len(relevant_qa_pairs)} relevant prepared answers above.
+
+Your task:
+1. Identify what parts of the question each prepared answer addresses
+2. Combine relevant information from multiple answers into ONE cohesive response
+3. Adapt the tone and structure to match the question
+4. Keep the response concise (follow the word limit: {instruction})
+
+Do NOT simply concatenate the answers - synthesize them intelligently."""
+
         user_prompt = f"""CANDIDATE BACKGROUND:
 {context}
 
 INTERVIEW QUESTION:
 {question}
 {repetition_warning}
+{rag_instruction}
 
 Generate a suggested answer ({instruction}):"""
 
