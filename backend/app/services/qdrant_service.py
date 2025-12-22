@@ -3,6 +3,7 @@ Qdrant Vector Search Service
 Handles all vector similarity search using Qdrant
 """
 
+import asyncio
 import logging
 from typing import List, Dict, Optional, Tuple
 from openai import AsyncOpenAI
@@ -248,7 +249,9 @@ class QdrantService:
                 return []
 
             # Search in Qdrant using query_points (v1.7+ API)
-            search_result = self.client.query_points(
+            # CRITICAL: QdrantClient is synchronous - must run in thread pool to avoid blocking event loop
+            search_result = await asyncio.to_thread(
+                self.client.query_points,
                 collection_name=self.COLLECTION_NAME,
                 query=query_embedding,  # Just pass the list!
                 query_filter=Filter(

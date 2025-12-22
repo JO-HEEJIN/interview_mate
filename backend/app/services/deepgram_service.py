@@ -267,8 +267,9 @@ class DeepgramStreamingService:
             max_consecutive_timeouts = 5  # Break if 5 timeouts in a row
 
             logger.info("🔄 FFmpeg converter loop started")
+            should_stop = False  # Flag to break outer loop
 
-            while not self.stop_converter and self.ffmpeg_process:
+            while not self.stop_converter and not should_stop and self.ffmpeg_process:
                 try:
                     # Check if ffmpeg is still alive
                     if self.ffmpeg_process.poll() is not None:
@@ -345,6 +346,7 @@ class DeepgramStreamingService:
                                             except Exception as e:
                                                 logger.error(f"Failed to call error callback: {e}")
 
+                                        should_stop = True  # Signal outer loop to stop
                                         break
 
                             except Exception as send_err:
@@ -355,6 +357,11 @@ class DeepgramStreamingService:
                                     break
                                 # Break out of retry loop on non-timeout errors
                                 break
+
+                        # Check if we should stop the outer loop (after retry loop completes)
+                        if should_stop:
+                            logger.info("🛑 Stopping converter due to consecutive failures")
+                            break
                     else:
                         logger.warning("⚠️ Connection not ready, skipping chunk")
 
