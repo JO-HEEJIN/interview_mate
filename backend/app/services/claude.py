@@ -913,12 +913,18 @@ Now answer the interview question following these guidelines."""
                 max_total_results=5  # Get up to 5 relevant Q&A pairs
             )
 
-            # If we found exactly one perfect match (>92% similarity), use it directly
-            if len(relevant_qa_pairs) == 1 and relevant_qa_pairs[0].get('is_exact_match'):
-                logger.info(f"Using single exact match Q&A pair for question: '{question}'")
-                return (relevant_qa_pairs[0]['answer'], [])
+            # If we found a good match (>= 62% similarity), use the stored answer directly
+            # No need to generate a new answer when we already have a prepared one
+            if relevant_qa_pairs and relevant_qa_pairs[0].get('similarity', 0) >= 0.62:
+                best_match = relevant_qa_pairs[0]
+                similarity = best_match.get('similarity', 0)
+                logger.info(
+                    f"Using stored Q&A answer (similarity: {similarity:.1%}) for question: '{question}' "
+                    f"Matched: '{best_match.get('question', '')[:80]}...'"
+                )
+                return (best_match['answer'], [])
 
-        # Check cache if no exact match
+        # Check cache if no good match found
         if use_cache and not relevant_qa_pairs:
             cached_answer = self._get_cached_answer(question)
             if cached_answer:
