@@ -956,6 +956,12 @@ Now answer the interview question following these guidelines."""
                 max_total_results=5  # Get up to 5 relevant Q&A pairs
             )
 
+            # DEBUG: Log what we got back
+            logger.warning(f"RAG_DEBUG: relevant_qa_pairs length: {len(relevant_qa_pairs)}")
+            if relevant_qa_pairs:
+                logger.warning(f"RAG_DEBUG: relevant_qa_pairs[0] similarity: {relevant_qa_pairs[0].get('similarity', 'NO_SIMILARITY_KEY')}")
+                logger.warning(f"RAG_DEBUG: relevant_qa_pairs[0] question: {relevant_qa_pairs[0].get('question', '')[:80]}")
+
             # If we found a good match (>= 62% similarity), use the stored answer directly
             # No need to generate a new answer when we already have a prepared one
             if relevant_qa_pairs and relevant_qa_pairs[0].get('similarity', 0) >= 0.62:
