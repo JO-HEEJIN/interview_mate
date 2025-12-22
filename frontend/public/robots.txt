@@ -1,9 +1,8 @@
-# Allow all crawlers
+# https://www.robotstxt.org/robotstxt.html
 User-agent: *
 Allow: /
-
-# Disallow authentication pages
+Disallow: /api/
+Disallow: /admin/
 Disallow: /auth/
 
-# Sitemap
-Sitemap: https://interviewmate.ai/sitemap.xml
+Sitemap: https://interviewmate.tech/sitemap.xml

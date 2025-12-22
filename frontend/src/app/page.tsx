@@ -6,11 +6,11 @@ export default function Home() {
       <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-center py-16 px-8 bg-white dark:bg-black">
         <div className="flex flex-col items-center gap-8 text-center">
           <h1 className="text-4xl font-bold tracking-tight text-black dark:text-zinc-50">
-            InterviewMate.ai
+            InterviewMate
           </h1>
           <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
             Real-time AI interview assistant. Get instant answer suggestions
-            based on your experience while practicing for interviews.
+            based on your experience during live video interviews.
           </p>
 
           <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
@@ -47,10 +47,10 @@ export default function Home() {
             </div>
             <div className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
               <h3 className="font-semibold text-zinc-900 dark:text-zinc-100">
-                3. Practice & Ace It
+                3. Use During Real Interviews
               </h3>
               <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-                Practice with AI-generated answers and succeed
+                Get real-time AI suggestions during your video interviews
               </p>
             </div>
           </div>

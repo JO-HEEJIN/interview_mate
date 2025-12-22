@@ -120,7 +120,13 @@ class DeepgramStreamingService:
         logger.info("🔄 State reset for new connection")
 
         # Store event loop for thread-safe async scheduling
-        self._loop = asyncio.get_event_loop()
+        # Use get_running_loop() to get the actual running loop
+        try:
+            self._loop = asyncio.get_running_loop()
+        except RuntimeError:
+            # Fallback to get_event_loop() if not in async context
+            self._loop = asyncio.get_event_loop()
+            logger.warning("⚠️ Using get_event_loop() fallback - this might cause issues")
 
         # Set up event handlers
         connection.on(EventType.MESSAGE, self._handle_transcript(self._on_transcript))
@@ -283,11 +289,19 @@ class DeepgramStreamingService:
                                 self.connection.send_media(data),
                                 self._loop
                             )
-                            # Wait briefly to ensure delivery (with timeout)
-                            future.result(timeout=0.5)
+                            # Wait with longer timeout to handle network latency
+                            # Increased from 0.5s to 2.0s to prevent spurious failures
+                            future.result(timeout=2.0)
                             logger.debug(f"✅ Sent {len(data)} bytes to Deepgram")
+                        except TimeoutError:
+                            logger.warning(f"⚠️ Timeout sending to Deepgram (network slow?), continuing...")
+                            # Don't break - continue with next chunk
                         except Exception as send_err:
                             logger.error(f"❌ Failed to send to Deepgram: {send_err}")
+                            # Check if connection is still valid
+                            if not self.is_connected:
+                                logger.error("Connection lost, stopping converter loop")
+                                break
                     else:
                         logger.warning("⚠️ Connection not ready, skipping chunk")
 

@@ -51,7 +51,7 @@ export default function LoginPage() {
             <div className="max-w-md w-full space-y-8">
                 <div>
                     <h1 className="text-center text-3xl font-bold text-gray-900">
-                        InterviewMate.ai
+                        InterviewMate
                     </h1>
                     <h2 className="mt-6 text-center text-2xl font-semibold text-gray-900">
                         Sign in to your account

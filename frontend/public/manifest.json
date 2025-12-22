@@ -1,7 +1,7 @@
 {
-  "name": "InterviewMate.ai - AI Interview Assistant",
+  "name": "InterviewMate - AI Interview Assistant",
   "short_name": "InterviewMate",
-  "description": "Real-time AI-powered interview assistant",
+  "description": "Real-time AI assistant for live video interviews",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

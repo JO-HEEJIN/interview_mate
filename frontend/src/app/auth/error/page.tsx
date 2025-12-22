@@ -42,7 +42,7 @@ function AuthErrorContent() {
     return (
         <div className="max-w-md w-full space-y-8 text-center">
             <div>
-                <h1 className="text-3xl font-bold text-gray-900">InterviewMate.ai</h1>
+                <h1 className="text-3xl font-bold text-gray-900">InterviewMate</h1>
                 <h2 className="mt-6 text-2xl font-semibold text-red-600">
                     Authentication Error
                 </h2>
