@@ -371,7 +371,7 @@ async def websocket_transcribe(websocket: WebSocket):
                             "question_type": question_type
                         })
 
-                        # Auto-generate answer with Q&A matching
+                        # Auto-generate answer with RAG approach
                         # 1. Send temporary answer immediately
                         temp_answer = claude_service.get_temporary_answer(question_type)
                         await manager.send_json(websocket, {
@@ -380,109 +380,80 @@ async def websocket_transcribe(websocket: WebSocket):
                             "answer": temp_answer
                         })
 
-                        # 2. Check for uploaded Q&A match (OPTIMIZED: <1ms lookup)
-                        matched_qa = claude_service.find_matching_qa_pair_fast(question)
+                        # 2. Generate answer using RAG (handles both simple and complex questions)
+                        # RAG will automatically:
+                        # - Find single exact match for simple questions (return directly)
+                        # - Find multiple relevant Q&A pairs for complex questions (synthesize)
+                        logger.info("Generating answer with RAG approach")
 
-                        if matched_qa:
-                            # 3a. Return uploaded answer (instant)
-                            qa_pair_id = matched_qa.get("id")
-                            logger.info(f"Using uploaded Q&A pair (ID: {qa_pair_id})")
+                        # NEW: Get session history and examples for context
+                        session_history = await get_session_history(session_id) if session_id else []
+                        session_examples = await get_session_examples(session_id) if session_id else []
+                        logger.info(f"Using session context: {len(session_history)} messages, {len(session_examples)} examples used")
 
-                            # Increment usage count in background
-                            if qa_pair_id:
-                                asyncio.create_task(increment_qa_usage(qa_pair_id))
+                        # Signal streaming start
+                        await manager.send_json(websocket, {
+                            "type": "answer_stream_start",
+                            "question": question,
+                            "source": "generated"
+                        })
 
+                        # Stream answer chunks in real-time with RAG
+                        generated_answer = ""
+                        async for chunk in llm_service.generate_answer_stream(
+                            question=question,
+                            resume_text=user_context["resume_text"],
+                            star_stories=user_context["star_stories"],
+                            talking_points=user_context["talking_points"],
+                            qa_pairs=user_context["qa_pairs"],  # Pass Q&A pairs for RAG
+                            format="bullet",  # Bullet point format for real-time interview
+                            user_profile=user_profile,
+                            session_history=session_history,
+                            examples_used=session_examples
+                        ):
+                            generated_answer += chunk
                             await manager.send_json(websocket, {
-                                "type": "answer",
+                                "type": "answer_stream_chunk",
                                 "question": question,
-                                "answer": matched_qa["answer"],
-                                "source": "uploaded",
-                                "qa_pair_id": qa_pair_id,
-                                "is_streaming": False
-                            })
-
-                            # NEW: Save uploaded answer to session
-                            if session_id:
-                                await save_session_message(
-                                    session_id=session_id,
-                                    role="candidate",
-                                    message_type="answer",
-                                    content=matched_qa["answer"],
-                                    question_type=question_type,
-                                    source="uploaded"
-                                )
-
-                        else:
-                            # 3b. Generate with streaming LLM (Phase 1.3)
-                            logger.info("No matching Q&A found, generating with streaming LLM")
-
-                            # NEW: Get session history and examples for context
-                            session_history = await get_session_history(session_id) if session_id else []
-                            session_examples = await get_session_examples(session_id) if session_id else []
-                            logger.info(f"Using session context: {len(session_history)} messages, {len(session_examples)} examples used")
-
-                            # Signal streaming start
-                            await manager.send_json(websocket, {
-                                "type": "answer_stream_start",
-                                "question": question,
+                                "chunk": chunk,
                                 "source": "generated"
                             })
 
-                            # Stream answer chunks in real-time
-                            generated_answer = ""
-                            async for chunk in llm_service.generate_answer_stream(
-                                question=question,
-                                resume_text=user_context["resume_text"],
-                                star_stories=user_context["star_stories"],
-                                talking_points=user_context["talking_points"],
-                                format="bullet",  # Bullet point format for real-time interview
-                                user_profile=user_profile,
-                                session_history=session_history,
-                                examples_used=session_examples
-                            ):
-                                generated_answer += chunk
-                                await manager.send_json(websocket, {
-                                    "type": "answer_stream_chunk",
-                                    "question": question,
-                                    "chunk": chunk,
-                                    "source": "generated"
-                                })
+                        # NEW: Extract examples and save generated answer to session
+                        if session_id and generated_answer:
+                            # Extract examples from answer
+                            import re
+                            new_examples = []
+                            example_patterns = re.findall(
+                                r'(?:Project|at|working on|led|built)\s+([A-Z][A-Za-z0-9\s]{2,30})',
+                                generated_answer
+                            )
+                            for match in example_patterns:
+                                cleaned = match.strip()
+                                if len(cleaned) > 3 and cleaned not in session_examples:
+                                    new_examples.append(cleaned)
 
-                            # NEW: Extract examples and save generated answer to session
-                            if session_id and generated_answer:
-                                # Extract examples from answer
-                                import re
-                                new_examples = []
-                                example_patterns = re.findall(
-                                    r'(?:Project|at|working on|led|built)\s+([A-Z][A-Za-z0-9\s]{2,30})',
-                                    generated_answer
-                                )
-                                for match in example_patterns:
-                                    cleaned = match.strip()
-                                    if len(cleaned) > 3 and cleaned not in session_examples:
-                                        new_examples.append(cleaned)
+                            logger.info(f"Extracted {len(new_examples)} new examples: {new_examples}")
 
-                                logger.info(f"Extracted {len(new_examples)} new examples: {new_examples}")
+                            await save_session_message(
+                                session_id=session_id,
+                                role="candidate",
+                                message_type="answer",
+                                content=generated_answer,
+                                question_type=question_type,
+                                source="ai_generated",
+                                examples_used=new_examples
+                            )
 
-                                await save_session_message(
-                                    session_id=session_id,
-                                    role="candidate",
-                                    message_type="answer",
-                                    content=generated_answer,
-                                    question_type=question_type,
-                                    source="ai_generated",
-                                    examples_used=new_examples
-                                )
+                            # Update local tracking
+                            session_examples_used.extend(new_examples)
 
-                                # Update local tracking
-                                session_examples_used.extend(new_examples)
-
-                            # Signal streaming end
-                            await manager.send_json(websocket, {
-                                "type": "answer_stream_end",
-                                "question": question,
-                                "source": "generated"
-                            })
+                        # Signal streaming end
+                        await manager.send_json(websocket, {
+                            "type": "answer_stream_end",
+                            "question": question,
+                            "source": "generated"
+                        })
                 finally:
                     is_processing = False
 
