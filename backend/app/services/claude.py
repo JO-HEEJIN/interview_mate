@@ -549,12 +549,16 @@ Examples:
         user_id = user_profile.get('id') if user_profile else None
         relevant_qa_pairs = []
 
+        logger.warning(f"RAG_DEBUG: user_id={user_id}, embedding_service={self.embedding_service is not None}")
+
         if user_id and self.embedding_service:
+            logger.warning("RAG_DEBUG: Entering RAG code path - calling find_relevant_qa_pairs")
             relevant_qa_pairs = await self.find_relevant_qa_pairs(
                 question=question,
                 user_id=user_id,
                 max_total_results=5
             )
+            logger.warning(f"RAG_DEBUG: Found {len(relevant_qa_pairs)} relevant Q&A pairs")
 
             # If we found exactly one perfect match, use it directly
             if len(relevant_qa_pairs) == 1 and relevant_qa_pairs[0].get('is_exact_match'):
