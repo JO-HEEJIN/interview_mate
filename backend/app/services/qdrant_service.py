@@ -300,7 +300,6 @@ class QdrantService:
             return {
                 'name': self.COLLECTION_NAME,
                 'points_count': collection.points_count,
-                'vectors_count': collection.vectors_count,
                 'status': collection.status
             }
         except Exception as e:

@@ -413,3 +413,67 @@ async def migrate_user_embeddings_to_qdrant(
     except Exception as e:
         logger.error(f"Error during migration: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{user_id}/qdrant-status")
+async def check_qdrant_status(user_id: str):
+    """
+    TEMPORARY: Check Qdrant collection status and search capability
+    """
+    try:
+        qdrant = get_qdrant_service()
+        if not qdrant:
+            return {"error": "Qdrant not available"}
+        
+        # Get collection info
+        collection_info = qdrant.get_collection_info()
+        
+        # Try a test search
+        test_results = await qdrant.search_similar_qa_pairs(
+            query_text="introduce yourself",
+            user_id=user_id,
+            similarity_threshold=0.5,
+            limit=5
+        )
+        
+        # Scroll to see what's actually in the collection for this user
+        from qdrant_client.models import Filter, FieldCondition, MatchValue
+        scroll_result = qdrant.client.scroll(
+            collection_name=qdrant.COLLECTION_NAME,
+            scroll_filter=Filter(
+                must=[
+                    FieldCondition(
+                        key="user_id",
+                        match=MatchValue(value=user_id)
+                    )
+                ]
+            ),
+            limit=10
+        )
+        
+        points = scroll_result[0] if scroll_result else []
+        
+        return {
+            "collection_info": collection_info,
+            "test_search_results": len(test_results),
+            "sample_results": [
+                {
+                    "id": r.get("id"),
+                    "question": r.get("question", "")[:100],
+                    "similarity": r.get("similarity")
+                }
+                for r in test_results[:3]
+            ],
+            "user_points_in_collection": len(points),
+            "sample_points": [
+                {
+                    "id": str(p.id),
+                    "question": p.payload.get("question", "")[:100] if p.payload else "No payload"
+                }
+                for p in points[:3]
+            ]
+        }
+        
+    except Exception as e:
+        logger.error(f"Error checking Qdrant status: {e}", exc_info=True)
+        return {"error": str(e)}
