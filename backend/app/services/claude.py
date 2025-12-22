@@ -330,7 +330,7 @@ Examples:
                 matches = await self.qdrant_service.search_similar_qa_pairs(
                     query_text=sub_q,
                     user_id=user_id,
-                    similarity_threshold=0.75,
+                    similarity_threshold=0.60,
                     limit=3
                 )
 
