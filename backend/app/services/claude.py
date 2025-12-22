@@ -1450,15 +1450,19 @@ def get_claude_service(supabase: Optional[Client] = None) -> ClaudeService:
     """Get or create singleton Claude service instance"""
     global _claude_service
     if _claude_service is None:
-        # Initialize Qdrant service if configured
+        # Initialize Qdrant service if configured (optional, graceful fallback)
         qdrant_service = None
         if settings.QDRANT_URL:
-            from app.services.qdrant_service import QdrantService
-            qdrant_service = QdrantService(
-                qdrant_url=settings.QDRANT_URL,
-                openai_api_key=settings.OPENAI_API_KEY
-            )
-            logger.info("Initialized ClaudeService with Qdrant for vector search")
+            try:
+                from app.services.qdrant_service import QdrantService
+                qdrant_service = QdrantService(
+                    qdrant_url=settings.QDRANT_URL,
+                    openai_api_key=settings.OPENAI_API_KEY
+                )
+                logger.info("Initialized ClaudeService with Qdrant for vector search")
+            except Exception as e:
+                logger.warning(f"Failed to initialize Qdrant (will use pgvector fallback): {e}")
+                qdrant_service = None
 
         _claude_service = ClaudeService(supabase, qdrant_service)
     return _claude_service

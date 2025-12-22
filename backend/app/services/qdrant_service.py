@@ -247,10 +247,10 @@ class QdrantService:
                 logger.warning(f"Failed to generate embedding for query: {query_text}")
                 return []
 
-            # Search in Qdrant
-            results = self.client.search(
+            # Search in Qdrant using query_points (v1.7+ API)
+            search_result = self.client.query_points(
                 collection_name=self.COLLECTION_NAME,
-                query_vector=query_embedding,  # Just pass the list!
+                query=query_embedding,  # Just pass the list!
                 query_filter=Filter(
                     must=[
                         FieldCondition(
@@ -260,8 +260,10 @@ class QdrantService:
                     ]
                 ),
                 limit=limit,
-                score_threshold=similarity_threshold
+                score_threshold=similarity_threshold,
+                with_payload=True
             )
+            results = search_result.points
 
             # Convert to standard format
             qa_pairs = [
