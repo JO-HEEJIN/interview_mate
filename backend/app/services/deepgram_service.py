@@ -286,36 +286,61 @@ class DeepgramStreamingService:
                     # Send converted PCM data to Deepgram
                     # send_media() is async but we're in a sync thread, so schedule it
                     if self.connection and self.is_connected:
-                        try:
-                            future = asyncio.run_coroutine_threadsafe(
-                                self.connection.send_media(data),
-                                self._loop
-                            )
-                            # Wait with longer timeout to handle network latency
-                            # Increased from 0.5s to 2.0s, then to 5.0s for long questions
-                            future.result(timeout=5.0)
-                            logger.debug(f"✅ Sent {len(data)} bytes to Deepgram")
-                            consecutive_timeouts = 0  # Reset counter on success
-                        except TimeoutError:
-                            consecutive_timeouts += 1
-                            logger.warning(
-                                f"⚠️ Timeout sending to Deepgram (network slow?) "
-                                f"[{consecutive_timeouts}/{max_consecutive_timeouts}]"
-                            )
+                        # Retry logic: try up to 3 times with exponential backoff
+                        max_retries = 3
+                        retry_delay = 0.1  # Start with 100ms
 
-                            # Break if too many consecutive timeouts
-                            if consecutive_timeouts >= max_consecutive_timeouts:
-                                logger.error(
-                                    f"❌ {max_consecutive_timeouts} consecutive timeouts, "
-                                    "connection likely broken. Stopping converter."
+                        for attempt in range(max_retries):
+                            try:
+                                future = asyncio.run_coroutine_threadsafe(
+                                    self.connection.send_media(data),
+                                    self._loop
                                 )
-                                break
-                            # Otherwise continue with next chunk
-                        except Exception as send_err:
-                            logger.error(f"❌ Failed to send to Deepgram: {send_err}")
-                            # Check if connection is still valid
-                            if not self.is_connected:
-                                logger.error("Connection lost, stopping converter loop")
+                                # Wait with longer timeout to handle network latency
+                                # Increased from 0.5s to 2.0s, then to 5.0s for long questions
+                                future.result(timeout=5.0)
+                                logger.debug(f"✅ Sent {len(data)} bytes to Deepgram")
+                                consecutive_timeouts = 0  # Reset counter on success
+                                break  # Success - exit retry loop
+
+                            except TimeoutError:
+                                if attempt < max_retries - 1:
+                                    # Retry with backoff
+                                    logger.warning(
+                                        f"⚠️ Timeout sending to Deepgram, retrying "
+                                        f"(attempt {attempt + 1}/{max_retries})..."
+                                    )
+                                    import time
+                                    time.sleep(retry_delay)
+                                    retry_delay *= 2  # Exponential backoff
+                                else:
+                                    # Final attempt failed
+                                    consecutive_timeouts += 1
+                                    logger.error(
+                                        f"❌ Failed to send after {max_retries} attempts. "
+                                        f"Consecutive failures: [{consecutive_timeouts}/{max_consecutive_timeouts}]"
+                                    )
+
+                                    # Check connection health
+                                    if not self.is_connected:
+                                        logger.error("❌ Connection lost during timeout, stopping converter")
+                                        break
+
+                                    # Break if too many consecutive failures
+                                    if consecutive_timeouts >= max_consecutive_timeouts:
+                                        logger.error(
+                                            f"❌ {max_consecutive_timeouts} consecutive failures, "
+                                            "Deepgram connection unstable. Stopping converter."
+                                        )
+                                        break
+
+                            except Exception as send_err:
+                                logger.error(f"❌ Failed to send to Deepgram: {send_err}")
+                                # Check if connection is still valid
+                                if not self.is_connected:
+                                    logger.error("Connection lost, stopping converter loop")
+                                    break
+                                # Break out of retry loop on non-timeout errors
                                 break
                     else:
                         logger.warning("⚠️ Connection not ready, skipping chunk")
