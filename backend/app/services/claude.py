@@ -376,7 +376,9 @@ class ClaudeService:
         talking_points: list = None,
         qa_pairs: list = None,
         format: str = "paragraph",
-        user_profile: Optional[dict] = None
+        user_profile: Optional[dict] = None,
+        session_history: list = None,
+        examples_used: list = None
     ):
         """
         Generate streaming answer with Claude API (REAL-TIME DISPLAY).
@@ -386,6 +388,8 @@ class ClaudeService:
             resume_text: User's resume content
             star_stories: List of STAR stories
             talking_points: List of key talking points
+            session_history: Previous Q&A from this session
+            examples_used: Examples already used in this session
             qa_pairs: List of prepared Q&A pairs
             format: "bullet" or "paragraph" (for compatibility)
 
@@ -657,8 +661,10 @@ Now answer the interview question following these guidelines."""
         talking_points: list = None,
         qa_pairs: list = None,
         use_cache: bool = True,
-        user_profile: Optional[dict] = None
-    ) -> str:
+        user_profile: Optional[dict] = None,
+        session_history: list = None,
+        examples_used: list = None
+    ) -> tuple[str, list]:
         """
         Generate an interview answer based on question and user context.
 
@@ -668,26 +674,32 @@ Now answer the interview question following these guidelines."""
             star_stories: List of STAR stories
             talking_points: List of key talking points
             qa_pairs: List of prepared Q&A pairs
+            session_history: Previous Q&A from this session (to avoid repetition)
+            examples_used: Examples already used in this session (to avoid repetition)
 
         Returns:
-            Generated answer suggestion
+            Tuple of (answer, examples_used_in_this_answer)
         """
         star_stories = star_stories or []
         talking_points = talking_points or []
         qa_pairs = qa_pairs or []
 
+        # Initialize session tracking
+        session_history = session_history or []
+        examples_used = examples_used or []
+
         # Check for matching Q&A pair first (using semantic similarity with OpenAI Embeddings)
         matching_qa = await self.find_matching_qa_pair(question, qa_pairs, user_profile.get('id') if user_profile else None)
         if matching_qa:
             logger.info(f"Using prepared Q&A pair for question: '{question}'")
-            # Return the prepared answer directly
-            return matching_qa['answer']
+            # Return the prepared answer directly (no new examples used)
+            return (matching_qa['answer'], [])
 
         # Check cache if no Q&A match
         if use_cache:
             cached_answer = self._get_cached_answer(question)
             if cached_answer:
-                return cached_answer
+                return (cached_answer, [])  # Return tuple for consistency
 
         logger.info(f"Generating answer for question: '{question}'")
         logger.info(f"Context: resume={len(resume_text)} chars, stories={len(star_stories)}, points={len(talking_points)}, qa_pairs={len(qa_pairs)}")
@@ -721,6 +733,19 @@ Now answer the interview question following these guidelines."""
             ])
             context_parts.append(f"PREPARED Q&A PAIRS (use as reference if relevant):\n{qa_text}")
 
+        # Add session history (to avoid repeating same examples)
+        if session_history:
+            history_text = "\n\n".join([
+                f"{'Interviewer' if msg.get('role') == 'interviewer' else 'You'}: {msg.get('content', '')}"
+                for msg in session_history[-5:]  # Last 5 exchanges
+            ])
+            context_parts.append(f"SESSION HISTORY (previous questions/answers in this interview):\n{history_text}")
+
+        # Add examples already used (CRITICAL: avoid repetition)
+        if examples_used:
+            examples_text = "\n- ".join(examples_used)
+            context_parts.append(f"EXAMPLES ALREADY USED IN THIS SESSION (DO NOT REPEAT):\n- {examples_text}")
+
         context = "\n\n---\n\n".join(context_parts) if context_parts else "No specific context provided."
 
         system_prompt = self._get_system_prompt(user_profile)
@@ -732,11 +757,17 @@ Now answer the interview question following these guidelines."""
         max_tokens = context_info["max_tokens"]
         instruction = context_info["instruction"]
 
+        # Add instruction about avoiding repetition if examples were used
+        repetition_warning = ""
+        if examples_used:
+            repetition_warning = f"\n\n🚨 CRITICAL: You have already used these examples/stories in this session:\n- {chr(10).join(['- ' + ex for ex in examples_used])}\n\nYou MUST use DIFFERENT examples or stories this time. DO NOT repeat the same examples."
+
         user_prompt = f"""CANDIDATE BACKGROUND:
 {context}
 
 INTERVIEW QUESTION:
 {question}
+{repetition_warning}
 
 Generate a suggested answer ({instruction}):"""
 
@@ -760,15 +791,29 @@ Generate a suggested answer ({instruction}):"""
             answer = response.content[0].text
             logger.info(f"Generated answer: {len(answer)} chars")
 
+            # Extract examples/projects mentioned in the answer (simple heuristic)
+            # Look for capitalized phrases that might be project/company names
+            new_examples = []
+            import re
+            # Match patterns like "Project X", "at Company Y", "working on Z"
+            example_patterns = re.findall(r'(?:Project|at|working on|led|built)\s+([A-Z][A-Za-z0-9\s]{2,30})', answer)
+            for match in example_patterns:
+                cleaned = match.strip()
+                if len(cleaned) > 3 and cleaned not in examples_used:
+                    new_examples.append(cleaned)
+
+            if new_examples:
+                logger.info(f"Extracted {len(new_examples)} new examples from answer: {new_examples}")
+
             # Cache the answer for future use
             if use_cache:
                 self._cache_answer(question, answer)
 
-            return answer
+            return (answer, new_examples)
 
         except Exception as e:
             logger.error(f"Claude API error: {str(e)}", exc_info=True)
-            return "Error generating answer. Please try again."
+            return ("Error generating answer. Please try again.", [])
 
     async def detect_question(self, transcription: str) -> dict:
         """

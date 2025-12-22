@@ -1,10 +1,11 @@
 """
-WebSocket endpoint for real-time audio transcription
+WebSocket endpoint for real-time audio transcription with session memory
 """
 
 import json
 import asyncio
 import logging
+from datetime import datetime
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from app.services.deepgram_service import deepgram_service
 from app.services.claude import claude_service, detect_question_fast
@@ -15,6 +16,108 @@ from app.core.supabase import get_supabase_client
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+
+# Helper functions for session management
+async def create_interview_session(user_id: str, title: str = "Interview Practice") -> str:
+    """Create a new interview session and return session_id"""
+    try:
+        supabase = get_supabase_client()
+        result = supabase.table("interview_sessions").insert({
+            "user_id": user_id,
+            "title": title,
+            "status": "active",
+            "started_at": datetime.utcnow().isoformat()
+        }).execute()
+
+        if result.data:
+            session_id = result.data[0]["id"]
+            logger.info(f"Created interview session: {session_id}")
+            return session_id
+        return None
+    except Exception as e:
+        logger.error(f"Failed to create session: {e}")
+        return None
+
+
+async def save_session_message(
+    session_id: str,
+    role: str,
+    message_type: str,
+    content: str,
+    question_type: str = None,
+    source: str = None,
+    examples_used: list = None
+):
+    """Save a message to the interview session"""
+    try:
+        supabase = get_supabase_client()
+
+        # Get sequence number
+        count_result = supabase.table("session_messages").select(
+            "sequence_number", count="exact"
+        ).eq("session_id", session_id).execute()
+
+        sequence_number = (count_result.count or 0) + 1
+
+        data = {
+            "session_id": session_id,
+            "role": role,
+            "message_type": message_type,
+            "content": content,
+            "question_type": question_type,
+            "source": source,
+            "examples_used": examples_used or [],
+            "sequence_number": sequence_number,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+
+        supabase.table("session_messages").insert(data).execute()
+        logger.debug(f"Saved session message ({role}/{message_type})")
+
+    except Exception as e:
+        logger.error(f"Failed to save session message: {e}")
+
+
+async def get_session_history(session_id: str) -> list:
+    """Get session history for context"""
+    try:
+        supabase = get_supabase_client()
+        result = supabase.rpc("get_session_history", {
+            "session_id_param": session_id
+        }).execute()
+
+        return result.data or []
+    except Exception as e:
+        logger.error(f"Failed to get session history: {e}")
+        return []
+
+
+async def get_session_examples(session_id: str) -> list:
+    """Get all examples used in session"""
+    try:
+        supabase = get_supabase_client()
+        result = supabase.rpc("get_session_examples", {
+            "session_id_param": session_id
+        }).execute()
+
+        return [row["example"] for row in (result.data or [])]
+    except Exception as e:
+        logger.error(f"Failed to get session examples: {e}")
+        return []
+
+
+async def end_interview_session(session_id: str):
+    """End interview session"""
+    try:
+        supabase = get_supabase_client()
+        supabase.rpc("end_interview_session", {
+            "session_id_param": session_id
+        }).execute()
+
+        logger.info(f"Ended interview session: {session_id}")
+    except Exception as e:
+        logger.error(f"Failed to end session: {e}")
 
 
 async def increment_qa_usage(qa_pair_id: str):
@@ -190,6 +293,10 @@ async def websocket_transcribe(websocket: WebSocket):
     total_audio_bytes = 0
     last_processed_question = ""
     deepgram_connected = False
+
+    # Session memory (NEW: track session for memory and export)
+    session_id = None
+    session_examples_used = []  # Track examples used to avoid repetition
 
     logger.info("WebSocket transcription session started")
 
