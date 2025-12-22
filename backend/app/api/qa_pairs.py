@@ -339,3 +339,77 @@ async def increment_usage(
     except Exception as e:
         logger.error(f"Error incrementing usage: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/{user_id}/migrate-to-qdrant")
+async def migrate_user_embeddings_to_qdrant(
+    user_id: str,
+    supabase: Client = Depends(get_supabase_client)
+):
+    """
+    TEMPORARY: Migrate user's Q&A embeddings from Supabase to Qdrant.
+    This endpoint will be removed after migration is complete.
+    """
+    try:
+        from app.core.config import settings
+        
+        # Check if Qdrant is configured
+        if not settings.QDRANT_URL:
+            raise HTTPException(status_code=503, detail="Qdrant not configured")
+        
+        # Get Qdrant service
+        qdrant = get_qdrant_service()
+        if not qdrant:
+            raise HTTPException(status_code=503, detail="Qdrant service unavailable")
+        
+        # Fetch Q&A pairs with embeddings from Supabase
+        result = supabase.table('qa_pairs')\
+            .select('*')\
+            .eq('user_id', user_id)\
+            .not_.is_('question_embedding', 'null')\
+            .execute()
+        
+        qa_pairs = result.data
+        
+        if not qa_pairs:
+            return {
+                "message": "No Q&A pairs with embeddings found",
+                "total": 0,
+                "success": 0,
+                "failed": 0
+            }
+        
+        total = len(qa_pairs)
+        logger.info(f"Starting migration of {total} Q&A pairs for user {user_id}")
+        
+        # Process embeddings (handle string format if needed)
+        for qa in qa_pairs:
+            embedding = qa.get('question_embedding')
+            if isinstance(embedding, str):
+                import json
+                try:
+                    embedding_list = json.loads(embedding)
+                    qa['question_embedding'] = embedding_list
+                except Exception as e:
+                    logger.error(f"Error parsing embedding for {qa['id']}: {e}")
+                    qa['question_embedding'] = None
+        
+        # Batch upload to Qdrant
+        success_count, failed_count = await qdrant.batch_upsert_qa_pairs(qa_pairs)
+        
+        logger.info(f"Migration complete: {success_count} success, {failed_count} failed")
+        
+        # Get collection info
+        collection_info = qdrant.get_collection_info()
+        
+        return {
+            "message": "Migration completed",
+            "total": total,
+            "success": success_count,
+            "failed": failed_count,
+            "collection_points": collection_info.get('points_count', 0)
+        }
+        
+    except Exception as e:
+        logger.error(f"Error during migration: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
