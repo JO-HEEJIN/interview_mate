@@ -300,6 +300,16 @@ async def websocket_transcribe(websocket: WebSocket):
 
     logger.info("WebSocket transcription session started")
 
+    # Send immediate acknowledgment
+    try:
+        await manager.send_json(websocket, {
+            "type": "connected",
+            "message": "WebSocket connected successfully"
+        })
+        logger.info("Sent connection acknowledgment to client")
+    except Exception as e:
+        logger.error(f"Failed to send connection ack: {e}")
+
     # Deepgram transcript callback
     async def on_transcript(text: str, is_final: bool):
         nonlocal accumulated_text, is_processing
@@ -477,13 +487,22 @@ async def websocket_transcribe(websocket: WebSocket):
 
     # Connect to Deepgram using context manager
     try:
+        logger.info("Attempting to create Deepgram connection...")
         async with deepgram_service.create_connection(
             on_transcript=on_transcript,
             on_error=on_error
         ) as dg_connection:
+            logger.info("Deepgram connection created, setting up handlers...")
             # Set up event handlers and start listening
             await deepgram_service.setup_connection(dg_connection)
             deepgram_connected = True
+            logger.info("✓ Deepgram connected and ready")
+
+            # Notify client that transcription is ready
+            await manager.send_json(websocket, {
+                "type": "transcription_ready",
+                "message": "Speech recognition ready"
+            })
 
             # Main message loop
             while True:
