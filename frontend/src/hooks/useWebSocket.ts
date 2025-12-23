@@ -12,7 +12,7 @@ interface UseWebSocketOptions {
     onAnswer?: (question: string, answer: string, source?: string) => void;
     onAnswerStreamStart?: (question: string) => void;
     onAnswerStreamChunk?: (chunk: string) => void;
-    onAnswerStreamEnd?: (question: string) => void;
+    onAnswerStreamEnd?: (question: string, hasPlaceholder?: boolean) => void;
     onError?: (message: string) => void;
     onConnectionChange?: (connected: boolean) => void;
     onCreditConsumed?: (remainingCredits: number) => void;
@@ -74,7 +74,7 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
                     onAnswerStreamChunk?.(data.chunk);
                     break;
                 case 'answer_stream_end':
-                    onAnswerStreamEnd?.(data.question);
+                    onAnswerStreamEnd?.(data.question, data.has_placeholder);
                     break;
                 case 'error':
                     onError?.(data.message);

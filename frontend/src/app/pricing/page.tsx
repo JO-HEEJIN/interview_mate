@@ -260,6 +260,26 @@ export default function PricingPage() {
                       )}
                     </div>
                     <p className="text-gray-600 text-sm mt-2">{plan.description}</p>
+
+                    {/* Show before/after comparison for AI Generator */}
+                    {plan.plan_code === 'ai_generator' && (
+                      <div className="mt-4 grid grid-cols-2 gap-3">
+                        <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                          <div className="text-xs font-semibold text-red-600 mb-2">Without AI Generator</div>
+                          <div className="text-xs text-red-700 italic">
+                            "My strength is [your skill]. At [company], I achieved [metric]..."
+                          </div>
+                          <div className="text-xs text-red-600 mt-2">❌ Generic placeholders</div>
+                        </div>
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                          <div className="text-xs font-semibold text-green-600 mb-2">With AI Generator</div>
+                          <div className="text-xs text-green-700">
+                            "My strength is frontend problem-solving. At Toss, I debugged a 500 error..."
+                          </div>
+                          <div className="text-xs text-green-600 mt-2">✅ Your real experience</div>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div className="mb-6">

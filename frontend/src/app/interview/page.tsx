@@ -16,6 +16,7 @@ interface Answer {
     answer: string;
     timestamp: Date;
     source?: string;
+    hasPlaceholder?: boolean;
 }
 
 interface StarStory {
@@ -44,8 +45,8 @@ export default function PracticePage() {
     const router = useRouter();
     const [userId, setUserId] = useState<string | null>(null);
 
-    // Feature gating - check interview credits
-    const { interview_credits, isLoading: featuresLoading } = useUserFeatures(userId);
+    // Feature gating - check interview credits and AI generator
+    const { interview_credits, ai_generator_available, isLoading: featuresLoading } = useUserFeatures(userId);
     const hasCredits = interview_credits > 0;
 
     const [currentText, setCurrentText] = useState('');
@@ -127,7 +128,7 @@ export default function PracticePage() {
             streamingAnswerRef.current += chunk;
             setStreamingAnswer(prev => prev + chunk);
         },
-        onAnswerStreamEnd: (question) => {
+        onAnswerStreamEnd: (question, hasPlaceholder) => {
             console.log('Streaming answer completed for:', question);
             // Move streaming answer to final answers using ref (avoids closure issue)
             const finalAnswer = streamingAnswerRef.current;
@@ -139,6 +140,7 @@ export default function PracticePage() {
                     answer: finalAnswer,
                     timestamp: new Date(),
                     source: 'streamed',
+                    hasPlaceholder: hasPlaceholder || false,
                 }, ...prev]);
             } else {
                 console.warn('Streaming ended but answer is empty');
@@ -464,6 +466,7 @@ export default function PracticePage() {
                             streamingQuestion={streamingQuestion}
                             onRegenerate={handleRegenerate}
                             onStopGenerating={handleStopGenerating}
+                            aiGeneratorAvailable={ai_generator_available}
                         />
                     </div>
                 </div>

@@ -516,11 +516,15 @@ async def websocket_transcribe(websocket: WebSocket):
                             # Update local tracking
                             session_examples_used.extend(new_examples)
 
+                        # Detect if answer contains placeholders
+                        has_placeholder = '[' in generated_answer and ']' in generated_answer
+
                         # Signal streaming end
                         await manager.send_json(websocket, {
                             "type": "answer_stream_end",
                             "question": question,
-                            "source": "generated"
+                            "source": "generated",
+                            "has_placeholder": has_placeholder
                         })
                 finally:
                     is_processing = False
@@ -803,11 +807,15 @@ async def websocket_transcribe(websocket: WebSocket):
                                         )
                                         session_examples_used.extend(new_examples)
 
+                                    # Detect if answer contains placeholders
+                                    has_placeholder = '[' in generated_answer and ']' in generated_answer
+
                                     # Signal streaming end
                                     await manager.send_json(websocket, {
                                         "type": "answer_stream_end",
                                         "question": question,
-                                        "source": "generated"
+                                        "source": "generated",
+                                        "has_placeholder": has_placeholder
                                     })
 
                         elif msg_type == "finalize":
