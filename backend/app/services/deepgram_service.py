@@ -6,8 +6,6 @@ Converts WebM/Opus audio to linear16 PCM using ffmpeg
 
 import logging
 import asyncio
-import subprocess
-import threading
 from typing import Optional, Callable
 from deepgram import AsyncDeepgramClient
 from deepgram.core.events import EventType
@@ -23,8 +21,8 @@ class DeepgramStreamingService:
         self.connection = None
         self.is_connected = False
         self.ffmpeg_process = None
-        self.converter_thread = None
-        self.stderr_thread = None
+        self.converter_task = None
+        self.stderr_task = None
         self.listening_task = None
         self.stop_converter = False
 
@@ -62,44 +60,52 @@ class DeepgramStreamingService:
             eager_eot_threshold=0.3,  # Early end of turn detection
         )
 
-    def _cleanup_ffmpeg(self):
+    async def _cleanup_ffmpeg(self):
         """
-        Clean up existing ffmpeg process and threads.
+        Clean up existing ffmpeg process and async tasks.
         Safe to call even if nothing is running.
         """
-        logger.debug("🧹 Cleaning up ffmpeg process and threads...")
+        logger.debug("🧹 Cleaning up ffmpeg process and tasks...")
 
-        # Stop converter thread
+        # Stop converter task
         self.stop_converter = True
+
+        # Cancel async tasks
+        if self.converter_task and not self.converter_task.done():
+            logger.debug("Cancelling converter task...")
+            self.converter_task.cancel()
+            try:
+                await self.converter_task
+            except asyncio.CancelledError:
+                pass
+
+        if self.stderr_task and not self.stderr_task.done():
+            logger.debug("Cancelling stderr task...")
+            self.stderr_task.cancel()
+            try:
+                await self.stderr_task
+            except asyncio.CancelledError:
+                pass
 
         # Kill ffmpeg process if running
         if self.ffmpeg_process:
             try:
-                if self.ffmpeg_process.poll() is None:  # Still running
+                if self.ffmpeg_process.returncode is None:  # Still running
                     logger.debug("Terminating existing ffmpeg process")
                     self.ffmpeg_process.terminate()
                     try:
-                        self.ffmpeg_process.wait(timeout=1.0)
-                    except subprocess.TimeoutExpired:
+                        await asyncio.wait_for(self.ffmpeg_process.wait(), timeout=1.0)
+                    except asyncio.TimeoutError:
                         logger.warning("FFmpeg didn't terminate, killing forcefully")
                         self.ffmpeg_process.kill()
-                        self.ffmpeg_process.wait()
+                        await self.ffmpeg_process.wait()
                 self.ffmpeg_process = None
             except Exception as e:
                 logger.error(f"Error killing ffmpeg: {e}")
                 self.ffmpeg_process = None
 
-        # Wait for threads to stop
-        if self.converter_thread and self.converter_thread.is_alive():
-            logger.debug("Waiting for converter thread to stop...")
-            self.converter_thread.join(timeout=2.0)
-
-        if self.stderr_thread and self.stderr_thread.is_alive():
-            logger.debug("Waiting for stderr thread to stop...")
-            self.stderr_thread.join(timeout=2.0)
-
-        self.converter_thread = None
-        self.stderr_thread = None
+        self.converter_task = None
+        self.stderr_task = None
         logger.debug("✅ FFmpeg cleanup complete")
 
     async def setup_connection(self, connection):
@@ -111,22 +117,13 @@ class DeepgramStreamingService:
             connection: Deepgram connection object
         """
         # CRITICAL: Clean up any existing ffmpeg process from previous connection
-        self._cleanup_ffmpeg()
+        await self._cleanup_ffmpeg()
 
         self.connection = connection
 
         # Reset state for new session
         self.is_connected = False
         logger.info("🔄 State reset for new connection")
-
-        # Store event loop for thread-safe async scheduling
-        # Use get_running_loop() to get the actual running loop
-        try:
-            self._loop = asyncio.get_running_loop()
-        except RuntimeError:
-            # Fallback to get_event_loop() if not in async context
-            self._loop = asyncio.get_event_loop()
-            logger.warning("⚠️ Using get_event_loop() fallback - this might cause issues")
 
         # Set up event handlers
         connection.on(EventType.MESSAGE, self._handle_transcript(self._on_transcript))
@@ -135,7 +132,7 @@ class DeepgramStreamingService:
         connection.on(EventType.CLOSE, lambda _: logger.info("Deepgram WebSocket closed"))
 
         # Start ffmpeg immediately (streaming mode handles incomplete headers gracefully)
-        self._start_ffmpeg()
+        await self._start_ffmpeg()
         logger.info("✅ FFmpeg started and ready for streaming")
 
         # Start listening in background task (non-blocking)
@@ -144,19 +141,19 @@ class DeepgramStreamingService:
         self.is_connected = True
         logger.info("✓ Deepgram WebSocket connected and listening")
 
-    def _start_ffmpeg(self):
+    async def _start_ffmpeg(self):
         """
-        Start ffmpeg process and converter threads.
+        Start ffmpeg process and converter async tasks.
         Called immediately during setup_connection().
         """
         # Defensive: cleanup any zombie process
         if self.ffmpeg_process is not None:
             logger.warning("⚠️ FFmpeg process already exists, cleaning up first...")
-            self._cleanup_ffmpeg()
+            await self._cleanup_ffmpeg()
 
         try:
             logger.info("🚀 Starting ffmpeg process...")
-            self.ffmpeg_process = subprocess.Popen([
+            self.ffmpeg_process = await asyncio.create_subprocess_exec(
                 "ffmpeg",
                 "-loglevel", "warning",
                 "-fflags", "+genpts+igndts",
@@ -168,23 +165,16 @@ class DeepgramStreamingService:
                 "-ar", "16000",
                 "-ac", "1",
                 "-fflags", "+discardcorrupt",
-                "pipe:1"
-            ], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=8192)
+                "pipe:1",
+                stdin=asyncio.subprocess.PIPE,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
 
-            # Start background thread to read from ffmpeg and send to Deepgram
+            # Start background tasks to read from ffmpeg and send to Deepgram
             self.stop_converter = False
-            self.converter_thread = threading.Thread(
-                target=self._ffmpeg_to_deepgram_loop,
-                daemon=True
-            )
-            self.converter_thread.start()
-
-            # Start thread to monitor ffmpeg stderr for errors
-            self.stderr_thread = threading.Thread(
-                target=self._ffmpeg_stderr_monitor,
-                daemon=True
-            )
-            self.stderr_thread.start()
+            self.converter_task = asyncio.create_task(self._ffmpeg_to_deepgram_loop())
+            self.stderr_task = asyncio.create_task(self._ffmpeg_stderr_monitor())
 
             logger.info("✅ FFmpeg process started successfully")
         except Exception as e:
@@ -231,14 +221,14 @@ class DeepgramStreamingService:
 
         return handler
 
-    def _ffmpeg_stderr_monitor(self):
+    async def _ffmpeg_stderr_monitor(self):
         """Monitor ffmpeg stderr for errors and warnings."""
         try:
             while not self.stop_converter and self.ffmpeg_process:
-                line = self.ffmpeg_process.stderr.readline()
+                line = await self.ffmpeg_process.stderr.readline()
                 if not line:
                     # No more data - check if process died
-                    if self.ffmpeg_process.poll() is not None:
+                    if self.ffmpeg_process.returncode is not None:
                         logger.error(f"🔧 FFmpeg process terminated with exit code {self.ffmpeg_process.returncode}")
                     break
 
@@ -251,32 +241,33 @@ class DeepgramStreamingService:
                         logger.warning(f"🔧 FFmpeg WARNING: {error_msg}")
                     else:
                         logger.debug(f"🔧 FFmpeg: {error_msg}")
+        except asyncio.CancelledError:
+            logger.debug("FFmpeg stderr monitor cancelled")
+            raise
         except Exception as e:
             logger.error(f"Error monitoring ffmpeg stderr: {e}", exc_info=True)
 
-    def _ffmpeg_to_deepgram_loop(self):
+    async def _ffmpeg_to_deepgram_loop(self):
         """
-        Background thread that reads converted audio from ffmpeg stdout
+        Background async task that reads converted audio from ffmpeg stdout
         and sends it to Deepgram.
         """
         try:
             # Read in chunks (2560 bytes = 160ms at 16kHz mono s16le)
             chunk_size = 2560
             total_sent = 0
-            consecutive_timeouts = 0
-            max_consecutive_timeouts = 5  # Break if 5 timeouts in a row
 
             logger.info("🔄 FFmpeg converter loop started")
-            should_stop = False  # Flag to break outer loop
 
-            while not self.stop_converter and not should_stop and self.ffmpeg_process:
+            while not self.stop_converter and self.ffmpeg_process:
                 try:
                     # Check if ffmpeg is still alive
-                    if self.ffmpeg_process.poll() is not None:
+                    if self.ffmpeg_process.returncode is not None:
                         logger.error(f"❌ FFmpeg died in converter loop (exit code: {self.ffmpeg_process.returncode})")
                         break
 
-                    data = self.ffmpeg_process.stdout.read(chunk_size)
+                    # Read chunk from ffmpeg stdout
+                    data = await self.ffmpeg_process.stdout.read(chunk_size)
                     if not data:
                         logger.info("📭 No more data from ffmpeg stdout")
                         break
@@ -284,96 +275,36 @@ class DeepgramStreamingService:
                     total_sent += len(data)
                     logger.debug(f"📤 Read {len(data)} bytes from ffmpeg (total: {total_sent})")
 
-                    # Send converted PCM data to Deepgram
-                    # send_media() is async but we're in a sync thread, so schedule it
+                    # Send converted PCM data to Deepgram directly (no timeout issues!)
                     if self.connection and self.is_connected:
-                        # Retry logic: try up to 3 times with exponential backoff
-                        max_retries = 3
-                        retry_delay = 0.1  # Start with 100ms
-
-                        for attempt in range(max_retries):
-                            try:
-                                future = asyncio.run_coroutine_threadsafe(
-                                    self.connection.send_media(data),
-                                    self._loop
-                                )
-                                # Wait with longer timeout to handle network latency
-                                # Increased from 0.5s to 2.0s, then to 5.0s for long questions
-                                future.result(timeout=5.0)
-                                logger.debug(f"✅ Sent {len(data)} bytes to Deepgram")
-                                consecutive_timeouts = 0  # Reset counter on success
-                                break  # Success - exit retry loop
-
-                            except TimeoutError:
-                                if attempt < max_retries - 1:
-                                    # Retry with backoff
-                                    logger.warning(
-                                        f"⚠️ Timeout sending to Deepgram, retrying "
-                                        f"(attempt {attempt + 1}/{max_retries})..."
-                                    )
-                                    import time
-                                    time.sleep(retry_delay)
-                                    retry_delay *= 2  # Exponential backoff
-                                else:
-                                    # Final attempt failed
-                                    consecutive_timeouts += 1
-                                    logger.error(
-                                        f"❌ Failed to send after {max_retries} attempts. "
-                                        f"Consecutive failures: [{consecutive_timeouts}/{max_consecutive_timeouts}]"
-                                    )
-
-                                    # Check connection health
-                                    if not self.is_connected:
-                                        logger.error("❌ Connection lost during timeout, stopping converter")
-                                        break
-
-                                    # Break if too many consecutive failures
-                                    if consecutive_timeouts >= max_consecutive_timeouts:
-                                        error_msg = (
-                                            f"❌ {max_consecutive_timeouts} consecutive failures, "
-                                            "Deepgram connection unstable. Stopping converter."
-                                        )
-                                        logger.error(error_msg)
-
-                                        # Notify WebSocket handler of fatal error
-                                        if self._on_error:
-                                            try:
-                                                # Schedule error callback in event loop
-                                                asyncio.run_coroutine_threadsafe(
-                                                    self._on_error("FATAL: Network connection to Deepgram failed. Please refresh and try again."),
-                                                    self._loop
-                                                )
-                                            except Exception as e:
-                                                logger.error(f"Failed to call error callback: {e}")
-
-                                        should_stop = True  # Signal outer loop to stop
-                                        break
-
-                            except Exception as send_err:
-                                logger.error(f"❌ Failed to send to Deepgram: {send_err}")
-                                # Check if connection is still valid
-                                if not self.is_connected:
-                                    logger.error("Connection lost, stopping converter loop")
-                                    break
-                                # Break out of retry loop on non-timeout errors
+                        try:
+                            await self.connection.send_media(data)
+                            logger.debug(f"✅ Sent {len(data)} bytes to Deepgram")
+                        except Exception as send_err:
+                            logger.error(f"❌ Failed to send to Deepgram: {send_err}")
+                            # Check if connection is still valid
+                            if not self.is_connected:
+                                logger.error("Connection lost, stopping converter loop")
                                 break
-
-                        # Check if we should stop the outer loop (after retry loop completes)
-                        if should_stop:
-                            logger.info("🛑 Stopping converter due to consecutive failures")
-                            break
+                            # Continue on error - don't stop the whole stream for one chunk
                     else:
                         logger.warning("⚠️ Connection not ready, skipping chunk")
 
+                except asyncio.CancelledError:
+                    logger.debug("FFmpeg converter loop cancelled")
+                    raise
                 except Exception as e:
                     if not self.stop_converter:
                         logger.error(f"❌ Error in converter loop: {e}", exc_info=True)
                     break
 
+        except asyncio.CancelledError:
+            logger.debug("FFmpeg converter task cancelled")
+            raise
         except Exception as e:
-            logger.error(f"❌ FFmpeg converter thread error: {e}", exc_info=True)
+            logger.error(f"❌ FFmpeg converter task error: {e}", exc_info=True)
         finally:
-            logger.info(f"🛑 FFmpeg converter thread stopped (sent {total_sent} bytes total)")
+            logger.info(f"🛑 FFmpeg converter task stopped (sent {total_sent} bytes total)")
 
     async def send_audio(self, audio_data: bytes):
         """
@@ -387,38 +318,22 @@ class DeepgramStreamingService:
             return False
 
         # Check if ffmpeg process is still alive
-        if self.ffmpeg_process.poll() is not None:
+        if self.ffmpeg_process.returncode is not None:
             exit_code = self.ffmpeg_process.returncode
             logger.error(f"❌ FFmpeg process died with exit code {exit_code}")
-
-            # Read any error output
-            if self.ffmpeg_process.stderr:
-                try:
-                    error_output = self.ffmpeg_process.stderr.read().decode('utf-8', errors='ignore')
-                    if error_output:
-                        logger.error(f"FFmpeg error output: {error_output}")
-                except:
-                    pass
-
             return False
 
         try:
             # Write WebM/Opus data to ffmpeg stdin
             # ffmpeg will convert it to linear16 PCM and output to stdout
-            # The converter thread will read from stdout and send to Deepgram
+            # The converter task will read from stdout and send to Deepgram
             logger.debug(f"📥 Received {len(audio_data)} bytes from client, writing to ffmpeg")
             self.ffmpeg_process.stdin.write(audio_data)
-            self.ffmpeg_process.stdin.flush()
+            await self.ffmpeg_process.stdin.drain()
             logger.debug(f"✅ Wrote {len(audio_data)} bytes to ffmpeg stdin")
             return True
         except BrokenPipeError:
             logger.error(f"❌ BrokenPipeError: ffmpeg stdin pipe is broken (process may have crashed)")
-            # Mark process as dead
-            if self.ffmpeg_process:
-                try:
-                    self.ffmpeg_process.kill()
-                except:
-                    pass
             return False
         except Exception as e:
             logger.error(f"❌ Error sending audio to ffmpeg: {e}", exc_info=True)
@@ -455,7 +370,7 @@ class DeepgramStreamingService:
             logger.debug("Deepgram listening task cancelled")
 
         # Use centralized cleanup for ffmpeg
-        self._cleanup_ffmpeg()
+        await self._cleanup_ffmpeg()
 
         # Close Deepgram connection
         if self.connection:
