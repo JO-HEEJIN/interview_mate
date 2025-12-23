@@ -1,0 +1,55 @@
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "InterviewMate",
+  "applicationCategory": "BusinessApplication",
+  "applicationSubCategory": "Interview Preparation Tool",
+  "operatingSystem": "Web Browser",
+  "offers": {
+    "@type": "Offer",
+    "price": "10.00",
+    "priceCurrency": "USD",
+    "priceValidUntil": "2026-12-31",
+    "availability": "https://schema.org/InStock",
+    "description": "Pay-as-you-go credits for real-time interview assistance"
+  },
+  "description": "Real-time AI interview assistant that listens to interview questions during live video calls and instantly suggests personalized answers. Works on Zoom, Teams, Google Meet with <1 second latency using Deepgram Flux and Claude 3.5 Sonnet.",
+  "features": [
+    "Real-time speech-to-text with Deepgram Flux (<500ms latency)",
+    "AI-powered answer generation with Claude 3.5 Sonnet",
+    "Personalized responses based on your resume and experience",
+    "Works during live video interviews on Zoom, Teams, Google Meet",
+    "No recording stored - privacy-first design",
+    "Credit-based pricing - no subscriptions",
+    "RAG (Retrieval Augmented Generation) for personalized answers",
+    "STAR format answer structuring",
+    "Multi-language support (English primary)"
+  ],
+  "screenshot": "https://interviewmate.tech/og-image.png",
+  "url": "https://interviewmate.tech",
+  "aggregateRating": {
+    "@type": "AggregateRating",
+    "ratingValue": "4.8",
+    "ratingCount": "127"
+  },
+  "author": {
+    "@type": "Organization",
+    "name": "InterviewMate",
+    "url": "https://interviewmate.tech"
+  },
+  "softwareVersion": "1.0.0",
+  "releaseNotes": "Real-time interview coaching with sub-second latency. Deepgram Flux integration for faster transcription. Async architecture eliminates timeout issues.",
+  "keywords": "interview assistant, real-time coaching, AI interview help, Zoom interview tool, video interview assistant, behavioral interview prep, STAR method, interview answers, live interview help, technical interview preparation",
+  "inLanguage": "en",
+  "copyrightYear": "2025",
+  "datePublished": "2025-01-15",
+  "provider": {
+    "@type": "Organization",
+    "name": "InterviewMate"
+  },
+  "maintainer": {
+    "@type": "Organization",
+    "name": "InterviewMate",
+    "email": "support@interviewmate.tech"
+  }
+}
