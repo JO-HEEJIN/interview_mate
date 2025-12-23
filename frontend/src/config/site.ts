@@ -10,8 +10,9 @@ export const siteConfig = {
 
   // Site metadata
   name: process.env.NEXT_PUBLIC_SITE_NAME || 'InterviewMate',
-  title: 'InterviewMate - AI Interview Assistant',
-  description: 'Real-time AI assistant for live video interviews. Get instant answer suggestions based on your experience during actual interviews.',
+  title: 'InterviewMate - Real-Time AI Interview Coach for Live Video Calls',
+  description: 'Real-time AI interview assistant that helps you DURING actual live video interviews on Zoom, Teams, Google Meet. Get instant personalized answer suggestions in 2 seconds while interviewing. NOT a practice platform - works during real interviews with recruiters.',
+  keywords: 'real-time interview assistant, live video interview help, AI interview coach, Zoom interview tool, Google Meet interview assistant, behavioral interview help, STAR method answers, interview copilot, live interview support',
 
   // API
   apiUrl: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',

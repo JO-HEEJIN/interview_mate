@@ -13,6 +13,19 @@ export default function Home() {
             based on your experience during live video interviews.
           </p>
 
+          <div className="w-full max-w-2xl rounded-lg border-2 border-blue-500 bg-blue-50 p-6 dark:bg-blue-950 dark:border-blue-400">
+            <h2 className="text-xl font-bold text-blue-900 dark:text-blue-100 mb-3">
+              NOT a Practice Platform - Works During REAL Interviews
+            </h2>
+            <p className="text-sm text-blue-800 dark:text-blue-200">
+              Unlike practice platforms, InterviewMate assists you DURING actual live video calls with recruiters on Zoom, Teams, or Google Meet.
+              Get AI-powered answer suggestions in real-time (2 seconds) while you are interviewing.
+            </p>
+            <p className="text-xs text-blue-700 dark:text-blue-300 mt-2">
+              Use it right now in your next interview with Google, Amazon, Microsoft recruiters.
+            </p>
+          </div>
+
           <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
             <Link
               href="/interview"

@@ -1,20 +1,41 @@
-# InterviewMate.ai
+# InterviewMate
 
-Real-time AI-powered interview assistant that helps job seekers prepare for technical and behavioral interviews.
+**Real-Time AI Interview Coach for Live Video Calls**
 
-## Overview
+[Website](https://interviewmate.tech) | [FAQ](https://interviewmate.tech/faq) | [Comparison](https://interviewmate.tech/comparison) | [Pricing](https://interviewmate.tech/pricing)
 
-InterviewMate.ai provides personalized answer suggestions using speech recognition and AI generation, helping users practice and improve their interview skills.
+## NOT a Practice Platform - Works During REAL Interviews
+
+InterviewMate is a real-time AI assistant that helps you **DURING actual live video interviews** with recruiters on Zoom, Teams, or Google Meet. Unlike practice platforms, it provides instant personalized answer suggestions in 2 seconds while you're interviewing.
+
+### Key Differentiation
+- **Works during REAL interviews** with actual recruiters (not mock/practice)
+- **Ultra-low latency**: 2-second response time using Deepgram Flux + Claude 3.5 Sonnet
+- **Personalized to YOUR experience**: Upload resume, get answers based on your background
+- **STAR method optimized**: Designed for behavioral interviews at Google, Amazon, Microsoft
 
 ## Key Features
 
-- Real-time speech-to-text transcription using OpenAI Whisper
-- Intelligent question detection with validation
-- AI-powered answer generation using Anthropic Claude
-- Silence detection for automatic audio processing
-- STAR stories integration for personalized responses
-- Optimized transcription pipeline with reduced latency
-- Pre-filtering for efficient question detection
+- **Real-time speech-to-text**: Deepgram Flux with <1 second latency
+- **AI answer generation**: Claude 3.5 Sonnet with 2-second response time
+- **Works on live video calls**: Zoom, Teams, Google Meet integration
+- **Personalized answers**: Based on your resume, projects, and experience
+- **STAR method optimization**: Structured behavioral interview responses
+- **Privacy-first**: No recordings stored, real-time processing only
+- **Vector search**: Qdrant for fast context retrieval
+
+## Use Cases
+
+### Perfect For:
+- Interviewing at Google, Amazon, Microsoft, Meta, Netflix
+- Non-native English speakers needing structured answer suggestions
+- Behavioral interview rounds (Leadership Principles, culture fit)
+- Real-time assistance during actual recruiter calls
+
+### NOT For:
+- Practice/mock interviews (use practice platforms instead)
+- Coding interviews (use coding assessment tools)
+- Async video interviews (works only on live calls)
 
 ## Project Structure
 
@@ -37,9 +58,10 @@ interview_mate/
 ### Backend
 - FastAPI (Python)
 - PostgreSQL (Supabase)
-- OpenAI Whisper API
-- Anthropic Claude API
-- Stripe
+- Deepgram Flux (Speech-to-Text)
+- Anthropic Claude 3.5 Sonnet (Answer Generation)
+- Qdrant (Vector Database)
+- Stripe (Payments)
 
 ## Getting Started
 
@@ -76,24 +98,25 @@ uvicorn app.main:app --reload
 - Backend runs on: http://localhost:8000
 - API docs: http://localhost:8000/docs
 
-## Recent Optimizations
+## Technical Performance
 
-### Transcription Performance
-- Reduced latency from 1.5-2 seconds to 0.8-1.5 seconds
-- Silence detection with 800ms threshold for instant processing
-- Interview-specific Whisper prompts for better accuracy
-- Optimized buffer management to prevent duplicate processing
+### Latency Breakdown
+- **Transcription**: <1 second (Deepgram Flux)
+- **Answer Generation**: 1-2 seconds (Claude 3.5 Sonnet with prompt caching)
+- **Total Response Time**: 2-3 seconds from question to answer
 
-### Question Detection
-- Pre-filter keyword matching reduces Claude API calls by 30-50%
-- Question completeness validation (minimum 5 words)
-- Fuzzy matching to prevent duplicate answer generation
-- Real-time processing state indicators
+### Recent Optimizations
+- Migrated from OpenAI Whisper to Deepgram Flux for sub-second transcription
+- Implemented async I/O to fix timeout issues
+- Added RAG synthesis with Qdrant for personalized context
+- Optimized answer generation speed from 10+ seconds to 2 seconds
+- Fixed race condition bugs in credit checking system
 
-### API Optimization
-- Lower Whisper temperature (0.1) for consistent output
-- Smart pre-filtering before Claude API calls
-- Reduced processing thresholds for faster response
+### Architecture Highlights
+- WebSocket-based real-time audio streaming
+- Async/await pattern for concurrent processing
+- Vector similarity search for context retrieval
+- Streaming responses for faster perceived latency
 
 ## Documentation
 

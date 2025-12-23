@@ -9,6 +9,21 @@ import { siteConfig } from './site';
 export const defaultMetadata: Metadata = {
   title: siteConfig.title,
   description: siteConfig.description,
+  keywords: siteConfig.keywords,
+  authors: [{ name: 'InterviewMate Team' }],
+  creator: 'InterviewMate',
+  publisher: 'InterviewMate',
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
   icons: {
     icon: '/best.jpg',
     apple: '/best.jpg',

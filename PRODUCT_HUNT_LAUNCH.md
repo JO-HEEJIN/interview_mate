@@ -10,10 +10,11 @@ Never freeze during an interview again. InterviewMate listens to interview quest
 
 ### The Problem
 Traditional interview prep only works BEFORE the interview:
-- Mock interviews don't replicate real-time pressure
+- Mock/practice platforms help you prepare, but not during the actual call
 - Prepared answers sound scripted
 - You can't predict every question
 - When nerves kick in, you forget everything you practiced
+- ChatGPT requires manual typing (too slow for live interviews)
 
 ### The Solution
 InterviewMate provides **real-time AI coaching DURING your actual interview**:
@@ -55,12 +56,17 @@ InterviewMate provides **real-time AI coaching DURING your actual interview**:
 - AI Q&A Generator: $10 one-time (lifetime access)
 
 ### What Makes Us Different
-| Feature | InterviewMate | Mock Interviews | ChatGPT |
+
+**CRITICAL**: InterviewMate is NOT a practice/mock interview platform. It works DURING real interviews with actual recruiters.
+
+| Feature | InterviewMate | Practice Platforms | ChatGPT |
 |---------|--------------|-----------------|---------|
-| Real-time during interview | ✅ | ❌ | ⚠️ (manual typing) |
+| When to use | DURING real interview | BEFORE interview (practice) | Anytime |
+| Real-time during live call | ✅ | ❌ | ⚠️ (manual typing) |
 | Auto transcription | ✅ | ❌ | ❌ |
 | Personalized to YOU | ✅ RAG | ⚠️ Limited | ❌ Generic |
 | Sub-second latency | ✅ <1s | N/A | ❌ Requires typing |
+| Works on Zoom/Meet | ✅ | ❌ (own platform) | N/A |
 
 ### Roadmap
 - ✅ Deepgram Flux integration (Dec 2025)
