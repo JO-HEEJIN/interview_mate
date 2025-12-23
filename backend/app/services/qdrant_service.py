@@ -250,22 +250,24 @@ class QdrantService:
 
             # Search in Qdrant using query_points (v1.7+ API)
             # CRITICAL: QdrantClient is synchronous - must run in thread pool to avoid blocking event loop
-            search_result = await asyncio.to_thread(
-                self.client.query_points,
-                collection_name=self.COLLECTION_NAME,
-                query=query_embedding,  # Just pass the list!
-                query_filter=Filter(
-                    must=[
-                        FieldCondition(
-                            key="user_id",
-                            match=MatchValue(value=user_id)
-                        )
-                    ]
-                ),
-                limit=limit,
-                score_threshold=similarity_threshold,
-                with_payload=True
-            )
+            def _do_search():
+                return self.client.query_points(
+                    collection_name=self.COLLECTION_NAME,
+                    query=query_embedding,
+                    query_filter=Filter(
+                        must=[
+                            FieldCondition(
+                                key="user_id",
+                                match=MatchValue(value=user_id)
+                            )
+                        ]
+                    ),
+                    limit=limit,
+                    score_threshold=similarity_threshold,
+                    with_payload=True
+                )
+
+            search_result = await asyncio.to_thread(_do_search)
             results = search_result.points
 
             # Convert to standard format
