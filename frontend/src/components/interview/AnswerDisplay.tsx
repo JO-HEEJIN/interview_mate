@@ -29,6 +29,49 @@ interface AnswerDisplayProps {
     aiGeneratorAvailable?: boolean;
 }
 
+// Helper function to highlight placeholder text [like this] with purple-pink color
+function highlightPlaceholders(text: string) {
+    const parts: JSX.Element[] = [];
+    const regex = /(\[.*?\])/g;
+    let lastIndex = 0;
+    let match;
+    let key = 0;
+
+    while ((match = regex.exec(text)) !== null) {
+        // Add text before the placeholder
+        if (match.index > lastIndex) {
+            parts.push(
+                <span key={`text-${key++}`}>
+                    {text.substring(lastIndex, match.index)}
+                </span>
+            );
+        }
+
+        // Add the placeholder with purple-pink styling
+        parts.push(
+            <span
+                key={`placeholder-${key++}`}
+                className="text-purple-400 dark:text-purple-300 font-medium"
+            >
+                {match[0]}
+            </span>
+        );
+
+        lastIndex = match.index + match[0].length;
+    }
+
+    // Add remaining text after the last placeholder
+    if (lastIndex < text.length) {
+        parts.push(
+            <span key={`text-${key++}`}>
+                {text.substring(lastIndex)}
+            </span>
+        );
+    }
+
+    return parts.length > 0 ? parts : text;
+}
+
 // Inline SVG Icons
 const CopyIcon = ({ className }: { className?: string }) => (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -193,13 +236,13 @@ export function AnswerDisplay({ answers, isGenerating, temporaryAnswer, streamin
                                 <span className="inline-block h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
                             </div>
                             <p className="whitespace-pre-wrap text-sm text-green-900 dark:text-green-100 leading-relaxed">
-                                {streamingAnswer}
+                                {highlightPlaceholders(streamingAnswer)}
                             </p>
                         </div>
                     ) : temporaryAnswer ? (
                         <div className="mt-3 rounded border border-blue-300 bg-blue-100 p-3 dark:border-blue-800 dark:bg-blue-900">
                             <p className="text-sm text-blue-800 dark:text-blue-200 italic">
-                                {temporaryAnswer}
+                                {highlightPlaceholders(temporaryAnswer)}
                             </p>
                         </div>
                     ) : (
@@ -295,7 +338,7 @@ export function AnswerDisplay({ answers, isGenerating, temporaryAnswer, streamin
                             <div className="mt-2">
                                 <p className={`whitespace-pre-wrap text-zinc-700 dark:text-zinc-300 leading-relaxed ${shouldTruncate && !isExpanded ? 'line-clamp-3' : ''
                                     }`}>
-                                    {answer.answer}
+                                    {highlightPlaceholders(answer.answer)}
                                 </p>
 
                                 {shouldTruncate && (
