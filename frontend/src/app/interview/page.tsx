@@ -296,6 +296,12 @@ export default function PracticePage() {
 
     // Handle start
     const handleStart = async () => {
+        // Wait for features to load before checking credits
+        if (featuresLoading) {
+            console.log('Still loading user features, please wait...');
+            return;
+        }
+
         // Redirect to pricing if no credits
         if (!hasCredits) {
             router.push('/pricing');
@@ -427,6 +433,7 @@ export default function PracticePage() {
                             isRecording={isRecording}
                             isPaused={isPaused}
                             isConnected={isConnected}
+                            disabled={featuresLoading}
                             onStart={handleStart}
                             onStop={handleStop}
                             onPause={pauseRecording}

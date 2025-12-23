@@ -49,6 +49,7 @@ interface RecordingControlsProps {
     isRecording: boolean;
     isPaused: boolean;
     isConnected: boolean;
+    disabled?: boolean;
     onStart: () => void;
     onStop: () => void;
     onPause: () => void;
@@ -60,6 +61,7 @@ export function RecordingControls({
     isRecording,
     isPaused,
     isConnected,
+    disabled = false,
     onStart,
     onStop,
     onPause,
@@ -82,15 +84,20 @@ export function RecordingControls({
                     {!isRecording ? (
                         <button
                             onClick={onStart}
-                            disabled={!isConnected}
-                            className={`flex items-center gap-2 rounded-full px-6 py-3 font-medium text-white transition-all transform hover:scale-105 ${isConnected
-                                ? 'bg-red-500 hover:bg-red-600 shadow-lg shadow-red-500/30'
-                                : 'bg-gray-400 cursor-not-allowed'
-                                }`}
-                            title={isConnected ? 'Start recording' : 'Connecting...'}
+                            disabled={!isConnected || disabled}
+                            className={`flex items-center gap-2 rounded-full px-6 py-3 font-medium text-white transition-all transform hover:scale-105 ${
+                                isConnected && !disabled
+                                    ? 'bg-red-500 hover:bg-red-600 shadow-lg shadow-red-500/30'
+                                    : 'bg-gray-400 cursor-not-allowed'
+                            }`}
+                            title={
+                                !isConnected ? 'Connecting...' :
+                                disabled ? 'Loading...' :
+                                'Start recording'
+                            }
                         >
                             <MicIcon className="h-5 w-5" />
-                            Start Recording
+                            {disabled ? 'Loading...' : 'Start Recording'}
                         </button>
                     ) : (
                         <>
