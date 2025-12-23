@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
 import { useWebSocket } from '@/hooks/useWebSocket';
+import { useUserFeatures } from '@/hooks/useUserFeatures';
 import { AudioLevelIndicator } from '@/components/interview/AudioLevelIndicator';
 import { TranscriptionDisplay } from '@/components/interview/TranscriptionDisplay';
 import { AnswerDisplay } from '@/components/interview/AnswerDisplay';
@@ -42,6 +43,11 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 export default function PracticePage() {
     const router = useRouter();
     const [userId, setUserId] = useState<string | null>(null);
+
+    // Feature gating - check interview credits
+    const { interview_credits, isLoading: featuresLoading } = useUserFeatures(userId);
+    const hasCredits = interview_credits > 0;
+
     const [currentText, setCurrentText] = useState('');
     const [accumulatedText, setAccumulatedText] = useState('');
     const [answers, setAnswers] = useState<Answer[]>([]);
@@ -279,6 +285,11 @@ export default function PracticePage() {
 
     // Handle start
     const handleStart = async () => {
+        // Redirect to pricing if no credits
+        if (!hasCredits) {
+            router.push('/pricing');
+            return;
+        }
         setError(null);
         await startRecording();
     };
@@ -380,6 +391,13 @@ export default function PracticePage() {
                 {(error || recordingError) && (
                     <div className="mb-4 rounded-lg bg-red-50 p-4 text-red-700 dark:bg-red-950 dark:text-red-300">
                         {error || recordingError}
+                    </div>
+                )}
+
+                {/* Credits Display */}
+                {!featuresLoading && (
+                    <div className="mb-4 text-sm text-zinc-500 dark:text-zinc-400">
+                        Credits remaining: <span className="font-medium text-zinc-700 dark:text-zinc-300">{interview_credits}</span>
                     </div>
                 )}
 

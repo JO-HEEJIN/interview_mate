@@ -8,6 +8,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { useUserFeatures } from '@/hooks/useUserFeatures';
 
 interface QAPair {
     id: string;
@@ -36,6 +37,11 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 export default function QAPairsPage() {
     const router = useRouter();
     const [userId, setUserId] = useState<string | null>(null);
+
+    // Feature gating - check qa_management access
+    const { qa_management_available, isLoading: featuresLoading } = useUserFeatures(userId);
+    const canEdit = qa_management_available;
+
     const [qaPairs, setQaPairs] = useState<QAPair[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -302,6 +308,7 @@ export default function QAPairsPage() {
                             <>
                                 <button
                                     onClick={() => {
+                                        if (!canEdit) { router.push('/pricing'); return; }
                                         setShowBulkUpload(true);
                                         setIsCreating(false);
                                     }}
@@ -311,6 +318,7 @@ export default function QAPairsPage() {
                                 </button>
                                 <button
                                     onClick={() => {
+                                        if (!canEdit) { router.push('/pricing'); return; }
                                         setIsCreating(true);
                                         setShowBulkUpload(false);
                                     }}
@@ -568,13 +576,19 @@ export default function QAPairsPage() {
                                     </div>
                                     <div className="flex gap-2">
                                         <button
-                                            onClick={() => handleEdit(pair)}
+                                            onClick={() => {
+                                                if (!canEdit) { router.push('/pricing'); return; }
+                                                handleEdit(pair);
+                                            }}
                                             className="text-sm text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
                                         >
                                             Edit
                                         </button>
                                         <button
-                                            onClick={() => handleDelete(pair.id)}
+                                            onClick={() => {
+                                                if (!canEdit) { router.push('/pricing'); return; }
+                                                handleDelete(pair.id);
+                                            }}
                                             className="text-sm text-red-500 hover:text-red-700"
                                         >
                                             Delete

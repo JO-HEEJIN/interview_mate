@@ -635,3 +635,133 @@ Enable users to pre-upload expected interview Q&A pairs for instant answers duri
 - Consider renaming "Practice" to more intuitive name for real interviews
 - Potentially implement OpenAI Structured Outputs as alternative to Claude Tool Use
 
+---
+
+## Feature Gating Implementation (Dec 23, 2025)
+
+### Objective
+Make the site behave differently based on what the user has paid for. Users without purchases should see limited functionality with prompts to upgrade.
+
+### Current State
+- Pricing page exists and displays plans
+- Database schema ready (pricing_plans, user_subscriptions, payment_transactions)
+- Backend APIs ready (subscriptions.py, payments.py)
+- Stripe integration implemented
+- Helper functions exist: get_user_interview_credits, consume_interview_credit, user_has_feature
+
+### Features to Gate
+
+| Feature | Plan Required | Behavior if Not Owned |
+|---------|---------------|----------------------|
+| Interview Practice | Credits (interview_practice) | Show "Buy Credits" prompt, block WebSocket |
+| Q&A Pairs CRUD | qa_management ($25) | Read-only view, hide edit/delete/create buttons |
+| Q&A Bulk Upload | qa_management ($25) | Hide bulk upload section |
+| AI Q&A Generator | ai_generator ($10) | Hide "AI Generate" button |
+
+### Implementation Plan
+
+- [x] 1. Create shared useUserFeatures hook (Frontend)
+  - [x] 1.1 Create frontend/src/hooks/useUserFeatures.ts
+  - [x] 1.2 Fetch user features summary from /api/subscriptions/{user_id}/summary
+  - [x] 1.3 Return: interview_credits, ai_generator_available, qa_management_available
+  - [x] 1.4 Add loading state handling
+
+- [x] 2. Add feature gate to Interview page
+  - [x] 2.1 Use useUserFeatures hook in interview/page.tsx
+  - [x] 2.2 Check credits before allowing WebSocket connection
+  - [x] 2.3 Show "No Credits" modal if credits = 0
+  - [x] 2.4 Add link to pricing page from modal
+
+- [x] 3. Add feature gate to Q&A Pairs page
+  - [x] 3.1 Use useUserFeatures hook in qa-pairs/page.tsx
+  - [x] 3.2 Hide create/edit/delete buttons if qa_management_available = false
+  - [x] 3.3 Hide bulk upload section if qa_management_available = false
+  - [x] 3.4 Show "Upgrade to Q&A Management" banner
+
+- [x] 4. Add feature gate to AI Generator (if exists)
+  - [x] 4.1 Find AI generator component/page
+  - [x] 4.2 Hide or disable if ai_generator_available = false
+  - [x] 4.3 Show upgrade prompt
+
+- [x] 5. Backend: Add credit consumption on interview end
+  - [x] 5.1 Call consume_interview_credit when interview session ends
+  - [x] 5.2 Return remaining credits to frontend
+  - [x] 5.3 Handle insufficient credits error
+
+- [ ] 6. Testing
+  - [ ] 6.1 Test interview page with 0 credits
+  - [ ] 6.2 Test interview page with credits
+  - [ ] 6.3 Test Q&A page without qa_management
+  - [ ] 6.4 Test Q&A page with qa_management
+
+### Technical Notes
+
+**useUserFeatures hook:**
+```typescript
+interface UserFeatures {
+  interview_credits: number;
+  ai_generator_available: boolean;
+  qa_management_available: boolean;
+  isLoading: boolean;
+}
+```
+
+**API endpoint already exists:**
+- GET /api/subscriptions/{user_id}/summary returns FeaturesSummary
+
+### Simplicity Guidelines
+- Reuse existing backend APIs (no new endpoints needed)
+- Simple boolean checks in frontend
+- Minimal UI changes - just hide/show elements
+- No complex permission system - just feature flags
+
+### Implementation Review (Dec 23, 2025)
+
+**Completed Tasks:**
+
+1. **useUserFeatures hook** (frontend/src/hooks/useUserFeatures.ts)
+   - Fetches user features summary from /api/subscriptions/{user_id}/summary
+   - Returns: interview_credits, ai_generator_available, qa_management_available
+   - Includes loading state and refetch function
+
+2. **Interview Page Gating** (frontend/src/app/interview/page.tsx)
+   - Added credits check before recording can start
+   - Shows "No Interview Credits" banner with link to pricing
+   - Displays remaining credits when available
+   - Blocks handleStart() if no credits
+
+3. **Q&A Pairs Page Gating** (frontend/src/app/profile/qa-pairs/page.tsx)
+   - Hide "Add Q&A" and "Bulk Upload" buttons if qa_management = false
+   - Hide Edit/Delete buttons on individual Q&A pairs
+   - Show "Read-Only Mode" banner with upgrade link ($25)
+
+4. **AI Generator Gating** (frontend/src/app/profile/context-upload/page.tsx)
+   - Disable "Generate Q&A Pairs" button if ai_generator = false
+   - Show "AI Q&A Generator Required" banner with upgrade link ($10)
+
+5. **Backend Credit Consumption** (backend/app/api/websocket.py)
+   - Added consume_interview_credit() function
+   - Calls database RPC to consume credit on session end
+   - Logs remaining credits after consumption
+   - Called in finally block when WebSocket disconnects
+
+**Files Modified:**
+- frontend/src/hooks/useUserFeatures.ts (NEW)
+- frontend/src/app/interview/page.tsx
+- frontend/src/app/profile/qa-pairs/page.tsx
+- frontend/src/app/profile/context-upload/page.tsx
+- backend/app/api/websocket.py
+
+**Testing Notes:**
+- Test interview page with 0 credits (should show banner, block recording)
+- Test interview page with credits (should show count, allow recording)
+- Test Q&A page without qa_management (read-only, no edit buttons)
+- Test Q&A page with qa_management (full CRUD access)
+- Test context-upload without ai_generator (generate button disabled)
+- Test credit consumption after interview session ends
+
+**Known Limitations:**
+- Credit is consumed on WebSocket disconnect regardless of session length
+- No partial credit refund for short sessions
+- Frontend doesn't receive real-time credit update after consumption
+

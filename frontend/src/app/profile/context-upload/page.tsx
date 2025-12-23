@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { useUserFeatures } from '@/hooks/useUserFeatures';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -32,6 +33,11 @@ interface GenerationResult {
 export default function ContextUploadPage() {
   const router = useRouter();
   const [userId, setUserId] = useState<string | null>(null);
+
+  // Feature gating - check ai_generator access
+  const { ai_generator_available, isLoading: featuresLoading } = useUserFeatures(userId);
+  const canGenerate = ai_generator_available;
+
   const [currentStep, setCurrentStep] = useState<UploadStep>('resume');
 
   // Upload states
@@ -669,17 +675,20 @@ export default function ContextUploadPage() {
 
               {!hasResume && (
                 <p className="mb-4 text-sm text-red-600 dark:text-red-400">
-                  ⚠️ Resume is required to generate Q&A pairs. Please go back and upload your resume.
+                  Resume is required to generate Q&A pairs. Please go back and upload your resume.
                 </p>
               )}
 
               <div className="flex gap-2">
                 <button
-                  onClick={handleGenerateQA}
+                  onClick={() => {
+                    if (!canGenerate) { router.push('/pricing'); return; }
+                    handleGenerateQA();
+                  }}
                   disabled={!hasResume || isGenerating}
                   className="rounded-lg bg-zinc-900 px-6 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
                 >
-                  {isGenerating ? 'Generating Q&A pairs...' : '✨ Generate Q&A Pairs'}
+                  {isGenerating ? 'Generating Q&A pairs...' : 'Generate Q&A Pairs'}
                 </button>
                 <button
                   onClick={() => setCurrentStep('resume')}

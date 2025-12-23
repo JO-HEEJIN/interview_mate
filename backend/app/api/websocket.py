@@ -120,6 +120,39 @@ async def end_interview_session(session_id: str):
         logger.error(f"Failed to end session: {e}")
 
 
+async def consume_interview_credit(user_id: str, session_id: str = None) -> dict:
+    """
+    Consume one interview credit when session ends.
+    Returns dict with success status and remaining credits.
+    """
+    try:
+        supabase = get_supabase_client()
+
+        # Call the database function to consume credit
+        result = supabase.rpc('consume_interview_credit', {
+            'p_user_id': user_id,
+            'p_session_id': session_id
+        }).execute()
+
+        success = result.data if result.data is not None else False
+
+        if success:
+            # Get remaining credits
+            credits_result = supabase.rpc('get_user_interview_credits', {
+                'p_user_id': user_id
+            }).execute()
+            remaining = credits_result.data if credits_result.data is not None else 0
+            logger.info(f"Consumed 1 credit for user {user_id}. Remaining: {remaining}")
+            return {"success": True, "remaining_credits": remaining}
+        else:
+            logger.warning(f"Failed to consume credit for user {user_id} - no credits available")
+            return {"success": False, "remaining_credits": 0}
+
+    except Exception as e:
+        logger.error(f"Failed to consume credit: {e}")
+        return {"success": False, "error": str(e)}
+
+
 async def increment_qa_usage(qa_pair_id: str):
     """Increment usage count for a Q&A pair when it's used in practice"""
     try:
@@ -779,10 +812,18 @@ async def websocket_transcribe(websocket: WebSocket):
         except:
             pass
     finally:
-        # NEW: End session on disconnect
+        # End session and consume credit on disconnect
         if session_id:
             await end_interview_session(session_id)
             logger.info(f"Ended session {session_id} on disconnect")
+
+            # Consume interview credit
+            if user_id:
+                credit_result = await consume_interview_credit(user_id, session_id)
+                if credit_result.get("success"):
+                    logger.info(f"Credit consumed. Remaining: {credit_result.get('remaining_credits')}")
+                else:
+                    logger.warning(f"Failed to consume credit for user {user_id}")
 
         # Deepgram connection is automatically closed by context manager
         manager.disconnect(websocket)
