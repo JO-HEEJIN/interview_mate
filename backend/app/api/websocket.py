@@ -6,6 +6,7 @@ import json
 import asyncio
 import logging
 from datetime import datetime
+import uuid
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from app.services.deepgram_service import deepgram_service
 from app.services.claude import get_claude_service, detect_question_fast
@@ -330,21 +331,25 @@ async def websocket_transcribe(websocket: WebSocket):
     last_processed_question = ""
     deepgram_connected = False
 
+    # Generate unique connection ID for debugging
+    connection_id = str(uuid.uuid4())[:8]
+
     # Session memory (NEW: track session for memory and export)
     session_id = None
     session_examples_used = []  # Track examples used to avoid repetition
 
-    logger.info("WebSocket transcription session started")
+    logger.info(f"[{connection_id}] WebSocket transcription session started")
 
     # Send immediate acknowledgment
     try:
         await manager.send_json(websocket, {
             "type": "connected",
-            "message": "WebSocket connected successfully"
+            "message": "WebSocket connected successfully",
+            "connection_id": connection_id
         })
-        logger.info("Sent connection acknowledgment to client")
+        logger.info(f"[{connection_id}] Sent connection acknowledgment to client")
     except Exception as e:
-        logger.error(f"Failed to send connection ack: {e}")
+        logger.error(f"[{connection_id}] Failed to send connection ack: {e}")
 
     # Deepgram transcript callback
     async def on_transcript(text: str, is_final: bool):
@@ -354,7 +359,7 @@ async def websocket_transcribe(websocket: WebSocket):
             if not text.strip():
                 return
 
-            logger.info(f"Deepgram transcript ({'final' if is_final else 'interim'}): '{text}'")
+            logger.info(f"[{connection_id}] Deepgram transcript ({'final' if is_final else 'interim'}): '{text}'")
 
             # Update accumulated text
             if is_final:
@@ -398,7 +403,17 @@ async def websocket_transcribe(websocket: WebSocket):
                         question = detection["question"]
                         question_type = detection["question_type"]
 
-                        logger.info(f"Complete question detected: '{question}' ({question_type})")
+                        logger.info(f"[{connection_id}] Complete question detected: '{question}' ({question_type})")
+
+                        # CRITICAL FIX: Guard against unauthenticated sessions (zombie connections)
+                        if not user_id:
+                            logger.warning(f"[{connection_id}] ⚠️ Ignoring question from unauthenticated session (no user_id set)")
+                            await manager.send_json(websocket, {
+                                "type": "error",
+                                "message": "Starting session... (please wait)",
+                                "code": "waiting_for_context"
+                            })
+                            return
 
                         # NEW: Save question to session
                         if session_id:
@@ -606,7 +621,7 @@ async def websocket_transcribe(websocket: WebSocket):
 
                             # Extract user_id if provided
                             received_user_id = data.get("user_id")
-                            logger.warning(f"CONTEXT_DEBUG: Received user_id from frontend: {received_user_id}")
+                            logger.warning(f"[{connection_id}] CONTEXT_DEBUG: Received user_id from frontend: {received_user_id}")
                             logger.warning(f"CONTEXT_DEBUG: Current user_id in WebSocket: {user_id}")
                             logger.warning(f"CONTEXT_DEBUG: Full context message keys: {list(data.keys())}")
 
@@ -650,6 +665,7 @@ async def websocket_transcribe(websocket: WebSocket):
                                 "message": "Context updated",
                                 "has_profile": user_profile is not None
                             })
+                            logger.info(f"[{connection_id}] Context acknowledged for user {user_id}")
 
                         elif msg_type == "clear":
                             # NEW: End current session before clearing
@@ -812,9 +828,9 @@ async def websocket_transcribe(websocket: WebSocket):
                         })
 
     except WebSocketDisconnect:
-        logger.info(f"WebSocket disconnected after {audio_chunk_count} chunks, {total_audio_bytes} total bytes")
+        logger.info(f"[{connection_id}] WebSocket disconnected after {audio_chunk_count} chunks, {total_audio_bytes} total bytes")
     except asyncio.TimeoutError:
-        logger.error("TIMEOUT: Deepgram connection timed out", exc_info=True)
+        logger.error(f"[{connection_id}] TIMEOUT: Deepgram connection timed out", exc_info=True)
         try:
             await manager.send_json(websocket, {
                 "type": "error",
@@ -835,8 +851,8 @@ async def websocket_transcribe(websocket: WebSocket):
         # End session on disconnect (credit already consumed at start)
         if session_id:
             await end_interview_session(session_id)
-            logger.info(f"Ended session {session_id} on disconnect")
+            logger.info(f"[{connection_id}] Ended session {session_id} on disconnect")
 
         # Deepgram connection is automatically closed by context manager
         manager.disconnect(websocket)
-        logger.info("WebSocket session ended")
+        logger.info(f"[{connection_id}] WebSocket session ended")
