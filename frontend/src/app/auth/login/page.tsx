@@ -29,7 +29,7 @@ export default function LoginPage() {
         }
 
         if (data.session) {
-            router.push('/interview');
+            router.push('/profile/interview-settings');
         }
     };
 

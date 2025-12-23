@@ -65,7 +65,7 @@ export default function RegisterPage() {
             }
 
             // Registration successful, redirect to interview page
-            router.push('/interview');
+            router.push('/profile/interview-settings');
         } catch (err) {
             setError('An error occurred. Please try again.');
             setLoading(false);

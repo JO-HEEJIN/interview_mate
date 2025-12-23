@@ -67,74 +67,85 @@ export function RecordingControls({
     onClear,
 }: RecordingControlsProps) {
     return (
-        <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-                {!isRecording ? (
-                    <button
-                        onClick={onStart}
-                        disabled={!isConnected}
-                        className={`flex items-center gap-2 rounded-full px-6 py-3 font-medium text-white transition-all transform hover:scale-105 ${isConnected
-                            ? 'bg-red-500 hover:bg-red-600 shadow-lg shadow-red-500/30'
-                            : 'bg-gray-400 cursor-not-allowed'
-                            }`}
-                        title={isConnected ? 'Start recording' : 'Connecting...'}
-                    >
-                        <MicIcon className="h-5 w-5" />
-                        Start Recording
-                    </button>
-                ) : (
-                    <>
-                        {isPaused ? (
-                            <button
-                                onClick={onResume}
-                                className="flex items-center gap-2 rounded-full bg-green-500 px-6 py-3 font-medium text-white transition-all transform hover:scale-105 hover:bg-green-600 shadow-lg shadow-green-500/30"
-                                title="Resume recording"
-                            >
-                                <PlayIcon className="h-5 w-5" />
-                                Resume
-                            </button>
-                        ) : (
-                            <button
-                                onClick={onPause}
-                                className="flex items-center gap-2 rounded-full bg-yellow-500 px-6 py-3 font-medium text-white transition-all transform hover:scale-105 hover:bg-yellow-600 shadow-lg shadow-yellow-500/30"
-                                title="Pause recording"
-                            >
-                                <PauseIcon className="h-5 w-5" />
-                                Pause
-                            </button>
-                        )}
+        <div className="flex flex-col gap-2 w-full">
+            {/* Warning Text */}
+            {!isRecording && (
+                <div className="flex justify-center w-full">
+                    <p className="text-xs text-amber-600 dark:text-amber-500 font-medium animate-pulse">
+                        ⚠️ Pressing 'Start Recording' will consume 1 interview credit per session
+                    </p>
+                </div>
+            )}
 
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    {!isRecording ? (
                         <button
-                            onClick={onStop}
-                            className="flex items-center gap-2 rounded-full bg-zinc-700 px-6 py-3 font-medium text-white transition-all transform hover:scale-105 hover:bg-zinc-800 shadow-lg shadow-zinc-700/30"
-                            title="Stop recording"
+                            onClick={onStart}
+                            disabled={!isConnected}
+                            className={`flex items-center gap-2 rounded-full px-6 py-3 font-medium text-white transition-all transform hover:scale-105 ${isConnected
+                                ? 'bg-red-500 hover:bg-red-600 shadow-lg shadow-red-500/30'
+                                : 'bg-gray-400 cursor-not-allowed'
+                                }`}
+                            title={isConnected ? 'Start recording' : 'Connecting...'}
                         >
-                            <SquareIcon className="h-5 w-5" />
-                            Stop
+                            <MicIcon className="h-5 w-5" />
+                            Start Recording
                         </button>
-                    </>
-                )}
+                    ) : (
+                        <>
+                            {isPaused ? (
+                                <button
+                                    onClick={onResume}
+                                    className="flex items-center gap-2 rounded-full bg-green-500 px-6 py-3 font-medium text-white transition-all transform hover:scale-105 hover:bg-green-600 shadow-lg shadow-green-500/30"
+                                    title="Resume recording"
+                                >
+                                    <PlayIcon className="h-5 w-5" />
+                                    Resume
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={onPause}
+                                    className="flex items-center gap-2 rounded-full bg-yellow-500 px-6 py-3 font-medium text-white transition-all transform hover:scale-105 hover:bg-yellow-600 shadow-lg shadow-yellow-500/30"
+                                    title="Pause recording"
+                                >
+                                    <PauseIcon className="h-5 w-5" />
+                                    Pause
+                                </button>
+                            )}
 
-                <button
-                    onClick={onClear}
-                    className="rounded-full border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 transition-all hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
-                    title="Clear session"
-                >
-                    Clear
-                </button>
-            </div>
+                            <button
+                                onClick={onStop}
+                                className="flex items-center gap-2 rounded-full bg-zinc-700 px-6 py-3 font-medium text-white transition-all transform hover:scale-105 hover:bg-zinc-800 shadow-lg shadow-zinc-700/30"
+                                title="Stop recording"
+                            >
+                                <SquareIcon className="h-5 w-5" />
+                                Stop
+                            </button>
+                        </>
+                    )}
 
-            {/* Connection status indicator */}
-            <div className="flex items-center gap-2">
-                <div
-                    className={`h-3 w-3 rounded-full transition-all ${isConnected
-                        ? 'bg-green-500 shadow-lg shadow-green-500/50'
-                        : 'bg-red-500 shadow-lg shadow-red-500/50 animate-pulse'
-                        }`}
-                />
-                <span className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
-                    {isConnected ? 'Connected' : 'Disconnected'}
-                </span>
+                    <button
+                        onClick={onClear}
+                        className="rounded-full border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 transition-all hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                        title="Clear session"
+                    >
+                        Clear
+                    </button>
+                </div>
+
+                {/* Connection status indicator */}
+                <div className="flex items-center gap-2">
+                    <div
+                        className={`h-3 w-3 rounded-full transition-all ${isConnected
+                            ? 'bg-green-500 shadow-lg shadow-green-500/50'
+                            : 'bg-red-500 shadow-lg shadow-red-500/50 animate-pulse'
+                            }`}
+                    />
+                    <span className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                        {isConnected ? 'Connected' : 'Disconnected'}
+                    </span>
+                </div>
             </div>
         </div>
     );
