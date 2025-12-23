@@ -617,39 +617,24 @@ Examples:
         examples_used = examples_used or []
 
         # RAG APPROACH: Find multiple relevant Q&A pairs
-        user_id = user_profile.get('user_id') if user_profile else None  # FIX: Use 'user_id' not 'id'
+        user_id = user_profile.get('user_id') if user_profile else None
         relevant_qa_pairs = []
 
-        logger.warning(f"RAG_DEBUG: user_id={user_id}, qdrant_service={self.qdrant_service is not None}")
-
         if user_id and self.qdrant_service:
-            logger.warning("RAG_DEBUG: Entering RAG code path - calling find_relevant_qa_pairs")
             relevant_qa_pairs = await self.find_relevant_qa_pairs(
                 question=question,
                 user_id=user_id,
                 max_total_results=5
             )
-            logger.warning(f"RAG_DEBUG: Found {len(relevant_qa_pairs)} relevant Q&A pairs")
-
-            # DEBUG: Log what we got back
-            if relevant_qa_pairs:
-                logger.warning(f"RAG_DEBUG: relevant_qa_pairs[0] similarity: {relevant_qa_pairs[0].get('similarity', 'NO_SIMILARITY_KEY')}")
-                logger.warning(f"RAG_DEBUG: relevant_qa_pairs[0] question: {relevant_qa_pairs[0].get('question', '')[:80]}")
 
             # If we found a good match (>= 62% similarity), use the stored answer directly
-            # No need to generate a new answer when we already have a prepared one
             if relevant_qa_pairs and relevant_qa_pairs[0].get('similarity', 0) >= 0.62:
                 best_match = relevant_qa_pairs[0]
-                similarity = best_match.get('similarity', 0)
-                logger.info(
-                    f"Using stored Q&A answer (similarity: {similarity:.1%}) for streaming question: '{question}' "
-                    f"Matched: '{best_match.get('question', '')[:80]}...'"
-                )
+                logger.info(f"Using stored answer ({best_match.get('similarity', 0):.0%} match)")
                 yield best_match['answer']
                 return
 
-        logger.info(f"Streaming RAG answer for: '{question}'")
-        logger.info(f"Found {len(relevant_qa_pairs)} relevant Q&A pairs for synthesis")
+        logger.debug(f"Generating new answer for: '{question[:50]}...' ({len(relevant_qa_pairs)} RAG results)")
 
         # Build context (same as non-streaming)
         context_parts = []
@@ -712,18 +697,7 @@ Examples:
         # Add RAG synthesis instruction if we found multiple relevant Q&A pairs
         rag_instruction = ""
         if len(relevant_qa_pairs) > 1:
-            rag_instruction = f"""
-
-🎯 RAG SYNTHESIS MODE:
-The question may be asking about MULTIPLE things. I've found {len(relevant_qa_pairs)} relevant prepared answers above.
-
-Your task:
-1. Identify what parts of the question each prepared answer addresses
-2. Combine relevant information from multiple answers into ONE cohesive response
-3. Adapt the tone and structure to match the question
-4. Keep the response concise (follow the word limit: {instruction})
-
-Do NOT simply concatenate the answers - synthesize them intelligently."""
+            rag_instruction = f"\n\nNote: {len(relevant_qa_pairs)} relevant prepared answers provided above. Synthesize them into one cohesive response following the {instruction} guideline."
 
         user_prompt = f"""CANDIDATE BACKGROUND:
 {context}
@@ -1082,18 +1056,7 @@ Now answer the interview question following these guidelines."""
         # Add RAG synthesis instruction if we found multiple relevant Q&A pairs
         rag_instruction = ""
         if len(relevant_qa_pairs) > 1:
-            rag_instruction = f"""
-
-🎯 RAG SYNTHESIS MODE:
-The question may be asking about MULTIPLE things. I've found {len(relevant_qa_pairs)} relevant prepared answers above.
-
-Your task:
-1. Identify what parts of the question each prepared answer addresses
-2. Combine relevant information from multiple answers into ONE cohesive response
-3. Adapt the tone and structure to match the question
-4. Keep the response concise (follow the word limit: {instruction})
-
-Do NOT simply concatenate the answers - synthesize them intelligently."""
+            rag_instruction = f"\n\nNote: {len(relevant_qa_pairs)} relevant prepared answers provided above. Synthesize them into one cohesive response following the {instruction} guideline."
 
         user_prompt = f"""CANDIDATE BACKGROUND:
 {context}

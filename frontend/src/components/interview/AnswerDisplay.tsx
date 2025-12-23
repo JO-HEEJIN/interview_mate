@@ -51,7 +51,7 @@ function highlightPlaceholders(text: string) {
         parts.push(
             <span
                 key={`placeholder-${key++}`}
-                className="text-purple-400 dark:text-purple-300 font-medium"
+                className="text-fuchsia-500 dark:text-fuchsia-400 font-semibold"
             >
                 {match[0]}
             </span>
