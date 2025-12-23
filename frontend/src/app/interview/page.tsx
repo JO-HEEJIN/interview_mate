@@ -76,6 +76,7 @@ export default function PracticePage() {
         requestAnswer,
         clearSession,
         finalizeAudio,
+        notifyStartRecording,
     } = useWebSocket({
         url: WS_URL,
         onTranscription: (text, accumulated) => {
@@ -163,6 +164,14 @@ export default function PracticePage() {
         },
         onConnectionChange: (connected) => {
             console.log('Connection status:', connected);
+        },
+        onCreditConsumed: (remainingCredits) => {
+            console.log('Credit consumed, remaining:', remainingCredits);
+        },
+        onNoCredits: () => {
+            setError('No interview credits available. Please purchase more credits.');
+            stopRecording();
+            router.push('/pricing');
         },
     });
 
@@ -292,6 +301,8 @@ export default function PracticePage() {
         }
         setError(null);
         await startRecording();
+        // Notify backend to consume credit when recording actually starts
+        notifyStartRecording();
     };
 
     // Handle stop
@@ -403,6 +414,12 @@ export default function PracticePage() {
 
                 {/* Recording controls and audio level */}
                 <div className="mb-6 rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
+                    {/* Credit consumption warning */}
+                    {!isRecording && hasCredits && (
+                        <p className="mb-2 text-xs text-zinc-400 dark:text-zinc-500">
+                            Pressing Start will consume 1 credit from your balance.
+                        </p>
+                    )}
                     <div className="mb-4">
                         <RecordingControls
                             isRecording={isRecording}

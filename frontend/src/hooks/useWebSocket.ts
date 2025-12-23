@@ -28,6 +28,7 @@ interface UseWebSocketReturn {
     requestAnswer: (question: string, question_type?: string) => void;
     clearSession: () => void;
     finalizeAudio: () => void;
+    notifyStartRecording: () => void;
 }
 
 export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
@@ -42,6 +43,8 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
         onAnswerStreamEnd,
         onError,
         onConnectionChange,
+        onCreditConsumed,
+        onNoCredits,
     } = options;
 
     const [isConnected, setIsConnected] = useState(false);
@@ -76,11 +79,17 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
                 case 'error':
                     onError?.(data.message);
                     break;
+                case 'credit_consumed':
+                    onCreditConsumed?.(data.remaining_credits);
+                    break;
+                case 'no_credits':
+                    onNoCredits?.();
+                    break;
             }
         } catch (err) {
             console.error('Failed to parse WebSocket message:', err);
         }
-    }, [onTranscription, onQuestionDetected, onTemporaryAnswer, onAnswer, onAnswerStreamStart, onAnswerStreamChunk, onAnswerStreamEnd, onError]);
+    }, [onTranscription, onQuestionDetected, onTemporaryAnswer, onAnswer, onAnswerStreamStart, onAnswerStreamChunk, onAnswerStreamEnd, onError, onCreditConsumed, onNoCredits]);
 
     const connect = useCallback(() => {
         if (wsRef.current?.readyState === WebSocket.OPEN) {
@@ -183,6 +192,14 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
         }
     }, []);
 
+    const notifyStartRecording = useCallback(() => {
+        if (wsRef.current?.readyState === WebSocket.OPEN) {
+            wsRef.current.send(JSON.stringify({
+                type: 'start_recording',
+            }));
+        }
+    }, []);
+
     useEffect(() => {
         connect();
         return () => {
@@ -199,5 +216,6 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
         requestAnswer,
         clearSession,
         finalizeAudio,
+        notifyStartRecording,
     };
 }
