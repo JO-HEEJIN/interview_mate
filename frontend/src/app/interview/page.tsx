@@ -422,12 +422,6 @@ export default function PracticePage() {
 
                 {/* Recording controls and audio level */}
                 <div className="mb-6 rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
-                    {/* Credit consumption warning */}
-                    {!isRecording && hasCredits && (
-                        <p className="mb-2 text-xs text-zinc-400 dark:text-zinc-500">
-                            Pressing Start will consume 1 credit from your balance.
-                        </p>
-                    )}
                     <div className="mb-4">
                         <RecordingControls
                             isRecording={isRecording}
