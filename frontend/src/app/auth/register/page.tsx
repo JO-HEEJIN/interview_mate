@@ -13,6 +13,7 @@ export default function RegisterPage() {
         password: '',
         confirmPassword: '',
     });
+    const [agreedToTerms, setAgreedToTerms] = useState(false);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
@@ -27,6 +28,12 @@ export default function RegisterPage() {
         e.preventDefault();
         setLoading(true);
         setError('');
+
+        if (!agreedToTerms) {
+            setError('You must agree to the Refund Policy to create an account');
+            setLoading(false);
+            return;
+        }
 
         if (formData.password !== formData.confirmPassword) {
             setError('Passwords do not match');
@@ -170,9 +177,39 @@ export default function RegisterPage() {
                         </div>
                     </div>
 
+                    {/* Refund Policy Agreement */}
+                    <div className="flex items-start">
+                        <div className="flex items-center h-5">
+                            <input
+                                id="terms"
+                                name="terms"
+                                type="checkbox"
+                                checked={agreedToTerms}
+                                onChange={(e) => setAgreedToTerms(e.target.checked)}
+                                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer"
+                            />
+                        </div>
+                        <div className="ml-3 text-sm">
+                            <label htmlFor="terms" className="font-medium text-gray-700 cursor-pointer">
+                                I agree to the{' '}
+                                <a
+                                    href="https://github.com/JO-HEEJIN/interview_mate/blob/main/REFUND_POLICY.md"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-blue-600 hover:text-blue-500 underline"
+                                >
+                                    Refund Policy
+                                </a>
+                            </label>
+                            <p className="text-xs text-gray-500 mt-1">
+                                All purchases are final. No refunds except for technical issues within 7 days.
+                            </p>
+                        </div>
+                    </div>
+
                     <button
                         type="submit"
-                        disabled={loading}
+                        disabled={loading || !agreedToTerms}
                         className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {loading ? 'Creating account...' : 'Create account'}
