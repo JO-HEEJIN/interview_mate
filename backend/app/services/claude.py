@@ -865,7 +865,7 @@ Generate a suggested answer ({instruction}):"""
 
 # Your Background
 
-{projects if projects else 'Use the candidate background provided in the context below.'}{strengths_text}
+{projects if projects else 'No specific background provided. Use [placeholder] format for specific examples, projects, and metrics.'}{strengths_text}
 
 # Your Interview Style
 
@@ -918,6 +918,13 @@ Answer the specific question asked, then stop. Don't elaborate unless asked.
 - If your background says "92.6% cost reduction", say exactly that - NOT "90%" or "about 90%"
 - If your background distinguishes "test" vs "production" numbers, preserve that distinction
 - Never invent, round, or simplify numbers - use them exactly as written in your background
+
+**CRITICAL - When you DON'T have specific examples:**
+- If the candidate background is empty or says "No specific context provided", you MUST use placeholders
+- Use brackets like [your specific project], [your experience with X], [company name], [metric/result]
+- NEVER invent fake names, companies, projects, or specific details
+- Example: "In my role at [company], I led a project that achieved [specific metric]..."
+- This helps the candidate fill in their own real experiences
 
 **When caught in an error or gap:**
 Acknowledge briefly, provide correction if needed, then move forward. Don't over-explain.
