@@ -5,7 +5,7 @@
  * Enhanced with better UI, loading states, and interaction feedback
  */
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 
 interface Answer {
@@ -32,7 +32,7 @@ interface AnswerDisplayProps {
 
 // Helper function to highlight placeholder text [like this] with purple-pink color
 function highlightPlaceholders(text: string) {
-    const parts: JSX.Element[] = [];
+    const parts: React.ReactElement[] = [];
     const regex = /(\[.*?\])/g;
     let lastIndex = 0;
     let match;
