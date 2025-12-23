@@ -12,6 +12,7 @@ Incremental generation: 10 more Q&A pairs when new context added
 """
 
 import logging
+import asyncio
 from typing import List, Dict, Any, Optional
 from uuid import UUID, uuid4
 from openai import AsyncOpenAI
@@ -100,51 +101,56 @@ class QAGenerationService:
             contexts
         )
 
-        # Step 3: Generate Q&As by category
+        # Step 3: Generate Q&As by category (CONCURRENT for speed)
         all_qa_pairs = []
 
         try:
-            # Generate resume-based Q&As (18 pairs)
-            logger.info("Generating 18 resume-based Q&As...")
-            resume_qas = await self._generate_resume_based_qas(
+            logger.info("Starting concurrent Q&A generation across all categories...")
+
+            # Prepare all generation tasks
+            tasks = []
+
+            # Always generate resume-based Q&As (required)
+            tasks.append(self._generate_resume_based_qas(
                 contexts,
                 count=self.initial_distribution['resume_based']
-            )
-            all_qa_pairs.extend(resume_qas)
-            logger.info(f"Generated {len(resume_qas)} resume-based Q&As")
+            ))
 
-            # Generate company-aligned Q&As (7 pairs)
+            # Conditionally add company-aligned Q&As
             if contexts['company_info']:
-                logger.info("Generating 7 company-aligned Q&As...")
-                company_qas = await self._generate_company_aligned_qas(
+                tasks.append(self._generate_company_aligned_qas(
                     contexts,
                     count=self.initial_distribution['company_aligned']
-                )
-                all_qa_pairs.extend(company_qas)
-                logger.info(f"Generated {len(company_qas)} company-aligned Q&As")
+                ))
             else:
                 logger.warning("No company info available, skipping company-aligned Q&As")
 
-            # Generate job-posting Q&As (5 pairs)
+            # Conditionally add job-posting Q&As
             if contexts['job_posting']:
-                logger.info("Generating 5 job-posting Q&As...")
-                job_qas = await self._generate_job_posting_qas(
+                tasks.append(self._generate_job_posting_qas(
                     contexts,
                     count=self.initial_distribution['job_posting']
-                )
-                all_qa_pairs.extend(job_qas)
-                logger.info(f"Generated {len(job_qas)} job-posting Q&As")
+                ))
             else:
                 logger.warning("No job posting available, skipping job-posting Q&As")
 
-            # Generate general Q&As (5 pairs)
-            logger.info("Generating 5 general Q&As...")
-            general_qas = await self._generate_general_qas(
+            # Always generate general Q&As
+            tasks.append(self._generate_general_qas(
                 contexts,
                 count=self.initial_distribution['general']
-            )
-            all_qa_pairs.extend(general_qas)
-            logger.info(f"Generated {len(general_qas)} general Q&As")
+            ))
+
+            # Execute all tasks concurrently
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+
+            # Process results
+            for i, result in enumerate(results):
+                if isinstance(result, Exception):
+                    logger.error(f"Task {i} failed: {result}", exc_info=result)
+                    raise result
+                all_qa_pairs.extend(result)
+
+            logger.info(f"✅ Generated {len(all_qa_pairs)} Q&A pairs concurrently")
 
             # Step 4: Save to database
             logger.info(f"Saving {len(all_qa_pairs)} Q&A pairs to database...")
