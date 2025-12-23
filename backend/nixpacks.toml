@@ -2,4 +2,4 @@
 aptPkgs = ["ffmpeg"]
 
 [phases.install]
-cmds = ["pip install ."]
+cmds = ["pip install -r requirements.txt", "pip install ."]
