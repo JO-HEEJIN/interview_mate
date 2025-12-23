@@ -1,2 +1,5 @@
 [phases.setup]
 aptPkgs = ["ffmpeg"]
+
+[phases.install]
+cmds = ["pip install ."]
