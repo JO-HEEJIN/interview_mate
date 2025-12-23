@@ -6,6 +6,7 @@
  */
 
 import { useState } from 'react';
+import Link from 'next/link';
 
 interface Answer {
     question: string;
@@ -356,12 +357,12 @@ export function AnswerDisplay({ answers, isGenerating, temporaryAnswer, streamin
                                 <div className="mt-3 rounded-lg bg-blue-50 border border-blue-200 p-3 dark:bg-blue-950 dark:border-blue-800">
                                     <p className="text-sm text-blue-700 dark:text-blue-300">
                                         💡 Want personalized answers?{' '}
-                                        <a
+                                        <Link
                                             href="/pricing"
                                             className="font-medium underline hover:text-blue-800 dark:hover:text-blue-200"
                                         >
                                             Try our AI Q&A Generator!
-                                        </a>
+                                        </Link>
                                     </p>
                                 </div>
                             )}

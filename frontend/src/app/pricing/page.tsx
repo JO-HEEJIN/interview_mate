@@ -30,61 +30,39 @@ export default function PricingPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [plans, setPlans] = useState<PricingPlan[]>([]);
   const [userFeatures, setUserFeatures] = useState<UserFeatures | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [processingPlan, setProcessingPlan] = useState<string | null>(null);
 
-  // Check authentication
+  // Check authentication and fetch all data in parallel
   useEffect(() => {
-    const checkAuth = async () => {
+    const initializePage = async () => {
+      // Check auth first
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         router.push('/auth/login?redirect=/pricing');
         return;
       }
       setUserId(session.user.id);
-    };
-    checkAuth();
-  }, [router]);
 
-  // Fetch pricing plans
-  useEffect(() => {
-    const fetchPlans = async () => {
-      try {
-        const response = await fetch(`${API_URL}/api/subscriptions/plans`);
-        if (response.ok) {
-          const data = await response.json();
-          setPlans(data);
-        }
-      } catch (error) {
-        console.error('Error fetching plans:', error);
-      }
-    };
-    fetchPlans();
-  }, []);
-
-  // Fetch user features
-  useEffect(() => {
-    if (!userId) return;
-
-    const fetchUserFeatures = async () => {
-      try {
-        const response = await fetch(`${API_URL}/api/subscriptions/${userId}/summary`);
-        if (response.ok) {
-          const data = await response.json();
+      // Fetch plans and user features in parallel (no need to wait)
+      Promise.all([
+        fetch(`${API_URL}/api/subscriptions/plans`).then(res => res.ok ? res.json() : []),
+        fetch(`${API_URL}/api/subscriptions/${session.user.id}/summary`).then(res => res.ok ? res.json() : null)
+      ]).then(([plansData, featuresData]) => {
+        setPlans(plansData);
+        if (featuresData) {
           setUserFeatures({
-            interview_credits: data.interview_credits || 0,
-            ai_generator_available: data.ai_generator_available || false,
-            qa_management_available: data.qa_management_available || false,
+            interview_credits: featuresData.interview_credits || 0,
+            ai_generator_available: featuresData.ai_generator_available || false,
+            qa_management_available: featuresData.qa_management_available || false,
           });
         }
-      } catch (error) {
-        console.error('Error fetching user features:', error);
-      } finally {
-        setIsLoading(false);
-      }
+      }).catch(error => {
+        console.error('Error fetching data:', error);
+      });
     };
-    fetchUserFeatures();
-  }, [userId]);
+
+    initializePage();
+  }, [router]);
 
   const handlePurchase = async (planCode: string) => {
     if (!userId) {
@@ -122,14 +100,6 @@ export default function PricingPage() {
 
   const creditPacks = plans.filter(p => p.plan_type === 'credits');
   const oneTimePurchases = plans.filter(p => p.plan_type === 'one_time');
-
-  if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-lg">Loading...</div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
