@@ -350,7 +350,7 @@ Generate exactly {count} Q&A pairs."""
 
         try:
             completion = await self.openai_client.beta.chat.completions.parse(
-                model="gpt-4o-2024-08-06",
+                model="gpt-4o-mini",
                 messages=[
                     {"role": "system", "content": "You are an expert interview coach creating realistic, high-quality interview Q&A pairs tailored to the candidate's specific experience."},
                     {"role": "user", "content": prompt}
@@ -443,7 +443,7 @@ Generate exactly {count} company-aligned Q&A pairs."""
 
         try:
             completion = await self.openai_client.beta.chat.completions.parse(
-                model="gpt-4o-2024-08-06",
+                model="gpt-4o-mini",
                 messages=[
                     {"role": "system", "content": "You create situational interview questions that test company culture fit and alignment with mission/values."},
                     {"role": "user", "content": prompt}
@@ -534,7 +534,7 @@ Generate exactly {count} job-requirement Q&A pairs."""
 
         try:
             completion = await self.openai_client.beta.chat.completions.parse(
-                model="gpt-4o-2024-08-06",
+                model="gpt-4o-mini",
                 messages=[
                     {"role": "system", "content": "You create questions that probe job requirement fit and help candidates bridge experience gaps with transferable skills."},
                     {"role": "user", "content": prompt}
@@ -617,7 +617,7 @@ Generate exactly {count} general Q&A pairs."""
 
         try:
             completion = await self.openai_client.beta.chat.completions.parse(
-                model="gpt-4o-2024-08-06",
+                model="gpt-4o-mini",
                 messages=[
                     {"role": "system", "content": "You create personalized answers to common interview questions based on the candidate's specific background."},
                     {"role": "user", "content": prompt}

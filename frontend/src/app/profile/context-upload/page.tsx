@@ -712,7 +712,7 @@ export default function ContextUploadPage() {
                       Generating Q&A Pairs...
                     </h3>
                     <p className="text-sm text-blue-700 dark:text-blue-300">
-                      AI is analyzing your context and creating personalized interview questions
+                      AI is analyzing your context and creating 30+ personalized interview questions (takes about 10-15 seconds)
                     </p>
                   </div>
                 </div>
@@ -728,29 +728,34 @@ export default function ContextUploadPage() {
                 <div className="space-y-2 text-sm text-blue-800 dark:text-blue-200">
                   <div className="flex items-center gap-2">
                     <div className="h-1.5 w-1.5 rounded-full bg-blue-600 dark:bg-blue-400 animate-pulse"></div>
-                    <span>Analyzing resume content...</span>
+                    <span>Generating 18 resume-based Q&As (behavioral + technical)</span>
                   </div>
                   {hasCompany && (
                     <div className="flex items-center gap-2">
                       <div className="h-1.5 w-1.5 rounded-full bg-blue-600 dark:bg-blue-400 animate-pulse"></div>
-                      <span>Processing company information...</span>
+                      <span>Generating 7 company-aligned situational Q&As</span>
                     </div>
                   )}
                   {hasJob && (
                     <div className="flex items-center gap-2">
                       <div className="h-1.5 w-1.5 rounded-full bg-blue-600 dark:bg-blue-400 animate-pulse"></div>
-                      <span>Evaluating job requirements...</span>
+                      <span>Generating 5 job-posting gap analysis Q&As</span>
                     </div>
                   )}
                   <div className="flex items-center gap-2">
                     <div className="h-1.5 w-1.5 rounded-full bg-blue-600 dark:bg-blue-400 animate-pulse"></div>
-                    <span>Creating personalized Q&A pairs...</span>
+                    <span>Generating 5 general interview Q&As</span>
                   </div>
                 </div>
 
-                <p className="mt-4 text-xs text-blue-600 dark:text-blue-400">
-                  ⏱️ This usually takes 30-60 seconds. Please wait...
-                </p>
+                <div className="mt-4 space-y-1">
+                  <p className="text-xs text-blue-600 dark:text-blue-400 font-semibold">
+                    All categories are being generated simultaneously for faster results!
+                  </p>
+                  <p className="text-xs text-blue-600 dark:text-blue-400">
+                    Estimated time: 10-15 seconds (optimized with GPT-4o-mini + concurrent processing)
+                  </p>
+                </div>
               </div>
             )}
 
