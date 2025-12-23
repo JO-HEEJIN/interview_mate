@@ -15,6 +15,8 @@ interface UseWebSocketOptions {
     onAnswerStreamEnd?: (question: string) => void;
     onError?: (message: string) => void;
     onConnectionChange?: (connected: boolean) => void;
+    onCreditConsumed?: (remainingCredits: number) => void;
+    onNoCredits?: () => void;
 }
 
 interface UseWebSocketReturn {

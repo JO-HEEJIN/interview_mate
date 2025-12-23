@@ -414,42 +414,66 @@ Examples:
             logger.error(f"Error finding relevant Q&A pairs: {str(e)}", exc_info=True)
             return []
 
-    def _get_cached_answer(self, question: str) -> Optional[str]:
+    def _get_cached_answer(self, question: str, user_id: Optional[str] = None) -> Optional[str]:
         """
         Check cache for similar questions and return cached answer if found.
+        
+        CRITICAL: Cache usage must be scoped to user_id to prevent privacy leaks.
 
         Args:
             question: The question to check
+            user_id: The ID of the user asking the question
 
         Returns:
             Cached answer if similar question found, None otherwise
         """
+        if not user_id:
+            logger.warning("Cache access without user_id - skipping cache to prevent leakage")
+            return None
+            
         normalized_q = normalize_question(question)
+        
+        # Scope cache key to user
+        cache_key = f"{user_id}:{normalized_q}"
 
         # First check exact match
-        if normalized_q in self._answer_cache:
-            logger.info(f"Cache hit (exact): '{question}'")
-            return self._answer_cache[normalized_q]["answer"]
+        if cache_key in self._answer_cache:
+            logger.info(f"Cache hit (exact): '{question}' for user {user_id}")
+            return self._answer_cache[cache_key]["answer"]
 
         # Check for similar questions
-        for cached_q, cached_data in self._answer_cache.items():
-            similarity = calculate_similarity(normalized_q, cached_q)
+        # Note: This O(N) iteration is fine for small caches (50 items), 
+        # but we should filter by user_id prefix if cache grows large.
+        for cached_key, cached_data in self._answer_cache.items():
+            # Check if this cache entry belongs to this user
+            if not cached_key.startswith(f"{user_id}:"):
+                continue
+                
+            cached_q_normalized = cached_key.split(":", 1)[1] if ":" in cached_key else ""
+            
+            similarity = calculate_similarity(normalized_q, cached_q_normalized)
             if similarity >= self._cache_similarity_threshold:
-                logger.info(f"Cache hit (similar, {similarity:.2%}): '{question}' ~ '{cached_data['question']}'")
+                logger.info(f"Cache hit (similar, {similarity:.2%}): '{question}' ~ '{cached_data['question']}' for user {user_id}")
                 return cached_data["answer"]
 
-        logger.debug(f"Cache miss: '{question}'")
+        logger.debug(f"Cache miss: '{question}' for user {user_id}")
         return None
 
-    def _cache_answer(self, question: str, answer: str):
+    def _cache_answer(self, question: str, answer: str, user_id: Optional[str] = None):
         """
         Cache the generated answer for future use.
 
         Args:
             question: The original question
             answer: The generated answer
+            user_id: The ID of the user
         """
+        if not user_id:
+            logger.warning("Attempted to cache answer without user_id - skipping")
+            return
+
         normalized_q = normalize_question(question)
+        cache_key = f"{user_id}:{normalized_q}"
 
         # Implement simple LRU: remove oldest if cache is full
         if len(self._answer_cache) >= self._max_cache_size:
@@ -458,11 +482,11 @@ Examples:
             del self._answer_cache[oldest_key]
             logger.debug(f"Cache full, removed oldest entry: '{oldest_key}'")
 
-        self._answer_cache[normalized_q] = {
+        self._answer_cache[cache_key] = {
             "question": question,
             "answer": answer
         }
-        logger.info(f"Cached answer for: '{question}' (cache size: {len(self._answer_cache)})")
+        logger.info(f"Cached answer for: '{question}' (user: {user_id}, cache size: {len(self._answer_cache)})")
 
     def clear_cache(self):
         """Clear the answer cache."""
@@ -979,7 +1003,7 @@ Now answer the interview question following these guidelines."""
 
         # Check cache if no good match found
         if use_cache and not relevant_qa_pairs:
-            cached_answer = self._get_cached_answer(question)
+            cached_answer = self._get_cached_answer(question, user_id)
             if cached_answer:
                 return (cached_answer, [])  # Return tuple for consistency
 
@@ -1110,7 +1134,7 @@ Generate a suggested answer ({instruction}):"""
 
             # Cache the answer for future use
             if use_cache:
-                self._cache_answer(question, answer)
+                self._cache_answer(question, answer, user_id)
 
             return (answer, new_examples)
 

@@ -672,6 +672,26 @@ async def websocket_transcribe(websocket: WebSocket):
                                 "message": "Session cleared"
                             })
 
+                        elif msg_type == "start_recording":
+                            # Consume credit when recording starts
+                            if user_id:
+                                credit_result = await consume_interview_credit(user_id, session_id)
+                                if credit_result.get("success"):
+                                    logger.info(f"Credit consumed on recording start. Remaining: {credit_result.get('remaining_credits')}")
+                                    await manager.send_json(websocket, {
+                                        "type": "credit_consumed",
+                                        "remaining_credits": credit_result.get("remaining_credits"),
+                                        "message": "Credit consumed"
+                                    })
+                                else:
+                                    logger.warning(f"Failed to consume credit for user {user_id}")
+                                    await manager.send_json(websocket, {
+                                        "type": "no_credits",
+                                        "message": "No interview credits available"
+                                    })
+                            else:
+                                logger.warning("start_recording received but no user_id set")
+
                         elif msg_type == "generate_answer":
                             # Manual answer generation request
                             question = data.get("question", "")
@@ -812,18 +832,10 @@ async def websocket_transcribe(websocket: WebSocket):
         except:
             pass
     finally:
-        # End session and consume credit on disconnect
+        # End session on disconnect (credit already consumed at start)
         if session_id:
             await end_interview_session(session_id)
             logger.info(f"Ended session {session_id} on disconnect")
-
-            # Consume interview credit
-            if user_id:
-                credit_result = await consume_interview_credit(user_id, session_id)
-                if credit_result.get("success"):
-                    logger.info(f"Credit consumed. Remaining: {credit_result.get('remaining_credits')}")
-                else:
-                    logger.warning(f"Failed to consume credit for user {user_id}")
 
         # Deepgram connection is automatically closed by context manager
         manager.disconnect(websocket)
