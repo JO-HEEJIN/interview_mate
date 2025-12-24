@@ -73,13 +73,13 @@ export default function PricingPage() {
     setProcessingPlan(planCode);
 
     try {
-      const response = await fetch(`${API_URL}/api/payments/create-checkout-session`, {
+      const response = await fetch(`${API_URL}/api/lemon-squeezy/create-checkout-session`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           user_id: userId,
           plan_code: planCode,
-          success_url: `${window.location.origin}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
+          success_url: `${window.location.origin}/payment/success`,
           cancel_url: `${window.location.origin}/pricing`,
         }),
       });
@@ -301,7 +301,7 @@ export default function PricingPage() {
             <div>
               <h3 className="font-semibold text-gray-900 mb-2">What payment methods do you accept?</h3>
               <p className="text-gray-600">
-                We accept all major credit cards, Link, Google Pay, and Apple Pay via Stripe.
+                We accept all major credit cards, PayPal, and Apple Pay via Lemon Squeezy.
               </p>
             </div>
 

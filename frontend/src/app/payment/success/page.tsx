@@ -16,11 +16,14 @@ function PaymentSuccessContent() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // If no session_id, it's from Lemon Squeezy (webhook-based)
+    // Just show success message without fetching details
     if (!sessionId) {
-      router.push('/pricing');
+      setIsLoading(false);
       return;
     }
 
+    // If session_id exists, it's from Stripe - fetch details
     const fetchSessionDetails = async () => {
       try {
         const response = await fetch(`${API_URL}/api/payments/session/${sessionId}`);
