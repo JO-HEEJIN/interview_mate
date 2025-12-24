@@ -51,7 +51,21 @@ class Settings(BaseSettings):
     STRIPE_SECRET_KEY: str = ""
     STRIPE_WEBHOOK_SECRET: str = ""
     STRIPE_PUBLISHABLE_KEY: str = ""
-    
+
+    # Lemon Squeezy
+    LEMON_SQUEEZY_API_KEY: str = ""
+    LEMON_SQUEEZY_STORE_ID: str = ""
+    LEMON_SQUEEZY_WEBHOOK_SECRET: str = ""
+    # Product variant IDs (set after creating products in Lemon Squeezy dashboard)
+    LEMON_SQUEEZY_VARIANT_CREDITS_4: str = ""
+    LEMON_SQUEEZY_VARIANT_CREDITS_10: str = ""
+    LEMON_SQUEEZY_VARIANT_CREDITS_15: str = ""
+    LEMON_SQUEEZY_VARIANT_AI_GENERATOR: str = ""
+    LEMON_SQUEEZY_VARIANT_QA_MANAGEMENT: str = ""
+
+    # Payment processor selection
+    PAYMENT_PROCESSOR: str = "lemon_squeezy"  # "stripe" or "lemon_squeezy"
+
     # CORS
     CORS_ORIGINS: List[str] = [
         "http://localhost:3000",
