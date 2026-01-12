@@ -57,11 +57,13 @@ class Settings(BaseSettings):
     LEMON_SQUEEZY_STORE_ID: str = ""
     LEMON_SQUEEZY_WEBHOOK_SECRET: str = ""
     # Product variant IDs (set after creating products in Lemon Squeezy dashboard)
-    LEMON_SQUEEZY_VARIANT_CREDITS_4: str = ""
-    LEMON_SQUEEZY_VARIANT_CREDITS_10: str = ""
-    LEMON_SQUEEZY_VARIANT_CREDITS_15: str = ""
-    LEMON_SQUEEZY_VARIANT_AI_GENERATOR: str = ""
-    LEMON_SQUEEZY_VARIANT_QA_MANAGEMENT: str = ""
+    # Credit packs
+    LEMON_SQUEEZY_VARIANT_CREDITS_STARTER: str = ""  # $4 - 10 sessions
+    LEMON_SQUEEZY_VARIANT_CREDITS_POPULAR: str = ""  # $8 - 25 sessions
+    LEMON_SQUEEZY_VARIANT_CREDITS_PRO: str = ""      # $15 - 50 sessions
+    # One-time features
+    LEMON_SQUEEZY_VARIANT_AI_GENERATOR: str = ""     # $10
+    LEMON_SQUEEZY_VARIANT_QA_MANAGEMENT: str = ""    # $25
 
     # Payment processor selection
     PAYMENT_PROCESSOR: str = "lemon_squeezy"  # "stripe" or "lemon_squeezy"

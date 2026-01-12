@@ -44,6 +44,15 @@ async def create_checkout_session(request: CreateCheckoutRequest):
     Create a Lemon Squeezy checkout session for purchasing credits or features.
     """
     try:
+        # Verify API configuration
+        if not settings.LEMON_SQUEEZY_API_KEY:
+            logger.error("LEMON_SQUEEZY_API_KEY is not configured")
+            raise HTTPException(status_code=500, detail="Payment service not configured")
+
+        if not settings.LEMON_SQUEEZY_STORE_ID:
+            logger.error("LEMON_SQUEEZY_STORE_ID is not configured")
+            raise HTTPException(status_code=500, detail="Payment service not configured")
+
         supabase = get_supabase_client()
 
         # Get plan details
@@ -68,6 +77,8 @@ async def create_checkout_session(request: CreateCheckoutRequest):
                 detail=f"Lemon Squeezy product not configured for plan: {request.plan_code}"
             )
 
+        logger.info(f"Creating checkout for plan: {request.plan_code}, variant: {variant_id}, store: {settings.LEMON_SQUEEZY_STORE_ID}")
+
         # Create Lemon Squeezy checkout
         async with httpx.AsyncClient() as client:
             response = await client.post(
@@ -81,12 +92,15 @@ async def create_checkout_session(request: CreateCheckoutRequest):
                     "data": {
                         "type": "checkouts",
                         "attributes": {
+                            "checkout_options": {
+                                "redirect_url": request.success_url
+                            },
                             "checkout_data": {
                                 "custom": {
                                     "user_id": request.user_id,
                                     "plan_code": request.plan_code,
                                     "plan_type": plan['plan_type'],
-                                    "credits_amount": str(plan['credits_amount'])
+                                    "credits_amount": str(plan['credits_amount']) if plan['credits_amount'] else "0"
                                 }
                             }
                         },
@@ -109,10 +123,10 @@ async def create_checkout_session(request: CreateCheckoutRequest):
             )
 
         if response.status_code not in [200, 201]:
-            logger.error(f"Lemon Squeezy API error: {response.text}")
+            logger.error(f"Lemon Squeezy API error (status {response.status_code}): {response.text}")
             raise HTTPException(
                 status_code=500,
-                detail="Failed to create checkout session"
+                detail=f"Failed to create checkout session: {response.status_code}"
             )
 
         checkout_data = response.json()
@@ -129,8 +143,8 @@ async def create_checkout_session(request: CreateCheckoutRequest):
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error creating checkout session: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Failed to create checkout session")
+        logger.error(f"Error creating checkout session: {type(e).__name__}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to create checkout session: {str(e)}")
 
 
 @router.post("/webhook")
@@ -201,10 +215,11 @@ def get_variant_id_for_plan(plan_code: str) -> Optional[str]:
     These need to be configured after creating products in Lemon Squeezy dashboard.
     """
     variant_mapping = {
-        # TODO: Replace with actual Lemon Squeezy variant IDs after setup
-        'credits_4': settings.LEMON_SQUEEZY_VARIANT_CREDITS_4,
-        'credits_10': settings.LEMON_SQUEEZY_VARIANT_CREDITS_10,
-        'credits_15': settings.LEMON_SQUEEZY_VARIANT_CREDITS_15,
+        # Credit packs (matching pricing_plans table)
+        'credits_starter': settings.LEMON_SQUEEZY_VARIANT_CREDITS_STARTER,
+        'credits_popular': settings.LEMON_SQUEEZY_VARIANT_CREDITS_POPULAR,
+        'credits_pro': settings.LEMON_SQUEEZY_VARIANT_CREDITS_PRO,
+        # One-time features
         'ai_generator': settings.LEMON_SQUEEZY_VARIANT_AI_GENERATOR,
         'qa_management': settings.LEMON_SQUEEZY_VARIANT_QA_MANAGEMENT,
     }
