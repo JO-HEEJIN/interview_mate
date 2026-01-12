@@ -92,7 +92,7 @@ async def create_checkout_session(request: CreateCheckoutRequest):
                     "data": {
                         "type": "checkouts",
                         "attributes": {
-                            "checkout_options": {
+                            "product_options": {
                                 "redirect_url": request.success_url
                             },
                             "checkout_data": {
