@@ -24,7 +24,7 @@ const jsonLd = {
   "name": "InterviewMate",
   "applicationCategory": "BusinessApplication",
   "operatingSystem": "Web Browser",
-  "description": "InterviewMate is a real-time AI interview assistant that works during actual live video interviews on Zoom, Teams, and Google Meet. Powered by Claude AI for accurate answer generation and Deepgram for ultra-fast speech recognition under 2 seconds.",
+  "description": "InterviewMate is the most affordable real-time AI interview assistant on the market. Starting at just $0.20 per session. Works during actual live video interviews on Zoom, Teams, and Google Meet. Powered by Claude AI for accurate answer generation and Deepgram for ultra-fast speech recognition under 2 seconds.",
   "url": "https://interviewmate.tech",
   "offers": {
     "@type": "Offer",

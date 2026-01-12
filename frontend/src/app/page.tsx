@@ -9,9 +9,10 @@ export default function Home() {
             InterviewMate
           </h1>
           <p className="max-w-2xl text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Real-time AI interview assistant powered by Claude AI and Deepgram.
-            Get instant, personalized answer suggestions during live video interviews
-            on Zoom, Google Meet, and Microsoft Teams.
+            The most affordable real-time AI interview assistant on the market.
+            Powered by Claude AI and Deepgram. Get instant, personalized answer suggestions
+            during live video interviews on Zoom, Google Meet, and Microsoft Teams.
+            Starting at just $0.20 per session.
           </p>
 
           {/* Launch Discount Banner */}
@@ -150,11 +151,12 @@ export default function Home() {
           {/* Pricing CTA */}
           <div className="mt-8 w-full max-w-2xl rounded-lg border border-zinc-200 p-6 dark:border-zinc-800">
             <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100 mb-2">
-              Start at Just $2 with LAUNCH50
+              Most Affordable AI Interview Assistant - Start at $0.20/session
             </h2>
             <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-4">
-              10 interview sessions for $4 (or $2 with launch discount).
-              No subscription required. Pay as you go.
+              10 interview sessions for just $2 with LAUNCH50 discount (regular $4).
+              No subscription required. No hidden fees. Pay as you go.
+              The cheapest real-time interview AI on the market.
             </p>
             <Link
               href="/pricing"
