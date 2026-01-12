@@ -240,15 +240,18 @@ async def handle_order_created(event_data: dict):
         supabase = get_supabase_client()
 
         order = event_data['data']['attributes']
-        custom_data = order.get('custom_data', {})
+        # Custom data is in meta.custom_data, not in order attributes
+        custom_data = event_data.get('meta', {}).get('custom_data', {})
 
         user_id = custom_data.get('user_id')
         plan_code = custom_data.get('plan_code')
         plan_type = custom_data.get('plan_type')
         credits_amount = int(custom_data.get('credits_amount', 0))
 
+        logger.info(f"Webhook custom_data: {custom_data}")
+
         if not user_id or not plan_code:
-            logger.error("Missing required custom data in webhook")
+            logger.error(f"Missing required custom data in webhook. user_id={user_id}, plan_code={plan_code}, full_meta={event_data.get('meta', {})}")
             return
 
         # Get plan details
