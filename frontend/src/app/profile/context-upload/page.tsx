@@ -312,6 +312,31 @@ export default function ContextUploadPage() {
     setCurrentStep('review');
   };
 
+  // Delete context
+  const handleDeleteContext = async (contextType: string) => {
+    if (!userId) return;
+
+    const context = uploadedContexts.find(ctx => ctx.context_type === contextType);
+    if (!context) return;
+
+    try {
+      const response = await fetch(`${API_URL}/api/context/${userId}/contexts/${context.id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete context');
+      }
+
+      // Reload contexts
+      await loadContexts(userId);
+      setSuccess(`${contextType === 'resume' ? 'Background document' : contextType === 'company_info' ? 'Organization info' : 'Details'} deleted successfully`);
+      setTimeout(() => setSuccess(null), 2000);
+    } catch (err: any) {
+      setError(err.message);
+    }
+  };
+
   // Get uploaded context by type
   const getContextByType = (type: string) => {
     return uploadedContexts.find(ctx => ctx.context_type === type);
@@ -351,18 +376,21 @@ export default function ContextUploadPage() {
             { key: 'review', label: 'Generate', icon: '✨' },
           ].map((step, index) => (
             <div key={step.key} className="flex flex-1 items-center">
-              <div className="flex flex-col items-center">
+              <button
+                onClick={() => setCurrentStep(step.key as UploadStep)}
+                className="flex flex-col items-center cursor-pointer hover:opacity-80 transition-opacity"
+              >
                 <div
                   className={`flex h-12 w-12 items-center justify-center rounded-full text-2xl ${
                     currentStep === step.key
-                      ? 'bg-zinc-900 dark:bg-zinc-100'
+                      ? 'bg-zinc-900 dark:bg-zinc-100 ring-2 ring-offset-2 ring-zinc-900 dark:ring-zinc-100'
                       : uploadedContexts.some(ctx =>
                           (step.key === 'resume' && ctx.context_type === 'resume') ||
                           (step.key === 'company' && ctx.context_type === 'company_info') ||
                           (step.key === 'job' && ctx.context_type === 'job_posting')
                         ) || step.key === 'review'
-                      ? 'bg-green-500'
-                      : 'bg-zinc-200 dark:bg-zinc-800'
+                      ? 'bg-green-500 hover:bg-green-600'
+                      : 'bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700'
                   }`}
                 >
                   {step.icon}
@@ -370,7 +398,7 @@ export default function ContextUploadPage() {
                 <p className="mt-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">
                   {step.label}
                 </p>
-              </div>
+              </button>
               {index < 3 && (
                 <div className="mx-2 h-0.5 flex-1 bg-zinc-200 dark:bg-zinc-800"></div>
               )}
@@ -408,42 +436,57 @@ export default function ContextUploadPage() {
               Upload your resume, CV, or research summary in PDF format. This is required for Q&A generation.
             </p>
 
-            {hasResume ? (
+            {hasResume && (
               <div className="mb-4 rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-950">
-                <p className="text-green-700 dark:text-green-300">
-                  ✅ Document already uploaded: {getContextByType('resume')?.file_name}
-                </p>
+                <div className="flex items-center justify-between">
+                  <p className="text-green-700 dark:text-green-300">
+                    ✅ Current: {getContextByType('resume')?.file_name}
+                  </p>
+                  <button
+                    onClick={() => handleDeleteContext('resume')}
+                    className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 text-sm font-medium"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className="mb-4">
+              <p className="mb-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                {hasResume ? 'Upload a new document to replace:' : 'Select a file:'}
+              </p>
+              <input
+                type="file"
+                accept=".pdf"
+                onChange={(e) => setResumeFile(e.target.files?.[0] || null)}
+                className="w-full rounded-lg border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+              />
+            </div>
+
+            {resumeFile && (
+              <p className="mb-4 text-sm text-zinc-600 dark:text-zinc-400">
+                Selected: {resumeFile.name} ({(resumeFile.size / 1024).toFixed(1)} KB)
+              </p>
+            )}
+
+            <div className="flex gap-2">
+              <button
+                onClick={handleResumeUpload}
+                disabled={!resumeFile || isUploading}
+                className="rounded-lg bg-zinc-900 px-6 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+              >
+                {isUploading ? 'Uploading...' : hasResume ? 'Replace Document' : 'Upload Document'}
+              </button>
+              {hasResume && (
                 <button
                   onClick={() => setCurrentStep('company')}
-                  className="mt-4 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+                  className="rounded-lg border border-zinc-300 px-6 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
                 >
-                  Continue to Organization Info
+                  Continue →
                 </button>
-              </div>
-            ) : (
-              <>
-                <input
-                  type="file"
-                  accept=".pdf"
-                  onChange={(e) => setResumeFile(e.target.files?.[0] || null)}
-                  className="mb-4 w-full rounded-lg border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
-                />
-
-                {resumeFile && (
-                  <p className="mb-4 text-sm text-zinc-600 dark:text-zinc-400">
-                    Selected: {resumeFile.name} ({(resumeFile.size / 1024).toFixed(1)} KB)
-                  </p>
-                )}
-
-                <button
-                  onClick={handleResumeUpload}
-                  disabled={!resumeFile || isUploading}
-                  className="rounded-lg bg-zinc-900 px-6 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
-                >
-                  {isUploading ? 'Uploading...' : 'Upload Resume'}
-                </button>
-              </>
-            )}
+              )}
+            </div>
           </div>
         )}
 
@@ -457,22 +500,25 @@ export default function ContextUploadPage() {
               Upload info about the company, university, school, or organization. This helps generate context-specific questions.
             </p>
 
-            {hasCompany ? (
+            {hasCompany && (
               <div className="mb-4 rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-950">
-                <p className="text-green-700 dark:text-green-300">
-                  ✅ Organization info already uploaded
-                </p>
-                <div className="mt-2 flex gap-2">
+                <div className="flex items-center justify-between">
+                  <p className="text-green-700 dark:text-green-300">
+                    ✅ Organization info uploaded
+                  </p>
                   <button
-                    onClick={() => setCurrentStep('job')}
-                    className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+                    onClick={() => handleDeleteContext('company_info')}
+                    className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 text-sm font-medium"
                   >
-                    Continue to Interview Details
+                    Delete
                   </button>
                 </div>
               </div>
-            ) : (
-              <>
+            )}
+
+            <p className="mb-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              {hasCompany ? 'Upload new info to replace:' : 'Choose input method:'}
+            </p>
                 {/* Toggle Screenshot / Text */}
                 <div className="mb-4 flex gap-2">
                   <button
@@ -520,23 +566,21 @@ export default function ContextUploadPage() {
                   />
                 )}
 
-                <div className="flex gap-2">
-                  <button
-                    onClick={handleCompanyUpload}
-                    disabled={isUploading || (companyMode === 'file' ? !companyFile : !companyText.trim())}
-                    className="rounded-lg bg-zinc-900 px-6 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
-                  >
-                    {isUploading ? 'Uploading...' : 'Upload Organization Info'}
-                  </button>
-                  <button
-                    onClick={handleSkipCompany}
-                    className="rounded-lg border border-zinc-300 px-6 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
-                  >
-                    Skip (Optional)
-                  </button>
-                </div>
-              </>
-            )}
+            <div className="flex gap-2">
+              <button
+                onClick={handleCompanyUpload}
+                disabled={isUploading || (companyMode === 'file' ? !companyFile : !companyText.trim())}
+                className="rounded-lg bg-zinc-900 px-6 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+              >
+                {isUploading ? 'Uploading...' : hasCompany ? 'Replace' : 'Upload'}
+              </button>
+              <button
+                onClick={handleSkipCompany}
+                className="rounded-lg border border-zinc-300 px-6 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+              >
+                {hasCompany ? 'Continue →' : 'Skip'}
+              </button>
+            </div>
           </div>
         )}
 
@@ -550,20 +594,25 @@ export default function ContextUploadPage() {
               Upload additional context: job posting, thesis abstract, program details, or interview agenda.
             </p>
 
-            {hasJob ? (
+            {hasJob && (
               <div className="mb-4 rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-950">
-                <p className="text-green-700 dark:text-green-300">
-                  ✅ Interview details already uploaded
-                </p>
-                <button
-                  onClick={() => setCurrentStep('review')}
-                  className="mt-4 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
-                >
-                  Continue to Review
-                </button>
+                <div className="flex items-center justify-between">
+                  <p className="text-green-700 dark:text-green-300">
+                    ✅ Interview details uploaded
+                  </p>
+                  <button
+                    onClick={() => handleDeleteContext('job_posting')}
+                    className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 text-sm font-medium"
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
-            ) : (
-              <>
+            )}
+
+            <p className="mb-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              {hasJob ? 'Upload new details to replace:' : 'Choose input method:'}
+            </p>
                 {/* Toggle Screenshot / Text */}
                 <div className="mb-4 flex gap-2">
                   <button
@@ -611,23 +660,21 @@ export default function ContextUploadPage() {
                   />
                 )}
 
-                <div className="flex gap-2">
-                  <button
-                    onClick={handleJobUpload}
-                    disabled={isUploading || (jobMode === 'file' ? !jobFile : !jobText.trim())}
-                    className="rounded-lg bg-zinc-900 px-6 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
-                  >
-                    {isUploading ? 'Uploading...' : 'Upload Details'}
-                  </button>
-                  <button
-                    onClick={handleSkipJob}
-                    className="rounded-lg border border-zinc-300 px-6 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
-                  >
-                    Skip (Optional)
-                  </button>
-                </div>
-              </>
-            )}
+            <div className="flex gap-2">
+              <button
+                onClick={handleJobUpload}
+                disabled={isUploading || (jobMode === 'file' ? !jobFile : !jobText.trim())}
+                className="rounded-lg bg-zinc-900 px-6 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+              >
+                {isUploading ? 'Uploading...' : hasJob ? 'Replace' : 'Upload'}
+              </button>
+              <button
+                onClick={handleSkipJob}
+                className="rounded-lg border border-zinc-300 px-6 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+              >
+                {hasJob ? 'Continue →' : 'Skip'}
+              </button>
+            </div>
           </div>
         )}
 
