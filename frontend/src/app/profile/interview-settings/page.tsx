@@ -242,25 +242,25 @@ export default function InterviewSettingsPage() {
                             <div className="grid gap-4 md:grid-cols-2">
                                 <div>
                                     <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                                        Target Role
+                                        Target Position/Goal
                                     </label>
                                     <input
                                         type="text"
                                         value={formData.target_role}
                                         onChange={(e) => setFormData({ ...formData, target_role: e.target.value })}
-                                        placeholder="e.g., Software Engineer"
+                                        placeholder="e.g., Software Engineer, PhD Candidate, F1 Visa, MBA Applicant"
                                         className="w-full rounded-lg border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
                                     />
                                 </div>
                                 <div>
                                     <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                                        Target Company
+                                        Target Organization
                                     </label>
                                     <input
                                         type="text"
                                         value={formData.target_company}
                                         onChange={(e) => setFormData({ ...formData, target_company: e.target.value })}
-                                        placeholder="e.g., Google"
+                                        placeholder="e.g., Google, MIT, US Embassy, Stanford MBA"
                                         className="w-full rounded-lg border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
                                     />
                                 </div>
@@ -277,15 +277,15 @@ export default function InterviewSettingsPage() {
                         <div className="space-y-4">
                             <div>
                                 <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                                    Projects & Experience Summary
+                                    Background Summary
                                 </label>
                                 <p className="mb-2 text-xs text-zinc-500 dark:text-zinc-400">
-                                    Describe your key projects, achievements, and metrics. The AI will reference these when answering questions.
+                                    Describe your key achievements, projects, research, or experiences. The AI will reference these when answering questions.
                                 </p>
                                 <textarea
                                     value={formData.projects_summary}
                                     onChange={(e) => setFormData({ ...formData, projects_summary: e.target.value })}
-                                    placeholder="Example:&#10;&#10;**E-commerce Platform (2023-2024)**&#10;- Built real-time inventory system serving 100K+ daily users&#10;- Reduced page load time by 40% through React optimization&#10;- Led team of 3 engineers&#10;&#10;**AI Chatbot Project (2024)**&#10;- Implemented RAG system reducing hallucinations by 60%&#10;- Saved $2K/month by optimizing LLM calls"
+                                    placeholder="Examples:&#10;&#10;For Job Interviews:&#10;- Built real-time inventory system serving 100K+ daily users&#10;- Led team of 3 engineers&#10;&#10;For PhD Defense:&#10;- Research on neural network optimization&#10;- Published 3 papers in top-tier conferences&#10;&#10;For Visa Interview:&#10;- Accepted to Stanford CS PhD program&#10;- Research funding secured for 4 years&#10;&#10;For School Admissions:&#10;- Founded startup with $50K revenue&#10;- Led community service initiative"
                                     rows={10}
                                     className="w-full rounded-lg border border-zinc-300 px-3 py-2 font-mono text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
                                 />
@@ -293,13 +293,13 @@ export default function InterviewSettingsPage() {
 
                             <div>
                                 <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                                    Technical Stack (comma-separated)
+                                    Skills & Expertise (comma-separated)
                                 </label>
                                 <input
                                     type="text"
                                     value={formData.technical_stack}
                                     onChange={(e) => setFormData({ ...formData, technical_stack: e.target.value })}
-                                    placeholder="e.g., React, Python, PostgreSQL, AWS, Docker"
+                                    placeholder="e.g., React, Machine Learning, Research Methods, Data Analysis"
                                     className="w-full rounded-lg border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
                                 />
                             </div>
@@ -312,7 +312,7 @@ export default function InterviewSettingsPage() {
                                     type="text"
                                     value={formData.key_strengths}
                                     onChange={(e) => setFormData({ ...formData, key_strengths: e.target.value })}
-                                    placeholder="e.g., System design, Team leadership, Cost optimization"
+                                    placeholder="e.g., Problem solving, Leadership, Research, Communication"
                                     className="w-full rounded-lg border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
                                 />
                             </div>
@@ -371,10 +371,10 @@ export default function InterviewSettingsPage() {
                                 This makes the system work for any role, not just generic advice.
                             </p>
                             <ul className="mt-2 space-y-1 text-sm text-blue-800 dark:text-blue-200">
-                                <li>- Market-specific context (e.g., "For Korea market, consider latency and sovereignty")</li>
-                                <li>- Answer style (e.g., "Be brutally honest, not a cheerleader")</li>
-                                <li>- Domain expertise (e.g., "For healthcare, emphasize HIPAA compliance")</li>
-                                <li>- Competitive positioning (e.g., "When asked about Claude, acknowledge Tokyo region advantage")</li>
+                                <li>- Answer style (e.g., "Be concise and confident, avoid filler words")</li>
+                                <li>- Domain context (e.g., "For PhD defense, emphasize methodology rigor")</li>
+                                <li>- Cultural notes (e.g., "For visa interview, keep answers brief and factual")</li>
+                                <li>- Personal preferences (e.g., "Always mention my leadership experience")</li>
                             </ul>
                         </div>
 
@@ -388,7 +388,7 @@ export default function InterviewSettingsPage() {
                             <textarea
                                 value={formData.custom_instructions}
                                 onChange={(e) => setFormData({ ...formData, custom_instructions: e.target.value })}
-                                placeholder={"Example:\n\nFor Korea market questions:\n- Always acknowledge no Korea region (150-200ms latency)\n- Mention sovereign AI political pressure\n- Suggest hybrid architecture as pragmatic solution\n\nMy answer style:\n- Lead with specifics, not generalities\n- Acknowledge when alternatives might be better\n- Use PREP structure: Point → Reason → Example → Point"}
+                                placeholder={"Examples:\n\nFor Job Interviews:\n- Use STAR format for behavioral questions\n- Emphasize quantifiable results\n\nFor PhD Defense:\n- Be prepared to defend methodology choices\n- Reference specific papers when relevant\n\nFor Visa Interviews:\n- Keep answers short (1-2 sentences)\n- Focus on ties to home country\n\nFor School Admissions:\n- Show genuine interest in the program\n- Connect experiences to future goals"}
                                 rows={15}
                                 className="w-full rounded-lg border border-zinc-300 px-3 py-2 font-mono text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
                             />

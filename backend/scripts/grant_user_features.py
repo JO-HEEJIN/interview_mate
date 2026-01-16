@@ -115,9 +115,75 @@ def grant_user_features(email: str, credits: int = 100):
     return True
 
 
-if __name__ == "__main__":
-    # User to grant features
-    TARGET_EMAIL = "sc.im@mail.utoronto.ca"
-    CREDITS_TO_GRANT = 100
+def grant_credits_and_ai_generator(email: str, credits: int):
+    """Grant only credits and AI Generator to a user."""
 
-    grant_user_features(TARGET_EMAIL, CREDITS_TO_GRANT)
+    supabase = create_client(settings.SUPABASE_URL, settings.SUPABASE_SERVICE_ROLE_KEY)
+
+    # Find user by email
+    print(f"Looking up user: {email}")
+
+    user_result = supabase.auth.admin.list_users()
+    user_id = None
+
+    for user in user_result:
+        if hasattr(user, 'email') and user.email == email:
+            user_id = user.id
+            break
+
+    if not user_id:
+        print(f"ERROR: User with email '{email}' not found!")
+        return False
+
+    print(f"Found user ID: {user_id}")
+
+    # Grant credits
+    print(f"Granting {credits} credits...")
+    supabase.table("user_subscriptions").insert({
+        "user_id": user_id,
+        "plan_code": "admin_grant",
+        "plan_type": "credits",
+        "status": "active",
+        "credits_total": credits,
+        "credits_used": 0,
+        "credits_remaining": credits,
+        "metadata": {"granted_by": "admin", "reason": "promotional grant"}
+    }).execute()
+    print(f"Granted {credits} credits")
+
+    # Grant AI Generator only
+    existing_ai = supabase.table("user_subscriptions")\
+        .select("*")\
+        .eq("user_id", user_id)\
+        .eq("plan_code", "ai_generator")\
+        .in_("status", ["active", "depleted"])\
+        .execute()
+
+    if not existing_ai.data:
+        supabase.table("user_subscriptions").insert({
+            "user_id": user_id,
+            "plan_code": "ai_generator",
+            "plan_type": "one_time",
+            "status": "active",
+            "usage_count": 0,
+            "usage_limit": None,
+            "metadata": {"granted_by": "admin", "reason": "promotional grant"}
+        }).execute()
+        print("Granted AI Q&A Generator")
+    else:
+        print("AI Q&A Generator already owned")
+
+    print(f"Done for {email}")
+    return True
+
+
+if __name__ == "__main__":
+    # Grant 47 credits + AI Generator to these users
+    users = [
+        "moon.econlaw@gmail.com",
+        "yoosunna0707@gmail.com"
+    ]
+
+    for email in users:
+        print(f"\n--- Processing {email} ---")
+        grant_credits_and_ai_generator(email, 47)
