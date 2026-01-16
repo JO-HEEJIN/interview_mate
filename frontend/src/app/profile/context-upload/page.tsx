@@ -338,16 +338,16 @@ export default function ContextUploadPage() {
             AI-Powered Q&A Generation
           </h1>
           <p className="mt-2 text-zinc-600 dark:text-zinc-400">
-            Upload your resume, company info, and job posting to auto-generate 30 personalized interview Q&A pairs
+            Upload your background documents to auto-generate 30 personalized Q&A pairs for any interview
           </p>
         </div>
 
         {/* Step Indicator */}
         <div className="mb-8 flex items-center justify-between">
           {[
-            { key: 'resume', label: 'Resume', icon: '📄' },
-            { key: 'company', label: 'Company', icon: '🏢' },
-            { key: 'job', label: 'Job Posting', icon: '💼' },
+            { key: 'resume', label: 'Background', icon: '📄' },
+            { key: 'company', label: 'Organization', icon: '🏢' },
+            { key: 'job', label: 'Details', icon: '📋' },
             { key: 'review', label: 'Generate', icon: '✨' },
           ].map((step, index) => (
             <div key={step.key} className="flex flex-1 items-center">
@@ -402,22 +402,22 @@ export default function ContextUploadPage() {
         {currentStep === 'resume' && (
           <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950">
             <h2 className="mb-4 text-xl font-semibold text-zinc-900 dark:text-zinc-100">
-              📄 Upload Your Resume
+              📄 Upload Your Background Document
             </h2>
             <p className="mb-6 text-sm text-zinc-600 dark:text-zinc-400">
-              Upload your resume in PDF format. This is required for Q&A generation.
+              Upload your resume, CV, or research summary in PDF format. This is required for Q&A generation.
             </p>
 
             {hasResume ? (
               <div className="mb-4 rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-950">
                 <p className="text-green-700 dark:text-green-300">
-                  ✅ Resume already uploaded: {getContextByType('resume')?.file_name}
+                  ✅ Document already uploaded: {getContextByType('resume')?.file_name}
                 </p>
                 <button
                   onClick={() => setCurrentStep('company')}
                   className="mt-4 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
                 >
-                  Continue to Company Info
+                  Continue to Organization Info
                 </button>
               </div>
             ) : (
@@ -451,23 +451,23 @@ export default function ContextUploadPage() {
         {currentStep === 'company' && (
           <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950">
             <h2 className="mb-4 text-xl font-semibold text-zinc-900 dark:text-zinc-100">
-              🏢 Company Information (Optional)
+              🏢 Organization Information (Optional)
             </h2>
             <p className="mb-6 text-sm text-zinc-600 dark:text-zinc-400">
-              Upload company info via screenshot or paste text. This helps generate company-aligned questions.
+              Upload info about the company, university, school, or organization. This helps generate context-specific questions.
             </p>
 
             {hasCompany ? (
               <div className="mb-4 rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-950">
                 <p className="text-green-700 dark:text-green-300">
-                  ✅ Company info already uploaded
+                  ✅ Organization info already uploaded
                 </p>
                 <div className="mt-2 flex gap-2">
                   <button
                     onClick={() => setCurrentStep('job')}
                     className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
                   >
-                    Continue to Job Posting
+                    Continue to Interview Details
                   </button>
                 </div>
               </div>
@@ -515,7 +515,7 @@ export default function ContextUploadPage() {
                   <textarea
                     value={companyText}
                     onChange={(e) => setCompanyText(e.target.value)}
-                    placeholder="Paste company mission, values, culture info..."
+                    placeholder="Paste organization info: company mission, university program details, school culture..."
                     className="mb-4 h-40 w-full rounded-lg border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
                   />
                 )}
@@ -526,7 +526,7 @@ export default function ContextUploadPage() {
                     disabled={isUploading || (companyMode === 'file' ? !companyFile : !companyText.trim())}
                     className="rounded-lg bg-zinc-900 px-6 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
                   >
-                    {isUploading ? 'Uploading...' : 'Upload Company Info'}
+                    {isUploading ? 'Uploading...' : 'Upload Organization Info'}
                   </button>
                   <button
                     onClick={handleSkipCompany}
@@ -544,16 +544,16 @@ export default function ContextUploadPage() {
         {currentStep === 'job' && (
           <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950">
             <h2 className="mb-4 text-xl font-semibold text-zinc-900 dark:text-zinc-100">
-              💼 Job Posting (Optional)
+              📋 Interview Details (Optional)
             </h2>
             <p className="mb-6 text-sm text-zinc-600 dark:text-zinc-400">
-              Upload job description via screenshot or paste text. This helps generate job-specific questions.
+              Upload additional context: job posting, thesis abstract, program details, or interview agenda.
             </p>
 
             {hasJob ? (
               <div className="mb-4 rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-950">
                 <p className="text-green-700 dark:text-green-300">
-                  ✅ Job posting already uploaded
+                  ✅ Interview details already uploaded
                 </p>
                 <button
                   onClick={() => setCurrentStep('review')}
@@ -606,7 +606,7 @@ export default function ContextUploadPage() {
                   <textarea
                     value={jobText}
                     onChange={(e) => setJobText(e.target.value)}
-                    placeholder="Paste job title, responsibilities, requirements, skills..."
+                    placeholder="Paste details: job posting, thesis summary, program requirements, interview topics..."
                     className="mb-4 h-40 w-full rounded-lg border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
                   />
                 )}
@@ -617,7 +617,7 @@ export default function ContextUploadPage() {
                     disabled={isUploading || (jobMode === 'file' ? !jobFile : !jobText.trim())}
                     className="rounded-lg bg-zinc-900 px-6 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
                   >
-                    {isUploading ? 'Uploading...' : 'Upload Job Posting'}
+                    {isUploading ? 'Uploading...' : 'Upload Details'}
                   </button>
                   <button
                     onClick={handleSkipJob}
@@ -643,17 +643,17 @@ export default function ContextUploadPage() {
               <div className="mb-6 space-y-3">
                 <div className={`rounded-lg p-3 ${hasResume ? 'bg-green-50 dark:bg-green-950' : 'bg-red-50 dark:bg-red-950'}`}>
                   <p className={hasResume ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'}>
-                    📄 Resume: {hasResume ? '✅ Uploaded' : '❌ Required'}
+                    📄 Background: {hasResume ? '✅ Uploaded' : '❌ Required'}
                   </p>
                 </div>
                 <div className={`rounded-lg p-3 ${hasCompany ? 'bg-green-50 dark:bg-green-950' : 'bg-zinc-50 dark:bg-zinc-900'}`}>
                   <p className={hasCompany ? 'text-green-700 dark:text-green-300' : 'text-zinc-600 dark:text-zinc-400'}>
-                    🏢 Company Info: {hasCompany ? '✅ Uploaded (+7 questions)' : 'Not uploaded'}
+                    🏢 Organization: {hasCompany ? '✅ Uploaded (+7 questions)' : 'Not uploaded'}
                   </p>
                 </div>
                 <div className={`rounded-lg p-3 ${hasJob ? 'bg-green-50 dark:bg-green-950' : 'bg-zinc-50 dark:bg-zinc-900'}`}>
                   <p className={hasJob ? 'text-green-700 dark:text-green-300' : 'text-zinc-600 dark:text-zinc-400'}>
-                    💼 Job Posting: {hasJob ? '✅ Uploaded (+5 questions)' : 'Not uploaded'}
+                    📋 Details: {hasJob ? '✅ Uploaded (+5 questions)' : 'Not uploaded'}
                   </p>
                 </div>
               </div>
@@ -663,9 +663,9 @@ export default function ContextUploadPage() {
                   Expected Q&A Generation:
                 </h3>
                 <ul className="space-y-1 text-sm text-blue-800 dark:text-blue-200">
-                  <li>• Resume-based: 18 Q&A pairs (behavioral + technical)</li>
-                  {hasCompany && <li>• Company-aligned: 7 Q&A pairs (culture fit)</li>}
-                  {hasJob && <li>• Job posting: 5 Q&A pairs (requirement match)</li>}
+                  <li>• Background-based: 18 Q&A pairs</li>
+                  {hasCompany && <li>• Organization-aligned: 7 Q&A pairs</li>}
+                  {hasJob && <li>• Context-specific: 5 Q&A pairs</li>}
                   <li>• General: 5 Q&A pairs (common questions)</li>
                   <li className="font-semibold pt-2">
                     Total: {18 + (hasCompany ? 7 : 0) + (hasJob ? 5 : 0) + 5} Q&A pairs
@@ -675,7 +675,7 @@ export default function ContextUploadPage() {
 
               {!hasResume && (
                 <p className="mb-4 text-sm text-red-600 dark:text-red-400">
-                  Resume is required to generate Q&A pairs. Please go back and upload your resume.
+                  Background document is required to generate Q&A pairs. Please go back and upload.
                 </p>
               )}
 
@@ -728,18 +728,18 @@ export default function ContextUploadPage() {
                 <div className="space-y-2 text-sm text-blue-800 dark:text-blue-200">
                   <div className="flex items-center gap-2">
                     <div className="h-1.5 w-1.5 rounded-full bg-blue-600 dark:bg-blue-400 animate-pulse"></div>
-                    <span>Generating 18 resume-based Q&As (behavioral + technical)</span>
+                    <span>Generating 18 background-based Q&As</span>
                   </div>
                   {hasCompany && (
                     <div className="flex items-center gap-2">
                       <div className="h-1.5 w-1.5 rounded-full bg-blue-600 dark:bg-blue-400 animate-pulse"></div>
-                      <span>Generating 7 company-aligned situational Q&As</span>
+                      <span>Generating 7 organization-aligned Q&As</span>
                     </div>
                   )}
                   {hasJob && (
                     <div className="flex items-center gap-2">
                       <div className="h-1.5 w-1.5 rounded-full bg-blue-600 dark:bg-blue-400 animate-pulse"></div>
-                      <span>Generating 5 job-posting gap analysis Q&As</span>
+                      <span>Generating 5 context-specific Q&As</span>
                     </div>
                   )}
                   <div className="flex items-center gap-2">
@@ -767,9 +767,9 @@ export default function ContextUploadPage() {
                 </h3>
 
                 <div className="mb-6 space-y-2 text-sm text-green-800 dark:text-green-200">
-                  <p>• Resume-based: {generationResult.category_breakdown.resume_based}</p>
-                  <p>• Company-aligned: {generationResult.category_breakdown.company_aligned}</p>
-                  <p>• Job posting: {generationResult.category_breakdown.job_posting}</p>
+                  <p>• Background-based: {generationResult.category_breakdown.resume_based}</p>
+                  <p>• Organization-aligned: {generationResult.category_breakdown.company_aligned}</p>
+                  <p>• Context-specific: {generationResult.category_breakdown.job_posting}</p>
                   <p>• General: {generationResult.category_breakdown.general}</p>
                 </div>
 
