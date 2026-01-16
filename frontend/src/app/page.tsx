@@ -10,9 +10,8 @@ export default function Home() {
             InterviewMate
           </h1>
           <p className="max-w-2xl text-xl leading-8 text-zinc-600 dark:text-zinc-400">
-            The most affordable real-time AI interview assistant on the market.
-            Powered by Claude AI and Deepgram. Get instant, personalized answer suggestions
-            during live video interviews on Zoom, Google Meet, and Microsoft Teams.
+            Real-time cheating for any interview. Job interviews, PhD defenses, visa interviews,
+            school admissions - get AI-powered answers in under 2 seconds while you&apos;re being interviewed.
           </p>
 
           {/* Launch Discount Banner */}
@@ -28,9 +27,9 @@ export default function Home() {
               Works During REAL Interviews - Not a Practice Platform
             </h2>
             <p className="text-base text-blue-800 dark:text-blue-200">
-              Unlike interview practice platforms, InterviewMate assists you DURING actual live video calls
-              with recruiters at Google, Amazon, Microsoft, Meta, and other companies.
-              Get AI-powered answer suggestions in under 2 seconds while you are interviewing.
+              Unlike interview practice platforms, InterviewMate assists you DURING actual live interviews.
+              Whether it&apos;s a job interview, PhD defense, visa interview, or school admission -
+              get AI-powered answer suggestions in under 2 seconds.
             </p>
           </div>
 
@@ -157,47 +156,48 @@ export default function Home() {
       <section className="flex min-h-screen flex-col items-center justify-center bg-zinc-50 px-6 py-20 dark:bg-zinc-950">
         <div className="w-full max-w-5xl">
           <h2 className="text-4xl font-bold text-zinc-900 dark:text-zinc-100 mb-4 text-center">
-            Perfect For All Interview Types
+            Works For Any Interview
           </h2>
           <p className="text-lg text-zinc-600 dark:text-zinc-400 mb-16 text-center max-w-2xl mx-auto">
-            Whether behavioral, technical, or case interviews - we&apos;ve got you covered
+            Job interviews, academic defenses, visa interviews, admissions - we&apos;ve got you covered
           </p>
           <div className="grid gap-6 text-left sm:grid-cols-2 lg:grid-cols-4">
             <div className="rounded-2xl bg-white p-8 dark:bg-zinc-900 shadow-sm border border-zinc-200 dark:border-zinc-800">
               <div className="mb-4 h-12 w-12 rounded-lg bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
                 <svg className="h-6 w-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                 </svg>
               </div>
-              <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-2">Behavioral Interviews</h3>
-              <p className="text-sm text-zinc-600 dark:text-zinc-400">STAR method answers for any situation</p>
+              <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-2">Job Interviews</h3>
+              <p className="text-sm text-zinc-600 dark:text-zinc-400">Tech, consulting, finance, and more</p>
             </div>
             <div className="rounded-2xl bg-white p-8 dark:bg-zinc-900 shadow-sm border border-zinc-200 dark:border-zinc-800">
               <div className="mb-4 h-12 w-12 rounded-lg bg-green-100 dark:bg-green-900 flex items-center justify-center">
                 <svg className="h-6 w-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5zm0 7l9-5-9-5-9 5 9 5z" />
                 </svg>
               </div>
-              <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-2">Technical Interviews</h3>
-              <p className="text-sm text-zinc-600 dark:text-zinc-400">System design discussions and explanations</p>
+              <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-2">PhD & Academic</h3>
+              <p className="text-sm text-zinc-600 dark:text-zinc-400">Thesis defense, committee meetings</p>
             </div>
             <div className="rounded-2xl bg-white p-8 dark:bg-zinc-900 shadow-sm border border-zinc-200 dark:border-zinc-800">
               <div className="mb-4 h-12 w-12 rounded-lg bg-purple-100 dark:bg-purple-900 flex items-center justify-center">
                 <svg className="h-6 w-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
                 </svg>
               </div>
-              <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-2">HR Interviews</h3>
-              <p className="text-sm text-zinc-600 dark:text-zinc-400">Culture fit and personality questions</p>
+              <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-2">Visa & Immigration</h3>
+              <p className="text-sm text-zinc-600 dark:text-zinc-400">Embassy interviews, immigration cases</p>
             </div>
             <div className="rounded-2xl bg-white p-8 dark:bg-zinc-900 shadow-sm border border-zinc-200 dark:border-zinc-800">
               <div className="mb-4 h-12 w-12 rounded-lg bg-orange-100 dark:bg-orange-900 flex items-center justify-center">
                 <svg className="h-6 w-6 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                 </svg>
               </div>
-              <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-2">Case Interviews</h3>
-              <p className="text-sm text-zinc-600 dark:text-zinc-400">Consulting frameworks and structures</p>
+              <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-2">School Admissions</h3>
+              <p className="text-sm text-zinc-600 dark:text-zinc-400">MBA, graduate, undergraduate</p>
             </div>
           </div>
 
@@ -228,8 +228,8 @@ export default function Home() {
             Start at Just $0.20 per Session
           </h2>
           <p className="text-xl text-zinc-600 dark:text-zinc-400 mb-8 max-w-2xl mx-auto">
-            10 interview sessions for just $2 with LAUNCH50 discount (regular $4).
-            No subscription required. No hidden fees. Pay as you go.
+            10 sessions for just $2 with LAUNCH50 discount (regular $4).
+            Works for any interview type. No subscription. Pay as you go.
           </p>
 
           <div className="rounded-2xl border-2 border-zinc-200 bg-zinc-50 p-10 dark:border-zinc-700 dark:bg-zinc-900 mb-10">

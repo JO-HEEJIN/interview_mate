@@ -24,13 +24,13 @@ const jsonLd = {
   "name": "InterviewMate",
   "applicationCategory": "BusinessApplication",
   "operatingSystem": "Web Browser",
-  "description": "InterviewMate is the most affordable real-time AI interview assistant on the market. Starting at just $0.20 per session. Works during actual live video interviews on Zoom, Teams, and Google Meet. Powered by Claude AI for accurate answer generation and Deepgram for ultra-fast speech recognition under 2 seconds.",
+  "description": "Real-time cheating for any interview. Job interviews, PhD defenses, visa interviews, school admissions - get AI-powered answers in under 2 seconds. Works on Zoom, Teams, Google Meet. Starting at $0.20/session.",
   "url": "https://interviewmate.tech",
   "offers": {
     "@type": "Offer",
     "price": "4.00",
     "priceCurrency": "USD",
-    "description": "Starting at $4 for 10 interview sessions. Use code LAUNCH50 for 50% off until January 30, 2026.",
+    "description": "Starting at $4 for 10 sessions. Use code LAUNCH50 for 50% off until January 30, 2026.",
     "availability": "https://schema.org/InStock"
   },
   "aggregateRating": {
@@ -41,13 +41,12 @@ const jsonLd = {
   "featureList": [
     "Real-time speech-to-text transcription powered by Deepgram",
     "AI-generated answer suggestions powered by Claude AI",
-    "Works during live video interviews on Zoom, Google Meet, Microsoft Teams",
-    "Personalized responses based on your resume and experience",
-    "2-second response time for instant interview assistance",
-    "STAR method answer formatting",
-    "Supports behavioral, technical, and HR interviews"
+    "Works during live video calls on Zoom, Google Meet, Microsoft Teams",
+    "Personalized responses based on your uploaded context",
+    "2-second response time for instant assistance",
+    "Works for job interviews, PhD defenses, visa interviews, school admissions"
   ],
-  "keywords": "real-time interview assistant, AI interview coach, live video interview help, Claude AI, Deepgram, Zoom interview tool, Google Meet interview assistant",
+  "keywords": "real-time interview assistant, AI interview help, PhD defense, visa interview, job interview AI, school admission interview, Zoom interview tool",
   "creator": {
     "@type": "Organization",
     "name": "InterviewMate",

@@ -22,7 +22,7 @@ export default function ComparisonPage() {
                     <p className="text-blue-800 text-lg">
                         <span className="font-bold">Practice platforms</span> help you prepare BEFORE interviews with mock questions and feedback.
                         <br/>
-                        <span className="font-bold">InterviewMate</span> assists you DURING real interviews with live recruiters on Zoom/Teams/Meet.
+                        <span className="font-bold">InterviewMate</span> assists you DURING real interviews on Zoom/Teams/Meet - job interviews, PhD defenses, visa interviews, and more.
                     </p>
                 </div>
 
@@ -59,7 +59,7 @@ export default function ComparisonPage() {
                             <tr className="border-t">
                                 <td className="px-6 py-4 font-semibold">Use case</td>
                                 <td className="px-6 py-4 text-center bg-blue-50 border-l-4 border-blue-500">
-                                    Get AI help while talking to real recruiter
+                                    Get AI help during any live interview
                                 </td>
                                 <td className="px-6 py-4 text-center">Practice with AI interviewer</td>
                             </tr>
@@ -99,11 +99,11 @@ export default function ComparisonPage() {
                     <div className="bg-white rounded-lg shadow-md p-6 border-t-4 border-green-500">
                         <h3 className="text-xl font-bold text-gray-900 mb-4">When to use InterviewMate</h3>
                         <ul className="space-y-2 text-gray-700">
-                            <li>• You have a scheduled interview with a real recruiter</li>
+                            <li>• You have a scheduled interview (job, PhD, visa, school)</li>
                             <li>• Interview is on Zoom, Teams, or Google Meet</li>
                             <li>• You want real-time answer suggestions during the call</li>
-                            <li>• Behavioral interview (STAR format questions)</li>
-                            <li>• Big tech companies (Google, Amazon, Microsoft, etc.)</li>
+                            <li>• PhD defense or committee meeting</li>
+                            <li>• Visa/immigration interview at embassy</li>
                         </ul>
                     </div>
 
@@ -125,7 +125,7 @@ export default function ComparisonPage() {
                         <div>
                             <h4 className="font-bold mb-2">Real Interviews Only</h4>
                             <p className="text-sm">
-                                Works only during actual video calls with recruiters. No mock interviews, no simulations.
+                                Works only during actual video calls. No mock interviews, no simulations.
                                 Open InterviewMate in a separate tab while on your Zoom call.
                             </p>
                         </div>
@@ -137,17 +137,17 @@ export default function ComparisonPage() {
                             </p>
                         </div>
                         <div>
-                            <h4 className="font-bold mb-2">Personalized to Your Experience</h4>
+                            <h4 className="font-bold mb-2">Personalized to Your Context</h4>
                             <p className="text-sm">
-                                Upload your resume, projects, stories. AI generates answers based on YOUR actual experience,
+                                Upload your resume, research papers, projects. AI generates answers based on YOUR actual background,
                                 not generic templates.
                             </p>
                         </div>
                         <div>
-                            <h4 className="font-bold mb-2">STAR Method Optimized</h4>
+                            <h4 className="font-bold mb-2">Works for Any Interview</h4>
                             <p className="text-sm">
-                                Specifically designed for behavioral interviews at big tech companies.
-                                Answers follow STAR format (Situation, Task, Action, Result).
+                                Job interviews, PhD defenses, visa interviews, school admissions.
+                                Any video call where you need real-time AI assistance.
                             </p>
                         </div>
                     </div>

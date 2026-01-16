@@ -10,15 +10,15 @@ export default function FAQHindiPage() {
             questions: [
                 {
                     q: "क्या कोई ऐसा टूल है जो लाइव वीडियो इंटरव्यू के दौरान मेरी मदद कर सके?",
-                    a: "हां, InterviewMate एक रियल-टाइम AI कोच है जो आपके Zoom, Teams, या Google Meet इंटरव्यू के दौरान तुरंत सुझाव देता है। यह इंटरव्यूअर के सवालों को सुनता है और 2 सेकंड के अंदर personalized जवाब दिखाता है। Note: Product English में है, English interviews के लिए।"
+                    a: "हां, InterviewMate एक रियल-टाइम AI कोच है जो आपके Zoom, Teams, या Google Meet इंटरव्यू के दौरान तुरंत सुझाव देता है। Job interviews, PhD defense, visa interviews, admission interviews - सभी के लिए काम करता है। Note: Product English में है।"
                 },
                 {
-                    q: "क्या यह Google/Amazon/Microsoft जैसी बड़ी कंपनियों के इंटरव्यू में काम करता है?",
-                    a: "बिल्कुल! InterviewMate विशेष रूप से big tech companies के behavioral interviews के लिए बनाया गया है। Amazon के Leadership Principles, Google के behavioral rounds - सभी के लिए STAR format में answers suggest करता है।"
+                    q: "किस तरह के interviews में यह काम करता है?",
+                    a: "सभी तरह के interviews में! Job interviews (tech, consulting, finance), PhD defense और academic committee meetings, visa/immigration interviews, school admissions (MBA, graduate, undergraduate)। जहां भी real-time AI help चाहिए।"
                 },
                 {
-                    q: "मैं non-native English speaker हूं। क्या यह मेरी मदद करेगा?",
-                    a: "हां! InterviewMate आपको professional English में well-structured answers suggest करता है। यह विशेष रूप से Indian professionals के लिए helpful है जो US/UK companies में interview कर रहे हैं।"
+                    q: "क्या PhD defense में भी मदद मिलेगी?",
+                    a: "हां! अपनी thesis, research papers upload करें। InterviewMate आपको research methodology explain करने, conclusions defend करने, और committee के questions answer करने में real-time help देगा।"
                 },
                 {
                     q: "InterviewMate कितनी तेज़ है?",

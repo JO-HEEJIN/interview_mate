@@ -10,15 +10,15 @@ export default function FAQFilipinoPage() {
             questions: [
                 {
                     q: "May tool ba na tutulong sa akin habang live video interview?",
-                    a: "Oo! Ang InterviewMate ay real-time AI coach na nagbibigay ng instant suggestions habang nasa Zoom, Teams, o Google Meet interview ka. Nakikinig sa mga tanong ng interviewer at nagpapakita ng personalized answers sa loob ng 2 segundos. Note: Ang product ay English language, para sa English interviews."
+                    a: "Oo! Ang InterviewMate ay real-time AI coach na nagbibigay ng instant suggestions habang nasa Zoom, Teams, o Google Meet interview ka. Job interviews, PhD defense, visa interviews, admission interviews - lahat gumagana! Note: Ang product ay English language."
                 },
                 {
-                    q: "Gumagana ba ito para sa Google/Amazon/Microsoft interviews?",
-                    a: "Oo naman! Ang InterviewMate ay specially designed para sa behavioral interviews sa malalaking tech companies. Amazon Leadership Principles, Google behavioral rounds - lahat ng tanong ay may STAR format answers."
+                    q: "Sa anong mga interviews gumagana ito?",
+                    a: "Sa lahat ng interviews! Job interviews (tech, consulting, finance), PhD defense at academic committee meetings, visa/immigration interviews, school admissions (MBA, graduate, undergraduate). Kahit saan na kailangan mo ng real-time AI help."
                 },
                 {
-                    q: "Hindi ako native English speaker, makakatulong ba ito?",
-                    a: "Oo! Ang InterviewMate ay nagsusuggest ng well-structured answers sa professional English. Lalo na helpful para sa mga Filipino professionals na nag-iinterview sa US/UK companies."
+                    q: "Gumagana ba ito para sa PhD defense?",
+                    a: "Oo! I-upload ang thesis at research papers mo. Tutulungan ka ng InterviewMate na i-explain ang research methodology, i-defend ang conclusions, at sagutin ang committee questions in real-time."
                 },
                 {
                     q: "Gaano kabilis ang InterviewMate?",

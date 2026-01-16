@@ -88,20 +88,20 @@ export default function FAQPage() {
             category: "Use Cases",
             questions: [
                 {
-                    q: "What types of interviews is InterviewMate best for?",
-                    a: "InterviewMate excels at behavioral interviews (Tell me about a time when...), situational questions (How would you handle...?), and general questions (What's your biggest weakness?). It provides STAR-formatted answers based on your actual experience."
+                    q: "What types of interviews does InterviewMate work for?",
+                    a: "InterviewMate works for any interview type: job interviews (tech, consulting, finance), PhD defenses and academic committee meetings, visa and immigration interviews, school admissions (MBA, graduate, undergraduate). Any video call where you need real-time AI assistance."
                 },
                 {
-                    q: "Can InterviewMate help with technical coding interviews?",
-                    a: "Currently InterviewMate focuses on behavioral and conversational questions. For technical coding, traditional platforms like LeetCode are more suitable. However, we can help answer questions about your technical projects and design decisions."
+                    q: "Can InterviewMate help with PhD defenses?",
+                    a: "Yes! Upload your thesis, research papers, and key findings. InterviewMate helps you articulate your research methodology, defend your conclusions, and answer committee questions in real-time."
                 },
                 {
-                    q: "I'm interviewing at Google/Amazon/Meta - will this work?",
-                    a: "Yes, InterviewMate works for interviews at any company. Many big tech companies use behavioral interviews (Amazon's Leadership Principles, Google's Googleyness). Our AI helps you structure answers using the STAR method with specific examples from your background."
+                    q: "Does InterviewMate work for visa interviews?",
+                    a: "Absolutely. Upload your application documents and background information. InterviewMate helps you answer questions about your purpose of visit, ties to home country, financial situation, and other common visa interview topics."
                 },
                 {
                     q: "I'm a non-native English speaker - can InterviewMate help?",
-                    a: "Absolutely. InterviewMate helps you phrase answers clearly and professionally. The AI suggests well-structured responses you can read and adapt to your speaking style."
+                    a: "Yes! InterviewMate helps you phrase answers clearly and professionally. The AI suggests well-structured responses you can read and adapt to your speaking style."
                 }
             ]
         },
