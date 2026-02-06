@@ -8,6 +8,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import { ProfileSelector } from '@/components/ProfileSelector';
 
 export function Header() {
     const router = useRouter();
@@ -104,6 +105,13 @@ export function Header() {
                         ))}
                     </nav>
 
+                    {/* Profile Selector (desktop) */}
+                    {isLoggedIn && (
+                        <div className="hidden md:block">
+                            <ProfileSelector />
+                        </div>
+                    )}
+
                     {/* Right: Home button + Logout + Mobile menu button */}
                     <div className="flex items-center gap-2">
                         {pathname !== '/' && (
@@ -150,6 +158,12 @@ export function Header() {
                 {/* Mobile menu */}
                 {isMenuOpen && (
                     <div className="md:hidden border-t border-zinc-200 py-4 dark:border-zinc-800">
+                        {/* Mobile Profile Selector */}
+                        {isLoggedIn && (
+                            <div className="mb-4 px-2">
+                                <ProfileSelector compact />
+                            </div>
+                        )}
                         <nav className="flex flex-col gap-2">
                             {navLinks.map((link) => (
                                 <Link

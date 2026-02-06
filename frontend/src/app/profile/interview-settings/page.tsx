@@ -8,6 +8,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { useProfile } from '@/contexts/ProfileContext';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -20,11 +21,12 @@ const ANSWER_STYLES = [
 export default function InterviewSettingsPage() {
     const router = useRouter();
     const [userId, setUserId] = useState<string | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
-    const [hasProfile, setHasProfile] = useState(false);
+
+    // Profile context
+    const { activeProfile, isLoading: profileLoading, updateProfile, createProfile } = useProfile();
 
     // Form state
     const [formData, setFormData] = useState({
@@ -61,62 +63,25 @@ export default function InterviewSettingsPage() {
         return () => subscription.unsubscribe();
     }, [router]);
 
-    // Load existing profile
+    // Sync form data with active profile
     useEffect(() => {
-        if (!userId) return;
-
-        const loadProfile = async () => {
-            try {
-                setIsLoading(true);
-                setError(null);
-
-                const response = await fetch(`${API_URL}/api/interview-profile/${userId}`);
-
-                if (!response.ok) {
-                    if (response.status === 404) {
-                        // No profile yet - this is OK, user can create one
-                        console.log('No profile found yet');
-                        return;
-                    }
-                    throw new Error(`API request failed with status ${response.status}`);
-                }
-
-                const data = await response.json();
-
-                if (data.has_profile && data.profile) {
-                    const profile = data.profile;
-                    setFormData({
-                        full_name: profile.full_name || '',
-                        target_role: profile.target_role || '',
-                        target_company: profile.target_company || '',
-                        projects_summary: profile.projects_summary || '',
-                        answer_style: profile.answer_style || 'balanced',
-                        technical_stack: (profile.technical_stack || []).join(', '),
-                        key_strengths: (profile.key_strengths || []).join(', '),
-                        custom_instructions: profile.custom_instructions || '',
-                    });
-                    setHasProfile(true);
-                }
-            } catch (err) {
-                console.error('Failed to load profile:', err);
-
-                // Network error (Failed to fetch)
-                if (err instanceof TypeError && err.message === 'Failed to fetch') {
-                    setError(`Cannot connect to backend (${API_URL}). Please check if the server is running.`);
-                } else {
-                    setError(`Failed to load profile: ${err instanceof Error ? err.message : 'Unknown error'}`);
-                }
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        loadProfile();
-    }, [userId]);
+        if (activeProfile) {
+            setFormData({
+                full_name: activeProfile.full_name || '',
+                target_role: activeProfile.target_role || '',
+                target_company: activeProfile.target_company || '',
+                projects_summary: activeProfile.projects_summary || '',
+                answer_style: activeProfile.answer_style || 'balanced',
+                technical_stack: (activeProfile.technical_stack || []).join(', '),
+                key_strengths: (activeProfile.key_strengths || []).join(', '),
+                custom_instructions: activeProfile.custom_instructions || '',
+            });
+        }
+    }, [activeProfile]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!userId) return;
+        if (!activeProfile) return;
 
         setIsSaving(true);
         setError(null);
@@ -124,10 +89,10 @@ export default function InterviewSettingsPage() {
 
         try {
             const profileData = {
-                full_name: formData.full_name || null,
-                target_role: formData.target_role || null,
-                target_company: formData.target_company || null,
-                projects_summary: formData.projects_summary || null,
+                full_name: formData.full_name || undefined,
+                target_role: formData.target_role || undefined,
+                target_company: formData.target_company || undefined,
+                projects_summary: formData.projects_summary || undefined,
                 answer_style: formData.answer_style,
                 technical_stack: formData.technical_stack
                     ? formData.technical_stack.split(',').map(s => s.trim()).filter(Boolean)
@@ -135,25 +100,18 @@ export default function InterviewSettingsPage() {
                 key_strengths: formData.key_strengths
                     ? formData.key_strengths.split(',').map(s => s.trim()).filter(Boolean)
                     : [],
-                custom_instructions: formData.custom_instructions || null,
+                custom_instructions: formData.custom_instructions || undefined,
             };
 
-            const method = hasProfile ? 'PUT' : 'POST';
-            const response = await fetch(`${API_URL}/api/interview-profile/${userId}`, {
-                method,
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(profileData),
-            });
+            const result = await updateProfile(activeProfile.id, profileData);
 
-            if (!response.ok) {
+            if (result) {
+                setSuccessMessage('Profile saved successfully!');
+                // Clear success message after 3 seconds
+                setTimeout(() => setSuccessMessage(null), 3000);
+            } else {
                 throw new Error('Failed to save profile');
             }
-
-            setSuccessMessage('Profile saved successfully!');
-            setHasProfile(true);
-
-            // Clear success message after 3 seconds
-            setTimeout(() => setSuccessMessage(null), 3000);
         } catch (err) {
             console.error('Failed to save profile:', err);
             setError('Failed to save profile. Please try again.');
@@ -162,10 +120,34 @@ export default function InterviewSettingsPage() {
         }
     };
 
-    if (!userId || isLoading) {
+    if (!userId || profileLoading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-black">
                 <div className="text-zinc-500">Loading...</div>
+            </div>
+        );
+    }
+
+    // Show message if no profile is selected
+    if (!activeProfile) {
+        return (
+            <div className="min-h-screen bg-zinc-50 dark:bg-black">
+                <div className="mx-auto max-w-4xl px-4 py-6">
+                    <div className="rounded-lg border border-amber-200 bg-amber-50 p-6 dark:border-amber-800 dark:bg-amber-950">
+                        <h2 className="text-lg font-semibold text-amber-900 dark:text-amber-100">
+                            No Profile Selected
+                        </h2>
+                        <p className="mt-2 text-amber-700 dark:text-amber-300">
+                            Please create or select a profile to customize interview settings.
+                        </p>
+                        <button
+                            onClick={() => router.push('/profile/manage')}
+                            className="mt-4 rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700"
+                        >
+                            Manage Profiles
+                        </button>
+                    </div>
+                </div>
             </div>
         );
     }
@@ -176,6 +158,15 @@ export default function InterviewSettingsPage() {
             <header className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
                 <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-4">
                     <div>
+                        {/* Profile Indicator */}
+                        <div className="mb-2 flex items-center gap-2">
+                            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-xs font-bold text-white">
+                                {activeProfile.profile_name.charAt(0).toUpperCase()}
+                            </div>
+                            <span className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                                {activeProfile.profile_name}
+                            </span>
+                        </div>
                         <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
                             Interview Settings
                         </h1>
@@ -402,7 +393,7 @@ export default function InterviewSettingsPage() {
                             disabled={isSaving}
                             className="rounded-lg bg-zinc-900 px-6 py-3 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
                         >
-                            {isSaving ? 'Saving...' : hasProfile ? 'Update Profile' : 'Create Profile'}
+                            {isSaving ? 'Saving...' : 'Save Profile'}
                         </button>
                         <a
                             href="/interview"

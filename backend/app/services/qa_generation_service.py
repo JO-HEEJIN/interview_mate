@@ -62,6 +62,7 @@ class QAGenerationService:
     async def generate_initial_qa_batch(
         self,
         user_id: str,
+        profile_id: Optional[str] = None,
         batch_id: Optional[UUID] = None
     ) -> Dict[str, Any]:
         """
@@ -77,6 +78,7 @@ class QAGenerationService:
 
         Args:
             user_id: User ID
+            profile_id: Profile ID (for multi-profile support)
             batch_id: Optional batch ID (generated if not provided)
 
         Returns:
@@ -85,10 +87,10 @@ class QAGenerationService:
         if not batch_id:
             batch_id = uuid4()
 
-        logger.info(f"Starting initial Q&A generation for user {user_id}, batch {batch_id}")
+        logger.info(f"Starting initial Q&A generation for user {user_id}, profile {profile_id}, batch {batch_id}")
 
-        # Step 1: Fetch all user contexts
-        contexts = await self._fetch_user_contexts(user_id)
+        # Step 1: Fetch all user contexts (filtered by profile if specified)
+        contexts = await self._fetch_user_contexts(user_id, profile_id)
         if not contexts['resume']:
             raise ValueError("Resume is required for Q&A generation")
 
@@ -98,7 +100,8 @@ class QAGenerationService:
             batch_id,
             'initial',
             30,
-            contexts
+            contexts,
+            profile_id
         )
 
         # Step 3: Generate Q&As by category (CONCURRENT for speed)
@@ -154,7 +157,7 @@ class QAGenerationService:
 
             # Step 4: Save to database
             logger.info(f"Saving {len(all_qa_pairs)} Q&A pairs to database...")
-            saved_pairs = await self._save_qa_pairs(user_id, batch_id, all_qa_pairs)
+            saved_pairs = await self._save_qa_pairs(user_id, batch_id, all_qa_pairs, profile_id=profile_id)
 
             # Step 5: Update batch record
             category_breakdown = {
@@ -188,6 +191,7 @@ class QAGenerationService:
     async def generate_incremental_qa_batch(
         self,
         user_id: str,
+        profile_id: Optional[str] = None,
         new_context_ids: Optional[List[str]] = None
     ) -> Dict[str, Any]:
         """
@@ -200,6 +204,7 @@ class QAGenerationService:
 
         Args:
             user_id: User ID
+            profile_id: Profile ID (for multi-profile support)
             new_context_ids: IDs of newly added contexts (optional)
 
         Returns:
@@ -207,11 +212,11 @@ class QAGenerationService:
         """
         batch_id = uuid4()
 
-        logger.info(f"Starting incremental Q&A generation for user {user_id}")
+        logger.info(f"Starting incremental Q&A generation for user {user_id}, profile {profile_id}")
 
-        # Fetch all contexts + existing Q&As for deduplication
-        contexts = await self._fetch_user_contexts(user_id)
-        existing_qas = await self._fetch_existing_questions(user_id)
+        # Fetch all contexts + existing Q&As for deduplication (filtered by profile)
+        contexts = await self._fetch_user_contexts(user_id, profile_id)
+        existing_qas = await self._fetch_existing_questions(user_id, profile_id)
 
         # Create batch record
         await self._create_batch_record(
@@ -219,7 +224,8 @@ class QAGenerationService:
             batch_id,
             'incremental',
             10,
-            contexts
+            contexts,
+            profile_id
         )
 
         try:
@@ -265,7 +271,8 @@ class QAGenerationService:
                 user_id,
                 batch_id,
                 all_qa_pairs,
-                source='incremental_ai'
+                source='incremental_ai',
+                profile_id=profile_id
             )
             await self._update_batch_record(batch_id, 'completed', len(saved_pairs))
 
@@ -642,12 +649,16 @@ Generate exactly {count} general Q&A pairs."""
             logger.error(f"General Q&A generation failed: {e}", exc_info=True)
             raise
 
-    async def _fetch_user_contexts(self, user_id: str) -> Dict[str, Any]:
-        """Fetch all user contexts from database."""
-        result = self.supabase.table("user_contexts") \
+    async def _fetch_user_contexts(self, user_id: str, profile_id: Optional[str] = None) -> Dict[str, Any]:
+        """Fetch all user contexts from database, optionally filtered by profile."""
+        query = self.supabase.table("user_contexts") \
             .select("*") \
-            .eq("user_id", user_id) \
-            .execute()
+            .eq("user_id", user_id)
+
+        if profile_id:
+            query = query.eq("profile_id", profile_id)
+
+        result = query.execute()
 
         contexts = {
             'resume': None,
@@ -669,12 +680,16 @@ Generate exactly {count} general Q&A pairs."""
 
         return contexts
 
-    async def _fetch_existing_questions(self, user_id: str) -> List[str]:
-        """Fetch existing question texts for deduplication."""
-        result = self.supabase.table("qa_pairs") \
+    async def _fetch_existing_questions(self, user_id: str, profile_id: Optional[str] = None) -> List[str]:
+        """Fetch existing question texts for deduplication, optionally filtered by profile."""
+        query = self.supabase.table("qa_pairs") \
             .select("question") \
-            .eq("user_id", user_id) \
-            .execute()
+            .eq("user_id", user_id)
+
+        if profile_id:
+            query = query.eq("profile_id", profile_id)
+
+        result = query.execute()
 
         return [row['question'] for row in result.data]
 
@@ -684,10 +699,11 @@ Generate exactly {count} general Q&A pairs."""
         batch_id: UUID,
         batch_type: str,
         target_count: int,
-        contexts: Dict[str, Any]
+        contexts: Dict[str, Any],
+        profile_id: Optional[str] = None
     ):
         """Create generation batch tracking record."""
-        self.supabase.table("generation_batches").insert({
+        data = {
             'id': str(batch_id),
             'user_id': user_id,
             'batch_type': batch_type,
@@ -695,7 +711,12 @@ Generate exactly {count} general Q&A pairs."""
             'status': 'in_progress',
             'context_snapshot': contexts,
             'started_at': 'now()'
-        }).execute()
+        }
+
+        if profile_id:
+            data['profile_id'] = profile_id
+
+        self.supabase.table("generation_batches").insert(data).execute()
 
     async def _update_batch_record(
         self,
@@ -725,12 +746,13 @@ Generate exactly {count} general Q&A pairs."""
         user_id: str,
         batch_id: UUID,
         qa_pairs: List[QAPairGenerated],
-        source: str = 'ai_generated'
+        source: str = 'ai_generated',
+        profile_id: Optional[str] = None
     ) -> List[Dict[str, Any]]:
         """Save generated Q&A pairs to database."""
         data = []
         for qa in qa_pairs:
-            data.append({
+            record = {
                 'user_id': user_id,
                 'question': qa.question,
                 'answer': qa.answer,
@@ -739,7 +761,12 @@ Generate exactly {count} general Q&A pairs."""
                 'generation_batch_id': str(batch_id),
                 'generation_strategy': qa.generation_strategy,
                 'context_sources': {'reasoning': qa.reasoning}
-            })
+            }
+
+            if profile_id:
+                record['profile_id'] = profile_id
+
+            data.append(record)
 
         result = self.supabase.table("qa_pairs").insert(data).execute()
         return result.data

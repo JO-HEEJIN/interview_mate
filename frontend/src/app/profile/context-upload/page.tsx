@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useUserFeatures } from '@/hooks/useUserFeatures';
+import { useProfile } from '@/contexts/ProfileContext';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -33,6 +34,9 @@ interface GenerationResult {
 export default function ContextUploadPage() {
   const router = useRouter();
   const [userId, setUserId] = useState<string | null>(null);
+
+  // Profile context
+  const { activeProfile, isLoading: profileLoading } = useProfile();
 
   // Feature gating - check ai_generator access
   const { ai_generator_available, isLoading: featuresLoading } = useUserFeatures(userId);
@@ -72,9 +76,6 @@ export default function ContextUploadPage() {
       }
 
       setUserId(session.user.id);
-
-      // Load existing contexts
-      await loadContexts(session.user.id);
     };
 
     checkAuth();
@@ -94,10 +95,21 @@ export default function ContextUploadPage() {
     };
   }, [router]);
 
+  // Load contexts when user or profile changes
+  useEffect(() => {
+    if (userId && activeProfile) {
+      loadContexts(userId, activeProfile.id);
+    }
+  }, [userId, activeProfile]);
+
   // Load existing contexts
-  const loadContexts = async (uid: string) => {
+  const loadContexts = async (uid: string, profileId?: string) => {
     try {
-      const response = await fetch(`${API_URL}/api/context/${uid}/contexts`);
+      const url = new URL(`${API_URL}/api/context/${uid}/contexts`);
+      if (profileId) {
+        url.searchParams.set('profile_id', profileId);
+      }
+      const response = await fetch(url.toString());
       if (!response.ok) throw new Error('Failed to load contexts');
       const data = await response.json();
       setUploadedContexts(data);
@@ -108,7 +120,7 @@ export default function ContextUploadPage() {
 
   // Upload resume (PDF)
   const handleResumeUpload = async () => {
-    if (!resumeFile || !userId) return;
+    if (!resumeFile || !userId || !activeProfile) return;
 
     setIsUploading(true);
     setError(null);
@@ -117,6 +129,7 @@ export default function ContextUploadPage() {
     try {
       const formData = new FormData();
       formData.append('file', resumeFile);
+      formData.append('profile_id', activeProfile.id);
 
       const response = await fetch(`${API_URL}/api/context/${userId}/upload-resume`, {
         method: 'POST',
@@ -132,7 +145,7 @@ export default function ContextUploadPage() {
       setSuccess('Resume uploaded successfully!');
 
       // Reload contexts
-      await loadContexts(userId);
+      await loadContexts(userId, activeProfile.id);
 
       // Move to next step
       setTimeout(() => {
@@ -148,7 +161,7 @@ export default function ContextUploadPage() {
 
   // Upload company info (screenshot or text)
   const handleCompanyUpload = async () => {
-    if (!userId) return;
+    if (!userId || !activeProfile) return;
 
     setIsUploading(true);
     setError(null);
@@ -165,6 +178,7 @@ export default function ContextUploadPage() {
         const formData = new FormData();
         formData.append('file', companyFile);
         formData.append('context_type', 'company_info');
+        formData.append('profile_id', activeProfile.id);
 
         const response = await fetch(`${API_URL}/api/context/${userId}/upload-screenshot`, {
           method: 'POST',
@@ -188,6 +202,7 @@ export default function ContextUploadPage() {
           body: JSON.stringify({
             context_type: 'company_info',
             text_content: companyText,
+            profile_id: activeProfile.id,
           }),
         });
 
@@ -198,7 +213,7 @@ export default function ContextUploadPage() {
       }
 
       setSuccess('Company info uploaded successfully!');
-      await loadContexts(userId);
+      await loadContexts(userId, activeProfile.id);
 
       setTimeout(() => {
         setCurrentStep('job');
@@ -213,7 +228,7 @@ export default function ContextUploadPage() {
 
   // Upload job posting (screenshot or text)
   const handleJobUpload = async () => {
-    if (!userId) return;
+    if (!userId || !activeProfile) return;
 
     setIsUploading(true);
     setError(null);
@@ -230,6 +245,7 @@ export default function ContextUploadPage() {
         const formData = new FormData();
         formData.append('file', jobFile);
         formData.append('context_type', 'job_posting');
+        formData.append('profile_id', activeProfile.id);
 
         const response = await fetch(`${API_URL}/api/context/${userId}/upload-screenshot`, {
           method: 'POST',
@@ -253,6 +269,7 @@ export default function ContextUploadPage() {
           body: JSON.stringify({
             context_type: 'job_posting',
             text_content: jobText,
+            profile_id: activeProfile.id,
           }),
         });
 
@@ -263,7 +280,7 @@ export default function ContextUploadPage() {
       }
 
       setSuccess('Job posting uploaded successfully!');
-      await loadContexts(userId);
+      await loadContexts(userId, activeProfile.id);
 
       setTimeout(() => {
         setCurrentStep('review');
@@ -278,7 +295,7 @@ export default function ContextUploadPage() {
 
   // Generate Q&A pairs
   const handleGenerateQA = async () => {
-    if (!userId) return;
+    if (!userId || !activeProfile) return;
 
     setIsGenerating(true);
     setError(null);
@@ -287,6 +304,9 @@ export default function ContextUploadPage() {
       const response = await fetch(`${API_URL}/api/context/${userId}/generate-qa`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          profile_id: activeProfile.id,
+        }),
       });
 
       if (!response.ok) {
@@ -314,7 +334,7 @@ export default function ContextUploadPage() {
 
   // Delete context
   const handleDeleteContext = async (contextType: string) => {
-    if (!userId) return;
+    if (!userId || !activeProfile) return;
 
     const context = uploadedContexts.find(ctx => ctx.context_type === contextType);
     if (!context) return;
@@ -329,7 +349,7 @@ export default function ContextUploadPage() {
       }
 
       // Reload contexts
-      await loadContexts(userId);
+      await loadContexts(userId, activeProfile.id);
       setSuccess(`${contextType === 'resume' ? 'Background document' : contextType === 'company_info' ? 'Organization info' : 'Details'} deleted successfully`);
       setTimeout(() => setSuccess(null), 2000);
     } catch (err: any) {
@@ -346,7 +366,7 @@ export default function ContextUploadPage() {
   const hasCompany = !!getContextByType('company_info');
   const hasJob = !!getContextByType('job_posting');
 
-  if (!userId) {
+  if (!userId || profileLoading) {
     return (
       <div className="mx-auto max-w-4xl px-4 py-6">
         <p className="text-zinc-600 dark:text-zinc-400">Loading...</p>
@@ -354,9 +374,51 @@ export default function ContextUploadPage() {
     );
   }
 
+  // Show message if no profile is selected
+  if (!activeProfile) {
+    return (
+      <div className="min-h-screen bg-zinc-50 dark:bg-black">
+        <div className="mx-auto max-w-4xl px-4 py-6">
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-6 dark:border-amber-800 dark:bg-amber-950">
+            <h2 className="text-lg font-semibold text-amber-900 dark:text-amber-100">
+              No Profile Selected
+            </h2>
+            <p className="mt-2 text-amber-700 dark:text-amber-300">
+              Please create or select a profile to upload context documents.
+            </p>
+            <button
+              onClick={() => router.push('/profile/manage')}
+              className="mt-4 rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700"
+            >
+              Manage Profiles
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-black">
       <div className="mx-auto max-w-4xl px-4 py-6">
+        {/* Profile Indicator */}
+        <div className="mb-4 flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-sm font-bold text-white">
+            {activeProfile.profile_name.charAt(0).toUpperCase()}
+          </div>
+          <div>
+            <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+              {activeProfile.profile_name}
+            </p>
+            {activeProfile.target_role && (
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                {activeProfile.target_role}
+                {activeProfile.target_company && ` @ ${activeProfile.target_company}`}
+              </p>
+            )}
+          </div>
+        </div>
+
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-100">

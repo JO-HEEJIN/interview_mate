@@ -19,6 +19,7 @@ router = APIRouter(prefix="/api/context", tags=["context-upload"])
 class TextContextUpload(BaseModel):
     context_type: str  # company_info, job_posting, additional
     text_content: str
+    profile_id: Optional[str] = None  # Required for multi-profile support
 
 class ContextResponse(BaseModel):
     id: str
@@ -37,7 +38,8 @@ class UploadResponse(BaseModel):
 @router.post("/{user_id}/upload-resume")
 async def upload_resume(
     user_id: str,
-    file: UploadFile = File(...)
+    file: UploadFile = File(...),
+    profile_id: Optional[str] = Form(None)
 ):
     """
     Upload PDF resume and extract text.
@@ -45,6 +47,7 @@ async def upload_resume(
     Args:
         user_id: User ID
         file: PDF file to upload
+        profile_id: Profile ID (required for multi-profile)
 
     Returns:
         Context ID and extracted text preview
@@ -53,7 +56,7 @@ async def upload_resume(
         400: Invalid file format
         500: Upload or extraction failed
     """
-    logger.info(f"Resume upload requested for user {user_id}")
+    logger.info(f"Resume upload requested for user {user_id}, profile {profile_id}")
 
     try:
         # Validate PDF
@@ -73,7 +76,8 @@ async def upload_resume(
             'file_name': result['file_name'],
             'file_path': result['file_path'],
             'extracted_text': result['extracted_text'],
-            'metadata': result['metadata']
+            'metadata': result['metadata'],
+            'profile_id': profile_id
         }
 
         saved = supabase.table("user_contexts").insert(context_record).execute()
@@ -99,7 +103,8 @@ async def upload_resume(
 async def upload_screenshot(
     user_id: str,
     context_type: str = Form(...),  # company_info or job_posting
-    file: UploadFile = File(...)
+    file: UploadFile = File(...),
+    profile_id: Optional[str] = Form(None)
 ):
     """
     Upload screenshot (company info or job posting) and extract text via Vision API.
@@ -108,6 +113,7 @@ async def upload_screenshot(
         user_id: User ID
         context_type: Type of context ('company_info' or 'job_posting')
         file: Image file to upload
+        profile_id: Profile ID (required for multi-profile)
 
     Returns:
         Context ID and extracted text
@@ -116,7 +122,7 @@ async def upload_screenshot(
         400: Invalid context type or file format
         500: Upload or extraction failed
     """
-    logger.info(f"Screenshot upload requested for user {user_id}, type: {context_type}")
+    logger.info(f"Screenshot upload requested for user {user_id}, type: {context_type}, profile {profile_id}")
 
     try:
         # Validate context type
@@ -147,7 +153,8 @@ async def upload_screenshot(
             'file_name': result['file_name'],
             'file_path': result['file_path'],
             'extracted_text': result['extracted_text'],
-            'metadata': result['metadata']
+            'metadata': result['metadata'],
+            'profile_id': profile_id
         }
 
         saved = supabase.table("user_contexts").insert(context_record).execute()
@@ -215,7 +222,8 @@ async def upload_text_context(
             'file_name': result['file_name'],
             'file_path': result['file_path'],
             'extracted_text': result['extracted_text'],
-            'metadata': result['metadata']
+            'metadata': result['metadata'],
+            'profile_id': data.profile_id
         }
 
         saved = supabase.table("user_contexts").insert(context_record).execute()
@@ -223,7 +231,7 @@ async def upload_text_context(
         if not saved.data:
             raise HTTPException(500, "Failed to save context to database")
 
-        logger.info(f"Successfully uploaded text for user {user_id}")
+        logger.info(f"Successfully uploaded text for user {user_id}, profile {data.profile_id}")
 
         return {
             'context_id': saved.data[0]['id'],
@@ -238,13 +246,15 @@ async def upload_text_context(
 
 @router.get("/{user_id}/contexts")
 async def list_user_contexts(
-    user_id: str
+    user_id: str,
+    profile_id: Optional[str] = None
 ):
     """
     List all uploaded contexts for user.
 
     Args:
         user_id: User ID
+        profile_id: Filter by profile ID (optional)
 
     Returns:
         List of all contexts with metadata
@@ -252,16 +262,19 @@ async def list_user_contexts(
     Raises:
         500: Database query failed
     """
-    logger.info(f"Listing contexts for user {user_id}")
+    logger.info(f"Listing contexts for user {user_id}, profile {profile_id}")
 
     try:
         supabase = get_supabase_client()
 
-        result = supabase.table("user_contexts") \
+        query = supabase.table("user_contexts") \
             .select("*") \
-            .eq("user_id", user_id) \
-            .order("created_at", desc=True) \
-            .execute()
+            .eq("user_id", user_id)
+
+        if profile_id:
+            query = query.eq("profile_id", profile_id)
+
+        result = query.order("created_at", desc=True).execute()
 
         logger.info(f"Found {len(result.data)} contexts for user {user_id}")
 
@@ -274,7 +287,8 @@ async def list_user_contexts(
 @router.get("/{user_id}/contexts/{context_type}")
 async def get_contexts_by_type(
     user_id: str,
-    context_type: str
+    context_type: str,
+    profile_id: Optional[str] = None
 ):
     """
     Get all contexts of a specific type for user.
@@ -282,6 +296,7 @@ async def get_contexts_by_type(
     Args:
         user_id: User ID
         context_type: Type of context to retrieve
+        profile_id: Filter by profile ID (optional)
 
     Returns:
         List of contexts matching the type
@@ -290,7 +305,7 @@ async def get_contexts_by_type(
         400: Invalid context type
         500: Database query failed
     """
-    logger.info(f"Getting {context_type} contexts for user {user_id}")
+    logger.info(f"Getting {context_type} contexts for user {user_id}, profile {profile_id}")
 
     try:
         # Validate context type
@@ -303,12 +318,15 @@ async def get_contexts_by_type(
 
         supabase = get_supabase_client()
 
-        result = supabase.table("user_contexts") \
+        query = supabase.table("user_contexts") \
             .select("*") \
             .eq("user_id", user_id) \
-            .eq("context_type", context_type) \
-            .order("created_at", desc=True) \
-            .execute()
+            .eq("context_type", context_type)
+
+        if profile_id:
+            query = query.eq("profile_id", profile_id)
+
+        result = query.order("created_at", desc=True).execute()
 
         logger.info(f"Found {len(result.data)} {context_type} contexts for user {user_id}")
 
@@ -360,9 +378,14 @@ async def delete_context(
         logger.error(f"Failed to delete context: {e}", exc_info=True)
         raise HTTPException(500, f"Failed to delete context: {str(e)}")
 
+class GenerateQARequest(BaseModel):
+    profile_id: Optional[str] = None
+
+
 @router.post("/{user_id}/generate-qa")
 async def generate_qa_pairs(
-    user_id: str
+    user_id: str,
+    request: Optional[GenerateQARequest] = None
 ):
     """
     Generate initial 30 Q&A pairs from all uploaded contexts.
@@ -375,6 +398,7 @@ async def generate_qa_pairs(
 
     Args:
         user_id: User ID
+        request: Optional request body with profile_id
 
     Returns:
         Batch ID, generated count, category breakdown, Q&A pairs
@@ -383,19 +407,24 @@ async def generate_qa_pairs(
         400: Resume required
         500: Generation failed
     """
-    logger.info(f"Q&A generation requested for user {user_id}")
+    profile_id = request.profile_id if request else None
+    logger.info(f"Q&A generation requested for user {user_id}, profile {profile_id}")
 
     try:
         # Import here to avoid circular dependency
         from app.services.qa_generation_service import qa_generation_service
 
-        # Check if resume exists
+        # Check if resume exists (for this profile if specified)
         supabase = get_supabase_client()
-        resume_check = supabase.table("user_contexts") \
+        query = supabase.table("user_contexts") \
             .select("id") \
             .eq("user_id", user_id) \
-            .eq("context_type", "resume") \
-            .execute()
+            .eq("context_type", "resume")
+
+        if profile_id:
+            query = query.eq("profile_id", profile_id)
+
+        resume_check = query.execute()
 
         if not resume_check.data:
             raise HTTPException(
@@ -404,8 +433,8 @@ async def generate_qa_pairs(
             )
 
         # Start generation
-        logger.info(f"Starting Q&A generation for user {user_id}")
-        result = await qa_generation_service.generate_initial_qa_batch(user_id)
+        logger.info(f"Starting Q&A generation for user {user_id}, profile {profile_id}")
+        result = await qa_generation_service.generate_initial_qa_batch(user_id, profile_id)
 
         logger.info(f"✅ Generated {result['generated_count']} Q&A pairs for user {user_id}")
 
@@ -420,10 +449,15 @@ async def generate_qa_pairs(
         raise HTTPException(500, f"Q&A generation failed: {str(e)}")
 
 
+class GenerateIncrementalRequest(BaseModel):
+    profile_id: Optional[str] = None
+    new_context_ids: Optional[List[str]] = None
+
+
 @router.post("/{user_id}/generate-incremental")
 async def generate_incremental_qa(
     user_id: str,
-    new_context_ids: Optional[List[str]] = None
+    request: Optional[GenerateIncrementalRequest] = None
 ):
     """
     Generate 10 additional Q&A pairs after new context is added.
@@ -438,7 +472,7 @@ async def generate_incremental_qa(
 
     Args:
         user_id: User ID
-        new_context_ids: IDs of newly added contexts (optional)
+        request: Optional request body with profile_id and context IDs
 
     Returns:
         Batch ID, generated count, Q&A pairs
@@ -446,7 +480,9 @@ async def generate_incremental_qa(
     Raises:
         500: Generation failed
     """
-    logger.info(f"Incremental Q&A generation requested for user {user_id}")
+    profile_id = request.profile_id if request else None
+    new_context_ids = request.new_context_ids if request else None
+    logger.info(f"Incremental Q&A generation requested for user {user_id}, profile {profile_id}")
 
     try:
         # Import here to avoid circular dependency
@@ -455,6 +491,7 @@ async def generate_incremental_qa(
         # Start incremental generation
         result = await qa_generation_service.generate_incremental_qa_batch(
             user_id,
+            profile_id,
             new_context_ids
         )
 

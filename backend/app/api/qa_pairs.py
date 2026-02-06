@@ -91,6 +91,7 @@ class QAPairCreate(BaseModel):
     question_type: str  # behavioral, technical, situational, general
     source: str = "manual"
     question_variations: Optional[List[str]] = []  # Alternative question phrasings
+    profile_id: Optional[str] = None  # Required for multi-profile support
 
 
 class QAPairUpdate(BaseModel):
@@ -103,6 +104,7 @@ class QAPairUpdate(BaseModel):
 class QAPairResponse(BaseModel):
     id: str
     user_id: str
+    profile_id: Optional[str] = None
     question: str
     answer: str
     question_type: str
@@ -127,16 +129,20 @@ class BulkParseResponse(BaseModel):
 async def list_qa_pairs(
     user_id: str,
     question_type: Optional[str] = None,
+    profile_id: Optional[str] = None,
     supabase: Client = Depends(get_supabase_client)
 ):
     """
-    List all Q&A pairs for a user, optionally filtered by question type.
+    List all Q&A pairs for a user, optionally filtered by question type and profile.
     """
     try:
         query = supabase.table("qa_pairs").select("*").eq("user_id", user_id)
 
         if question_type:
             query = query.eq("question_type", question_type)
+
+        if profile_id:
+            query = query.eq("profile_id", profile_id)
 
         result = query.order("created_at", desc=True).execute()
 
@@ -165,6 +171,7 @@ async def create_qa_pair(
             "question_type": qa_pair.question_type,
             "source": qa_pair.source,
             "question_variations": qa_pair.question_variations or [],
+            "profile_id": qa_pair.profile_id,
         }
 
         result = supabase.table("qa_pairs").insert(data).execute()
@@ -213,10 +220,15 @@ async def bulk_parse_qa_pairs(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+class BulkUploadRequest(BaseModel):
+    qa_pairs: List[QAPairCreate]
+    profile_id: Optional[str] = None  # Can set at batch level
+
+
 @router.post("/{user_id}/bulk-upload", response_model=List[QAPairResponse])
 async def bulk_upload_qa_pairs(
     user_id: str,
-    qa_pairs: List[QAPairCreate],
+    request: BulkUploadRequest,
     supabase: Client = Depends(get_supabase_client)
 ):
     """
@@ -231,8 +243,9 @@ async def bulk_upload_qa_pairs(
                 "question_type": pair.question_type,
                 "source": pair.source,
                 "question_variations": pair.question_variations or [],
+                "profile_id": pair.profile_id or request.profile_id,  # Individual or batch-level
             }
-            for pair in qa_pairs
+            for pair in request.qa_pairs
         ]
 
         result = supabase.table("qa_pairs").insert(data).execute()
@@ -240,7 +253,7 @@ async def bulk_upload_qa_pairs(
         if not result.data:
             raise HTTPException(status_code=400, detail="Failed to upload Q&A pairs")
 
-        logger.info(f"Bulk uploaded {len(result.data)} Q&A pairs for user {user_id}")
+        logger.info(f"Bulk uploaded {len(result.data)} Q&A pairs for user {user_id}, profile {request.profile_id}")
         return result.data
     except Exception as e:
         logger.error(f"Error bulk uploading Q&A pairs: {e}", exc_info=True)

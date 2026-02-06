@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { useUserFeatures } from '@/hooks/useUserFeatures';
+import { useProfile } from '@/contexts/ProfileContext';
 import { AudioLevelIndicator } from '@/components/interview/AudioLevelIndicator';
 import { TranscriptionDisplay } from '@/components/interview/TranscriptionDisplay';
 import { AnswerDisplay } from '@/components/interview/AnswerDisplay';
@@ -44,6 +45,9 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 export default function PracticePage() {
     const router = useRouter();
     const [userId, setUserId] = useState<string | null>(null);
+
+    // Profile context
+    const { activeProfile, isLoading: profileLoading } = useProfile();
 
     // Feature gating - check interview credits and AI generator
     const { interview_credits, ai_generator_available, isLoading: featuresLoading } = useUserFeatures(userId);
@@ -226,16 +230,23 @@ export default function PracticePage() {
         return () => subscription.unsubscribe();
     }, [router]);
 
-    // Fetch user context (STAR stories and Q&A pairs) when userId is available
+    // Fetch user context (STAR stories and Q&A pairs) when userId and profile are available
     useEffect(() => {
-        if (!userId) return;
+        if (!userId || !activeProfile) return;
 
         const fetchAll = async () => {
             try {
+                // Build URLs with profile_id
+                const contextUrl = new URL(`${API_URL}/api/profile/context/${userId}`);
+                contextUrl.searchParams.set('profile_id', activeProfile.id);
+
+                const qaPairsUrl = new URL(`${API_URL}/api/qa-pairs/${userId}`);
+                qaPairsUrl.searchParams.set('profile_id', activeProfile.id);
+
                 // Fetch both context and Q&A pairs in parallel
                 const [contextResponse, qaPairsResponse] = await Promise.all([
-                    fetch(`${API_URL}/api/profile/context/${userId}`),
-                    fetch(`${API_URL}/api/qa-pairs/${userId}`)
+                    fetch(contextUrl.toString()),
+                    fetch(qaPairsUrl.toString())
                 ]);
 
                 if (contextResponse.ok) {
@@ -246,7 +257,7 @@ export default function PracticePage() {
                 if (qaPairsResponse.ok) {
                     const qaPairsData = await qaPairsResponse.json();
                     setQaPairs(qaPairsData || []);
-                    console.log(`Loaded ${qaPairsData?.length || 0} Q&A pairs`);
+                    console.log(`Loaded ${qaPairsData?.length || 0} Q&A pairs for profile ${activeProfile.profile_name}`);
                 }
 
                 // Set contextLoaded only after BOTH are loaded
@@ -257,20 +268,21 @@ export default function PracticePage() {
         };
 
         fetchAll();
-    }, [userId]);
+    }, [userId, activeProfile]);
 
     // Send context when connected
     useEffect(() => {
-        if (isConnected && contextLoaded && userId) {
+        if (isConnected && contextLoaded && userId && activeProfile) {
             sendContext({
                 user_id: userId,
+                profile_id: activeProfile.id,
                 resume_text: '',
                 star_stories: starStories,
                 talking_points: [],
                 qa_pairs: qaPairs
             });
         }
-    }, [isConnected, contextLoaded, userId, starStories, qaPairs, sendContext]);
+    }, [isConnected, contextLoaded, userId, activeProfile, starStories, qaPairs, sendContext]);
 
     // Session timer
     useEffect(() => {
@@ -379,14 +391,51 @@ export default function PracticePage() {
         }
     }, [accumulatedText, requestAnswer]);
 
+    // Show message if no profile is selected
+    if (!profileLoading && !activeProfile) {
+        return (
+            <div className="min-h-screen bg-zinc-50 dark:bg-black">
+                <div className="mx-auto max-w-4xl px-4 py-6">
+                    <div className="rounded-lg border border-amber-200 bg-amber-50 p-6 dark:border-amber-800 dark:bg-amber-950">
+                        <h2 className="text-lg font-semibold text-amber-900 dark:text-amber-100">
+                            No Profile Selected
+                        </h2>
+                        <p className="mt-2 text-amber-700 dark:text-amber-300">
+                            Please create or select a profile before starting an interview practice session.
+                        </p>
+                        <button
+                            onClick={() => router.push('/profile/manage')}
+                            className="mt-4 rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700"
+                        >
+                            Manage Profiles
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen bg-zinc-50 dark:bg-black">
             {/* Header */}
             <header className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
                 <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
-                    <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
-                        Interview Practice
-                    </h1>
+                    <div>
+                        {/* Profile Indicator */}
+                        {activeProfile && (
+                            <div className="mb-1 flex items-center gap-2">
+                                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-xs font-bold text-white">
+                                    {activeProfile.profile_name.charAt(0).toUpperCase()}
+                                </div>
+                                <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                                    {activeProfile.profile_name}
+                                </span>
+                            </div>
+                        )}
+                        <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
+                            Interview Practice
+                        </h1>
+                    </div>
                     <div className="flex items-center gap-4">
                         <div className="text-2xl font-mono text-zinc-700 dark:text-zinc-300">
                             {formatTime(sessionTime)}

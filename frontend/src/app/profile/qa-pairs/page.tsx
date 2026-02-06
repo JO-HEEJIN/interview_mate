@@ -9,6 +9,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useUserFeatures } from '@/hooks/useUserFeatures';
+import { useProfile } from '@/contexts/ProfileContext';
 
 interface QAPair {
     id: string;
@@ -37,6 +38,9 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 export default function QAPairsPage() {
     const router = useRouter();
     const [userId, setUserId] = useState<string | null>(null);
+
+    // Profile context
+    const { activeProfile, isLoading: profileLoading } = useProfile();
 
     // Feature gating - check qa_management access
     const { qa_management_available, isLoading: featuresLoading } = useUserFeatures(userId);
@@ -90,19 +94,21 @@ export default function QAPairsPage() {
         return () => subscription.unsubscribe();
     }, [router]);
 
-    // Fetch Q&A pairs when userId is available
+    // Fetch Q&A pairs when userId or activeProfile changes
     useEffect(() => {
-        if (userId) {
+        if (userId && activeProfile) {
             fetchQAPairs();
         }
-    }, [userId]);
+    }, [userId, activeProfile]);
 
     const fetchQAPairs = async () => {
-        if (!userId) return;
+        if (!userId || !activeProfile) return;
 
         try {
             setIsLoading(true);
-            const response = await fetch(`${API_URL}/api/qa-pairs/${userId}`);
+            const url = new URL(`${API_URL}/api/qa-pairs/${userId}`);
+            url.searchParams.set('profile_id', activeProfile.id);
+            const response = await fetch(url.toString());
             if (!response.ok) throw new Error('Failed to fetch Q&A pairs');
             const data = await response.json();
             setQaPairs(data || []);
@@ -147,7 +153,7 @@ export default function QAPairsPage() {
 
     // Upload parsed pairs
     const handleUploadParsed = async () => {
-        if (parsedPairs.length === 0 || !userId) return;
+        if (parsedPairs.length === 0 || !userId || !activeProfile) return;
 
         try {
             setIsUploading(true);
@@ -155,7 +161,10 @@ export default function QAPairsPage() {
             const response = await fetch(`${API_URL}/api/qa-pairs/${userId}/bulk-upload`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(parsedPairs),
+                body: JSON.stringify({
+                    qa_pairs: parsedPairs,
+                    profile_id: activeProfile.id,
+                }),
             });
 
             if (!response.ok) throw new Error('Failed to upload Q&A pairs');
@@ -175,6 +184,7 @@ export default function QAPairsPage() {
     // Create or update single Q&A
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!activeProfile) return;
 
         const pairData = {
             question: formData.question,
@@ -182,6 +192,7 @@ export default function QAPairsPage() {
             question_type: formData.question_type,
             source: 'manual',
             question_variations: formData.question_variations,
+            profile_id: activeProfile.id,
         };
 
         try {
@@ -276,10 +287,34 @@ export default function QAPairsPage() {
         }
     };
 
-    if (!userId || isLoading) {
+    if (!userId || isLoading || profileLoading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-black">
                 <div className="text-zinc-500">Loading...</div>
+            </div>
+        );
+    }
+
+    // Show message if no profile is selected
+    if (!activeProfile) {
+        return (
+            <div className="min-h-screen bg-zinc-50 dark:bg-black">
+                <div className="mx-auto max-w-4xl px-4 py-6">
+                    <div className="rounded-lg border border-amber-200 bg-amber-50 p-6 dark:border-amber-800 dark:bg-amber-950">
+                        <h2 className="text-lg font-semibold text-amber-900 dark:text-amber-100">
+                            No Profile Selected
+                        </h2>
+                        <p className="mt-2 text-amber-700 dark:text-amber-300">
+                            Please create or select a profile to manage Q&A pairs.
+                        </p>
+                        <button
+                            onClick={() => router.push('/profile/manage')}
+                            className="mt-4 rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700"
+                        >
+                            Manage Profiles
+                        </button>
+                    </div>
+                </div>
             </div>
         );
     }
@@ -290,6 +325,15 @@ export default function QAPairsPage() {
             <header className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
                 <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-4">
                     <div>
+                        {/* Profile Indicator */}
+                        <div className="mb-2 flex items-center gap-2">
+                            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-xs font-bold text-white">
+                                {activeProfile.profile_name.charAt(0).toUpperCase()}
+                            </div>
+                            <span className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                                {activeProfile.profile_name}
+                            </span>
+                        </div>
                         <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
                             Q&A Pairs
                         </h1>

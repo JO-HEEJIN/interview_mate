@@ -1,10 +1,11 @@
 """
 REST API endpoints for user profile, STAR stories, and talking points
+Supports multi-profile filtering via profile_id
 """
 
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 from supabase import create_client, Client
 from app.core.config import settings
 
@@ -22,7 +23,8 @@ class StarStoryCreate(BaseModel):
     task: str
     action: str
     result: str
-    tags: Optional[list[str]] = []
+    tags: Optional[List[str]] = []
+    profile_id: Optional[str] = None  # Required for multi-profile support
 
 
 class StarStoryUpdate(BaseModel):
@@ -38,12 +40,13 @@ class StarStoryUpdate(BaseModel):
 class StarStoryResponse(BaseModel):
     id: str
     user_id: str
+    profile_id: Optional[str] = None
     title: str
     situation: str
     task: str
     action: str
     result: str
-    tags: list[str]
+    tags: List[str]
     is_favorite: bool
 
 
@@ -52,6 +55,7 @@ class TalkingPointCreate(BaseModel):
     category: str
     content: str
     priority: Optional[int] = 0
+    profile_id: Optional[str] = None  # Required for multi-profile support
 
 
 class TalkingPointUpdate(BaseModel):
@@ -63,6 +67,7 @@ class TalkingPointUpdate(BaseModel):
 class TalkingPointResponse(BaseModel):
     id: str
     user_id: str
+    profile_id: Optional[str] = None
     category: str
     content: str
     priority: int
@@ -70,11 +75,16 @@ class TalkingPointResponse(BaseModel):
 
 # STAR Stories Endpoints
 @router.get("/star-stories/{user_id}")
-async def get_star_stories(user_id: str):
-    """Get all STAR stories for a user"""
+async def get_star_stories(user_id: str, profile_id: Optional[str] = None):
+    """Get all STAR stories for a user, optionally filtered by profile"""
     supabase = get_supabase()
 
-    response = supabase.table("star_stories").select("*").eq("user_id", user_id).execute()
+    query = supabase.table("star_stories").select("*").eq("user_id", user_id)
+
+    if profile_id:
+        query = query.eq("profile_id", profile_id)
+
+    response = query.execute()
 
     return {"stories": response.data}
 
@@ -91,7 +101,8 @@ async def create_star_story(user_id: str, story: StarStoryCreate):
         "task": story.task,
         "action": story.action,
         "result": story.result,
-        "tags": story.tags or []
+        "tags": story.tags or [],
+        "profile_id": story.profile_id
     }
 
     response = supabase.table("star_stories").insert(data).execute()
@@ -132,11 +143,16 @@ async def delete_star_story(story_id: str):
 
 # Talking Points Endpoints
 @router.get("/talking-points/{user_id}")
-async def get_talking_points(user_id: str):
-    """Get all talking points for a user"""
+async def get_talking_points(user_id: str, profile_id: Optional[str] = None):
+    """Get all talking points for a user, optionally filtered by profile"""
     supabase = get_supabase()
 
-    response = supabase.table("talking_points").select("*").eq("user_id", user_id).order("priority", desc=True).execute()
+    query = supabase.table("talking_points").select("*").eq("user_id", user_id)
+
+    if profile_id:
+        query = query.eq("profile_id", profile_id)
+
+    response = query.order("priority", desc=True).execute()
 
     return {"talking_points": response.data}
 
@@ -150,7 +166,8 @@ async def create_talking_point(user_id: str, point: TalkingPointCreate):
         "user_id": user_id,
         "category": point.category,
         "content": point.content,
-        "priority": point.priority or 0
+        "priority": point.priority or 0,
+        "profile_id": point.profile_id
     }
 
     response = supabase.table("talking_points").insert(data).execute()
@@ -191,16 +208,22 @@ async def delete_talking_point(point_id: str):
 
 # User Context Endpoint (for interview session)
 @router.get("/context/{user_id}")
-async def get_user_context(user_id: str):
+async def get_user_context(user_id: str, profile_id: Optional[str] = None):
     """Get all user context for interview session (stories, talking points, resume)"""
     supabase = get_supabase()
 
-    # Get STAR stories
-    stories_response = supabase.table("star_stories").select("*").eq("user_id", user_id).execute()
+    # Get STAR stories (filtered by profile if specified)
+    stories_query = supabase.table("star_stories").select("*").eq("user_id", user_id)
+    if profile_id:
+        stories_query = stories_query.eq("profile_id", profile_id)
+    stories_response = stories_query.execute()
 
-    # Get talking points
+    # Get talking points (filtered by profile if specified)
     try:
-        points_response = supabase.table("talking_points").select("*").eq("user_id", user_id).execute()
+        points_query = supabase.table("talking_points").select("*").eq("user_id", user_id)
+        if profile_id:
+            points_query = points_query.eq("profile_id", profile_id)
+        points_response = points_query.execute()
         talking_points = points_response.data
     except Exception:
         talking_points = []

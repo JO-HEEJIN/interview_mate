@@ -20,20 +20,25 @@ router = APIRouter()
 
 
 # Helper functions for session management
-async def create_interview_session(user_id: str, title: str = "Interview Practice") -> str:
+async def create_interview_session(user_id: str, title: str = "Interview Practice", profile_id: str = None) -> str:
     """Create a new interview session and return session_id"""
     try:
         supabase = get_supabase_client()
-        result = supabase.table("interview_sessions").insert({
+        data = {
             "user_id": user_id,
             "title": title,
             "status": "active",
             "started_at": datetime.utcnow().isoformat()
-        }).execute()
+        }
+
+        if profile_id:
+            data["profile_id"] = profile_id
+
+        result = supabase.table("interview_sessions").insert(data).execute()
 
         if result.data:
             session_id = result.data[0]["id"]
-            logger.info(f"Created interview session: {session_id}")
+            logger.info(f"Created interview session: {session_id} (profile: {profile_id})")
             return session_id
         return None
     except Exception as e:
@@ -317,6 +322,7 @@ async def websocket_transcribe(websocket: WebSocket):
     # Session state
     language = "en"
     user_id = None
+    profile_id = None  # For multi-profile support
     user_profile = None  # Interview profile for personalized prompts
     user_context = {
         "resume_text": "",
@@ -623,24 +629,56 @@ async def websocket_transcribe(websocket: WebSocket):
                             user_context["talking_points"] = data.get("talking_points", [])
                             user_context["qa_pairs"] = data.get("qa_pairs", [])
 
-                            # Extract user_id if provided
+                            # Extract user_id and profile_id if provided
                             received_user_id = data.get("user_id")
-                            logger.warning(f"[{connection_id}] CONTEXT_DEBUG: Received user_id from frontend: {received_user_id}")
-                            logger.warning(f"CONTEXT_DEBUG: Current user_id in WebSocket: {user_id}")
+                            received_profile_id = data.get("profile_id")
+                            logger.warning(f"[{connection_id}] CONTEXT_DEBUG: Received user_id from frontend: {received_user_id}, profile_id: {received_profile_id}")
+                            logger.warning(f"CONTEXT_DEBUG: Current user_id in WebSocket: {user_id}, profile_id: {profile_id}")
                             logger.warning(f"CONTEXT_DEBUG: Full context message keys: {list(data.keys())}")
 
-                            if received_user_id and received_user_id != user_id:
-                                logger.warning(f"CONTEXT_DEBUG: Switching user_id from {user_id} to {received_user_id}")
-                                user_id = received_user_id
+                            # Check if user or profile changed
+                            user_changed = received_user_id and received_user_id != user_id
+                            profile_changed = received_profile_id and received_profile_id != profile_id
 
-                                # Load interview profile
+                            if user_changed or profile_changed:
+                                if user_changed:
+                                    logger.warning(f"CONTEXT_DEBUG: Switching user_id from {user_id} to {received_user_id}")
+                                    user_id = received_user_id
+                                if received_profile_id:
+                                    profile_id = received_profile_id
+                                    logger.warning(f"CONTEXT_DEBUG: Switching profile_id to {profile_id}")
+
+                                # Load interview profile (specific profile if profile_id provided, otherwise default)
                                 try:
                                     supabase = get_supabase_client()
-                                    profile_response = supabase.table("user_interview_profiles").select("*").eq("user_id", user_id).execute()
+
+                                    if profile_id:
+                                        # Load specific profile by ID
+                                        profile_response = supabase.table("user_interview_profiles") \
+                                            .select("*") \
+                                            .eq("id", profile_id) \
+                                            .eq("user_id", user_id) \
+                                            .execute()
+                                    else:
+                                        # Load default profile or any profile
+                                        profile_response = supabase.table("user_interview_profiles") \
+                                            .select("*") \
+                                            .eq("user_id", user_id) \
+                                            .eq("is_default", True) \
+                                            .execute()
+
+                                        # If no default, get any profile
+                                        if not profile_response.data or len(profile_response.data) == 0:
+                                            profile_response = supabase.table("user_interview_profiles") \
+                                                .select("*") \
+                                                .eq("user_id", user_id) \
+                                                .limit(1) \
+                                                .execute()
 
                                     if profile_response.data and len(profile_response.data) > 0:
                                         user_profile = profile_response.data[0]
-                                        logger.info(f"Loaded interview profile for user {user_id}: {user_profile.get('full_name', 'N/A')}")
+                                        profile_id = user_profile.get("id")  # Ensure profile_id is set
+                                        logger.info(f"Loaded interview profile for user {user_id}: {user_profile.get('profile_name', 'N/A')} ({user_profile.get('full_name', 'N/A')})")
                                     else:
                                         logger.info(f"No interview profile found for user {user_id}, using defaults")
                                         user_profile = None
@@ -648,11 +686,11 @@ async def websocket_transcribe(websocket: WebSocket):
                                     logger.error(f"Failed to load interview profile: {e}", exc_info=True)
                                     user_profile = None
 
-                                # NEW: Create interview session for memory tracking
+                                # NEW: Create interview session for memory tracking (with profile_id)
                                 if not session_id:
-                                    session_id = await create_interview_session(user_id, "Interview Practice")
+                                    session_id = await create_interview_session(user_id, "Interview Practice", profile_id)
                                     if session_id:
-                                        logger.info(f"Created session {session_id} for user {user_id}")
+                                        logger.info(f"Created session {session_id} for user {user_id}, profile {profile_id}")
 
                             # OPTIMIZATION (Phase 1.1): Build Q&A index for fast lookup
                             # This takes <1ms and enables O(1) exact matching + faster similarity search

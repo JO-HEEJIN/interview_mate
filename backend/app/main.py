@@ -246,7 +246,12 @@ app.include_router(
 
 app.include_router(
     interview_profile.router,
-    tags=["interview-profile"],
+    tags=["interview-profiles"],
+)
+
+app.include_router(
+    interview_profile.legacy_router,
+    tags=["interview-profile-legacy"],
 )
 
 app.include_router(
