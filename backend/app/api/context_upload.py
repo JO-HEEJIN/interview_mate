@@ -338,8 +338,9 @@ async def get_contexts_by_type(
         logger.error(f"Failed to get contexts: {e}", exc_info=True)
         raise HTTPException(500, f"Failed to get contexts: {str(e)}")
 
-@router.delete("/contexts/{context_id}")
+@router.delete("/{user_id}/contexts/{context_id}")
 async def delete_context(
+    user_id: str,
     context_id: str
 ):
     """
