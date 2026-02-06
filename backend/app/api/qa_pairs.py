@@ -323,6 +323,49 @@ async def delete_qa_pair(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.delete("/{user_id}/all")
+async def delete_all_qa_pairs(
+    user_id: str,
+    profile_id: Optional[str] = None,
+    background_tasks: BackgroundTasks = None,
+    supabase: Client = Depends(get_supabase_client)
+):
+    """
+    Delete all Q&A pairs for a user (optionally filtered by profile).
+    """
+    try:
+        # First, get all QA pair IDs for Qdrant cleanup
+        query = supabase.table("qa_pairs").select("id").eq("user_id", user_id)
+        if profile_id:
+            query = query.eq("profile_id", profile_id)
+
+        existing = query.execute()
+        qa_ids = [item["id"] for item in existing.data] if existing.data else []
+
+        # Delete from Supabase
+        delete_query = supabase.table("qa_pairs").delete().eq("user_id", user_id)
+        if profile_id:
+            delete_query = delete_query.eq("profile_id", profile_id)
+
+        result = delete_query.execute()
+        deleted_count = len(result.data) if result.data else 0
+
+        # Delete from Qdrant in background
+        if background_tasks:
+            for qa_id in qa_ids:
+                background_tasks.add_task(delete_qa_pair_from_qdrant, qa_id)
+
+        logger.info(f"Deleted {deleted_count} Q&A pairs for user {user_id}, profile {profile_id}")
+
+        return {
+            "message": f"Deleted {deleted_count} Q&A pairs",
+            "deleted_count": deleted_count
+        }
+    except Exception as e:
+        logger.error(f"Error deleting all Q&A pairs: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.post("/{qa_pair_id}/increment-usage")
 async def increment_usage(
     qa_pair_id: str,

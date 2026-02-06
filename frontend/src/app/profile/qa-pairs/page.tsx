@@ -233,6 +233,29 @@ export default function QAPairsPage() {
         }
     };
 
+    const handleDeleteAll = async () => {
+        if (!userId || !activeProfile) return;
+
+        const confirmMsg = `Are you sure you want to delete ALL ${qaPairs.length} Q&A pairs for "${activeProfile.profile_name}"?\n\nThis action cannot be undone.`;
+        if (!confirm(confirmMsg)) return;
+
+        try {
+            const url = new URL(`${API_URL}/api/qa-pairs/${userId}/all`);
+            url.searchParams.set('profile_id', activeProfile.id);
+            const response = await fetch(url.toString(), {
+                method: 'DELETE',
+            });
+
+            if (!response.ok) throw new Error('Failed to delete Q&A pairs');
+
+            const data = await response.json();
+            setQaPairs([]);
+            setError(null);
+        } catch (err) {
+            setError('Failed to delete all Q&A pairs');
+        }
+    };
+
     const handleEdit = (pair: QAPair) => {
         setEditingPair(pair);
         setFormData({
@@ -350,6 +373,17 @@ export default function QAPairsPage() {
                         </a>
                         {!isCreating && !showBulkUpload && (
                             <>
+                                {qaPairs.length > 0 && (
+                                    <button
+                                        onClick={() => {
+                                            if (!canEdit) { router.push('/pricing'); return; }
+                                            handleDeleteAll();
+                                        }}
+                                        className="rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-950"
+                                    >
+                                        Delete All
+                                    </button>
+                                )}
                                 <button
                                     onClick={() => {
                                         if (!canEdit) { router.push('/pricing'); return; }
