@@ -5,7 +5,7 @@
  * Allows users to customize their interview persona and answer style
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useProfile } from '@/contexts/ProfileContext';
@@ -24,9 +24,14 @@ export default function InterviewSettingsPage() {
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
+    const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
 
     // Profile context
     const { activeProfile, isLoading: profileLoading, updateProfile, createProfile } = useProfile();
+
+    // Auto-save timer ref
+    const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+    const isInitialLoadRef = useRef(true);
 
     // Form state
     const [formData, setFormData] = useState({
@@ -66,6 +71,7 @@ export default function InterviewSettingsPage() {
     // Sync form data with active profile
     useEffect(() => {
         if (activeProfile) {
+            isInitialLoadRef.current = true;
             setFormData({
                 full_name: activeProfile.full_name || '',
                 target_role: activeProfile.target_role || '',
@@ -76,8 +82,66 @@ export default function InterviewSettingsPage() {
                 key_strengths: (activeProfile.key_strengths || []).join(', '),
                 custom_instructions: activeProfile.custom_instructions || '',
             });
+            // Reset initial load flag after a short delay
+            setTimeout(() => {
+                isInitialLoadRef.current = false;
+            }, 100);
         }
     }, [activeProfile]);
+
+    // Auto-save function
+    const performAutoSave = useCallback(async (data: typeof formData) => {
+        if (!activeProfile) return;
+
+        setAutoSaveStatus('saving');
+
+        const profileData = {
+            full_name: data.full_name || undefined,
+            target_role: data.target_role || undefined,
+            target_company: data.target_company || undefined,
+            projects_summary: data.projects_summary || undefined,
+            answer_style: data.answer_style,
+            technical_stack: data.technical_stack
+                ? data.technical_stack.split(',').map(s => s.trim()).filter(Boolean)
+                : [],
+            key_strengths: data.key_strengths
+                ? data.key_strengths.split(',').map(s => s.trim()).filter(Boolean)
+                : [],
+            custom_instructions: data.custom_instructions || undefined,
+        };
+
+        const result = await updateProfile(activeProfile.id, profileData);
+
+        if (result) {
+            setAutoSaveStatus('saved');
+            setTimeout(() => setAutoSaveStatus('idle'), 2000);
+        } else {
+            setAutoSaveStatus('idle');
+        }
+    }, [activeProfile, updateProfile]);
+
+    // Trigger auto-save when form data changes
+    useEffect(() => {
+        // Skip auto-save on initial load
+        if (isInitialLoadRef.current) return;
+        if (!activeProfile) return;
+
+        // Clear existing timer
+        if (autoSaveTimerRef.current) {
+            clearTimeout(autoSaveTimerRef.current);
+        }
+
+        // Set new timer for auto-save (1.5 seconds after last change)
+        autoSaveTimerRef.current = setTimeout(() => {
+            performAutoSave(formData);
+        }, 1500);
+
+        return () => {
+            if (autoSaveTimerRef.current) {
+                clearTimeout(autoSaveTimerRef.current);
+            }
+        };
+    }, [formData, activeProfile, performAutoSave]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -158,7 +222,7 @@ export default function InterviewSettingsPage() {
             <header className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
                 <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-4">
                     <div>
-                        {/* Profile Indicator */}
+                        {/* Profile Indicator + Auto-save Status */}
                         <div className="mb-2 flex items-center gap-2">
                             <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-xs font-bold text-white">
                                 {activeProfile.profile_name.charAt(0).toUpperCase()}
@@ -166,6 +230,23 @@ export default function InterviewSettingsPage() {
                             <span className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
                                 {activeProfile.profile_name}
                             </span>
+                            {autoSaveStatus === 'saving' && (
+                                <span className="flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400">
+                                    <svg className="h-3 w-3 animate-spin" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                    </svg>
+                                    Saving...
+                                </span>
+                            )}
+                            {autoSaveStatus === 'saved' && (
+                                <span className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
+                                    <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                    Saved
+                                </span>
+                            )}
                         </div>
                         <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
                             Interview Settings
