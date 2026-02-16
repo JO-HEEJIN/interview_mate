@@ -357,10 +357,32 @@ export default function InterviewSettingsPage() {
                                 <textarea
                                     value={formData.projects_summary}
                                     onChange={(e) => setFormData({ ...formData, projects_summary: e.target.value })}
-                                    placeholder="Examples:&#10;&#10;For Job Interviews:&#10;- Built real-time inventory system serving 100K+ daily users&#10;- Led team of 3 engineers&#10;&#10;For PhD Defense:&#10;- Research on neural network optimization&#10;- Published 3 papers in top-tier conferences&#10;&#10;For Visa Interview:&#10;- Accepted to Stanford CS PhD program&#10;- Research funding secured for 4 years&#10;&#10;For School Admissions:&#10;- Founded startup with $50K revenue&#10;- Led community service initiative"
+                                    placeholder="Enter your key achievements and experiences..."
                                     rows={10}
                                     className="w-full rounded-lg border border-zinc-300 px-3 py-2 font-mono text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
                                 />
+                                <details className="mt-2 rounded-lg border border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800/50">
+                                    <summary className="cursor-pointer px-3 py-2 text-xs font-medium text-zinc-500 dark:text-zinc-400 select-none">
+                                        View examples
+                                    </summary>
+                                    <div className="px-3 pb-2 text-xs text-zinc-500 dark:text-zinc-400 font-mono whitespace-pre-line">
+{`Job Interviews:
+- Built real-time inventory system serving 100K+ daily users
+- Led team of 3 engineers
+
+PhD Defense:
+- Research on neural network optimization
+- Published 3 papers in top-tier conferences
+
+Visa Interview:
+- Accepted to Stanford CS PhD program
+- Research funding secured for 4 years
+
+School Admissions:
+- Founded startup with $50K revenue
+- Led community service initiative`}
+                                    </div>
+                                </details>
                             </div>
 
                             <div>
@@ -460,10 +482,32 @@ export default function InterviewSettingsPage() {
                             <textarea
                                 value={formData.custom_instructions}
                                 onChange={(e) => setFormData({ ...formData, custom_instructions: e.target.value })}
-                                placeholder={"Examples:\n\nFor Job Interviews:\n- Use STAR format for behavioral questions\n- Emphasize quantifiable results\n\nFor PhD Defense:\n- Be prepared to defend methodology choices\n- Reference specific papers when relevant\n\nFor Visa Interviews:\n- Keep answers short (1-2 sentences)\n- Focus on ties to home country\n\nFor School Admissions:\n- Show genuine interest in the program\n- Connect experiences to future goals"}
+                                placeholder="Enter your custom instructions..."
                                 rows={15}
                                 className="w-full rounded-lg border border-zinc-300 px-3 py-2 font-mono text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
                             />
+                            <details className="mt-2 rounded-lg border border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800/50">
+                                <summary className="cursor-pointer px-3 py-2 text-xs font-medium text-zinc-500 dark:text-zinc-400 select-none">
+                                    View examples
+                                </summary>
+                                <div className="px-3 pb-2 text-xs text-zinc-500 dark:text-zinc-400 font-mono whitespace-pre-line">
+{`Job Interviews:
+- Use STAR format for behavioral questions
+- Emphasize quantifiable results
+
+PhD Defense:
+- Be prepared to defend methodology choices
+- Reference specific papers when relevant
+
+Visa Interviews:
+- Keep answers short (1-2 sentences)
+- Focus on ties to home country
+
+School Admissions:
+- Show genuine interest in the program
+- Connect experiences to future goals`}
+                                </div>
+                            </details>
                         </div>
                     </div>
 

@@ -436,10 +436,22 @@ export default function QAPairsPage() {
                         <textarea
                             value={bulkText}
                             onChange={(e) => setBulkText(e.target.value)}
-                            placeholder="Example:&#10;Q: Tell me about yourself&#10;A: I'm a software engineer with 5 years of experience...&#10;&#10;Q: What are your strengths?&#10;A: I excel at problem-solving and teamwork..."
+                            placeholder="Paste your Q&A pairs here..."
                             rows={10}
                             className="w-full rounded-lg border border-zinc-300 px-3 py-2 font-mono text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
                         />
+                        <details className="mt-2 rounded-lg border border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800/50">
+                            <summary className="cursor-pointer px-3 py-2 text-xs font-medium text-zinc-500 dark:text-zinc-400 select-none">
+                                View format example
+                            </summary>
+                            <div className="px-3 pb-2 text-xs text-zinc-500 dark:text-zinc-400 font-mono whitespace-pre-line">
+{`Q: Tell me about yourself
+A: I'm a software engineer with 5 years of experience...
+
+Q: What are your strengths?
+A: I excel at problem-solving and teamwork...`}
+                            </div>
+                        </details>
 
                         <div className="mt-4 flex gap-2">
                             <button
