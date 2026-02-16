@@ -315,7 +315,7 @@ export default function PracticePage() {
     useEffect(() => {
         let interval: NodeJS.Timeout | null = null;
 
-        if (isRecording && !isPaused) {
+        if (isRecording) {
             interval = setInterval(() => {
                 setSessionTime(prev => prev + 1);
             }, 1000);
@@ -324,7 +324,7 @@ export default function PracticePage() {
         return () => {
             if (interval) clearInterval(interval);
         };
-    }, [isRecording, isPaused]);
+    }, [isRecording]);
 
     // Format time
     const formatTime = (seconds: number) => {
