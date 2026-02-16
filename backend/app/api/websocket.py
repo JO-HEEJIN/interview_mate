@@ -438,100 +438,136 @@ async def websocket_transcribe(websocket: WebSocket):
                             "question_type": question_type
                         })
 
-                        # Auto-generate answer with RAG approach
-                        # 1. Send temporary answer immediately
-                        temp_answer = claude_service.get_temporary_answer(question_type)
-                        await manager.send_json(websocket, {
-                            "type": "answer_temporary",
-                            "question": question,
-                            "answer": temp_answer
-                        })
+                        # Auto-generate answer
+                        # Step 1: Check fast QA pair match first (same as manual path)
+                        matched_qa = claude_service.find_matching_qa_pair_fast(question)
 
-                        # 2. Generate answer using RAG (handles both simple and complex questions)
-                        # RAG will automatically:
-                        # - Find single exact match for simple questions (return directly)
-                        # - Find multiple relevant Q&A pairs for complex questions (synthesize)
-                        logger.info("Generating answer with RAG approach")
+                        if matched_qa:
+                            # Fast path: return stored answer directly
+                            qa_pair_id = matched_qa.get("id")
+                            if qa_pair_id:
+                                asyncio.create_task(increment_qa_usage(qa_pair_id))
+                            logger.info(f"Auto-detect: Using uploaded Q&A pair (ID: {qa_pair_id})")
 
-                        # NEW: Get session history and examples for context
-                        session_history = await get_session_history(session_id) if session_id else []
-                        session_examples = await get_session_examples(session_id) if session_id else []
-                        logger.info(f"Using session context: {len(session_history)} messages, {len(session_examples)} examples used")
-
-                        # Signal streaming start
-                        await manager.send_json(websocket, {
-                            "type": "answer_stream_start",
-                            "question": question,
-                            "source": "generated"
-                        })
-
-                        # Debug logging
-                        logger.warning("=" * 80)
-                        logger.warning(f"RAG_DEBUG: Starting answer generation for question: {question}")
-                        logger.warning(f"RAG_DEBUG: Context has {len(user_context.get('qa_pairs', []))} Q&A pairs")
-                        logger.warning(f"RAG_DEBUG: user_id={user_profile.get('user_id') if user_profile else 'None'}")
-                        logger.warning("=" * 80)
-
-                        # Stream answer chunks in real-time with RAG
-                        generated_answer = ""
-                        async for chunk in llm_service.generate_answer_stream(
-                            question=question,
-                            resume_text=user_context["resume_text"],
-                            star_stories=user_context["star_stories"],
-                            talking_points=user_context["talking_points"],
-                            qa_pairs=user_context["qa_pairs"],  # Pass Q&A pairs for RAG
-                            format="bullet",  # Bullet point format for real-time interview
-                            user_profile=user_profile,
-                            session_history=session_history,
-                            examples_used=session_examples
-                        ):
-                            generated_answer += chunk
+                            await manager.send_json(websocket, {
+                                "type": "answer_stream_start",
+                                "question": question,
+                                "source": "uploaded"
+                            })
                             await manager.send_json(websocket, {
                                 "type": "answer_stream_chunk",
                                 "question": question,
-                                "chunk": chunk,
+                                "chunk": matched_qa["answer"],
+                                "source": "uploaded"
+                            })
+                            await manager.send_json(websocket, {
+                                "type": "answer_stream_end",
+                                "question": question,
+                                "source": "uploaded",
+                                "has_placeholder": False
+                            })
+
+                            if session_id:
+                                await save_session_message(
+                                    session_id=session_id,
+                                    role="candidate",
+                                    message_type="answer",
+                                    content=matched_qa["answer"],
+                                    question_type=question_type,
+                                    source="uploaded",
+                                    examples_used=[]
+                                )
+                        else:
+                            # RAG path: no fast match found, generate with LLM
+                            # 1. Send temporary answer immediately
+                            temp_answer = claude_service.get_temporary_answer(question_type)
+                            await manager.send_json(websocket, {
+                                "type": "answer_temporary",
+                                "question": question,
+                                "answer": temp_answer
+                            })
+
+                            # 2. Generate answer using RAG
+                            logger.info("No fast Q&A match, generating with RAG approach")
+
+                            # Get session history and examples for context
+                            session_history = await get_session_history(session_id) if session_id else []
+                            session_examples = await get_session_examples(session_id) if session_id else []
+                            logger.info(f"Using session context: {len(session_history)} messages, {len(session_examples)} examples used")
+
+                            # Signal streaming start
+                            await manager.send_json(websocket, {
+                                "type": "answer_stream_start",
+                                "question": question,
                                 "source": "generated"
                             })
 
-                        # NEW: Extract examples and save generated answer to session
-                        if session_id and generated_answer:
-                            # Extract examples from answer
-                            import re
-                            new_examples = []
-                            example_patterns = re.findall(
-                                r'(?:Project|at|working on|led|built)\s+([A-Z][A-Za-z0-9\s]{2,30})',
-                                generated_answer
-                            )
-                            for match in example_patterns:
-                                cleaned = match.strip()
-                                if len(cleaned) > 3 and cleaned not in session_examples:
-                                    new_examples.append(cleaned)
+                            # Debug logging
+                            logger.warning("=" * 80)
+                            logger.warning(f"RAG_DEBUG: Starting answer generation for question: {question}")
+                            logger.warning(f"RAG_DEBUG: Context has {len(user_context.get('qa_pairs', []))} Q&A pairs")
+                            logger.warning(f"RAG_DEBUG: user_id={user_profile.get('user_id') if user_profile else 'None'}")
+                            logger.warning("=" * 80)
 
-                            logger.info(f"Extracted {len(new_examples)} new examples: {new_examples}")
+                            # Stream answer chunks in real-time with RAG
+                            generated_answer = ""
+                            async for chunk in llm_service.generate_answer_stream(
+                                question=question,
+                                resume_text=user_context["resume_text"],
+                                star_stories=user_context["star_stories"],
+                                talking_points=user_context["talking_points"],
+                                qa_pairs=user_context["qa_pairs"],  # Pass Q&A pairs for RAG
+                                format="bullet",  # Bullet point format for real-time interview
+                                user_profile=user_profile,
+                                session_history=session_history,
+                                examples_used=session_examples
+                            ):
+                                generated_answer += chunk
+                                await manager.send_json(websocket, {
+                                    "type": "answer_stream_chunk",
+                                    "question": question,
+                                    "chunk": chunk,
+                                    "source": "generated"
+                                })
 
-                            await save_session_message(
-                                session_id=session_id,
-                                role="candidate",
-                                message_type="answer",
-                                content=generated_answer,
-                                question_type=question_type,
-                                source="ai_generated",
-                                examples_used=new_examples
-                            )
+                            # Extract examples and save generated answer to session
+                            if session_id and generated_answer:
+                                import re
+                                new_examples = []
+                                example_patterns = re.findall(
+                                    r'(?:Project|at|working on|led|built)\s+([A-Z][A-Za-z0-9\s]{2,30})',
+                                    generated_answer
+                                )
+                                for match in example_patterns:
+                                    cleaned = match.strip()
+                                    if len(cleaned) > 3 and cleaned not in session_examples:
+                                        new_examples.append(cleaned)
 
-                            # Update local tracking
-                            session_examples_used.extend(new_examples)
+                                logger.info(f"Extracted {len(new_examples)} new examples: {new_examples}")
 
-                        # Detect if answer contains placeholders
-                        has_placeholder = '[' in generated_answer and ']' in generated_answer
+                                await save_session_message(
+                                    session_id=session_id,
+                                    role="candidate",
+                                    message_type="answer",
+                                    content=generated_answer,
+                                    question_type=question_type,
+                                    source="ai_generated",
+                                    examples_used=new_examples
+                                )
 
-                        # Signal streaming end
-                        await manager.send_json(websocket, {
-                            "type": "answer_stream_end",
-                            "question": question,
-                            "source": "generated",
-                            "has_placeholder": has_placeholder
-                        })
+                                # Update local tracking
+                                session_examples_used.extend(new_examples)
+
+                            # Detect if answer contains placeholders
+                            has_placeholder = '[' in generated_answer and ']' in generated_answer
+
+                            # Signal streaming end
+                            await manager.send_json(websocket, {
+                                "type": "answer_stream_end",
+                                "question": question,
+                                "source": "generated",
+                                "has_placeholder": has_placeholder
+                            })
                 finally:
                     is_processing = False
 

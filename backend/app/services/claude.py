@@ -353,7 +353,7 @@ Examples:
                         matches = await self.qdrant_service.search_similar_qa_pairs(
                             query_text=sub_q,
                             user_id=user_id,
-                            similarity_threshold=0.60,
+                            similarity_threshold=0.45,
                             limit=3
                         )
 
@@ -627,8 +627,8 @@ Examples:
                 max_total_results=5
             )
 
-            # If we found a good match (>= 62% similarity), use the stored answer directly
-            if relevant_qa_pairs and relevant_qa_pairs[0].get('similarity', 0) >= 0.62:
+            # If we found a good match (>= 55% similarity), use the stored answer directly
+            if relevant_qa_pairs and relevant_qa_pairs[0].get('similarity', 0) >= 0.55:
                 best_match = relevant_qa_pairs[0]
                 logger.info(f"Using stored answer ({best_match.get('similarity', 0):.0%} match)")
                 yield best_match['answer']
