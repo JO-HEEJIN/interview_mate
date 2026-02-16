@@ -45,11 +45,20 @@ const RotateCcwIcon = ({ className }: { className?: string }) => (
     </svg>
 );
 
+const ScreenShareIcon = ({ className }: { className?: string }) => (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+    </svg>
+);
+
 interface RecordingControlsProps {
     isRecording: boolean;
     isPaused: boolean;
     isConnected: boolean;
     disabled?: boolean;
+    captureSystemAudio?: boolean;
+    isCapturingSystemAudio?: boolean;
+    onCaptureSystemAudioChange?: (enabled: boolean) => void;
     onStart: () => void;
     onStop: () => void;
     onPause: () => void;
@@ -62,6 +71,9 @@ export function RecordingControls({
     isPaused,
     isConnected,
     disabled = false,
+    captureSystemAudio = false,
+    isCapturingSystemAudio = false,
+    onCaptureSystemAudioChange,
     onStart,
     onStop,
     onPause,
@@ -74,8 +86,46 @@ export function RecordingControls({
             {!isRecording && (
                 <div className="flex justify-center w-full">
                     <p className="text-xs text-amber-600 dark:text-amber-500 font-medium animate-pulse">
-                        ⚠️ Pressing 'Start Recording' will consume 1 interview credit per session
+                        Pressing 'Start Recording' will consume 1 interview credit per session
                     </p>
+                </div>
+            )}
+
+            {/* System Audio Toggle — only shown when not recording */}
+            {!isRecording && onCaptureSystemAudioChange && (
+                <div className="flex items-center gap-2 px-1">
+                    <button
+                        type="button"
+                        role="switch"
+                        aria-checked={captureSystemAudio}
+                        onClick={() => onCaptureSystemAudioChange(!captureSystemAudio)}
+                        className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${
+                            captureSystemAudio ? 'bg-blue-500' : 'bg-zinc-300 dark:bg-zinc-600'
+                        }`}
+                    >
+                        <span
+                            className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                                captureSystemAudio ? 'translate-x-4' : 'translate-x-0'
+                            }`}
+                        />
+                    </button>
+                    <ScreenShareIcon className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
+                    <span className="text-xs text-zinc-600 dark:text-zinc-400">
+                        Capture system audio (Zoom/Meet)
+                    </span>
+                </div>
+            )}
+
+            {/* System Audio Active Indicator — shown during recording when capturing */}
+            {isRecording && isCapturingSystemAudio && (
+                <div className="flex items-center gap-2 px-1">
+                    <span className="relative flex h-2.5 w-2.5">
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue-400 opacity-75" />
+                        <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-blue-500" />
+                    </span>
+                    <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
+                        Capturing system audio
+                    </span>
                 </div>
             )}
 

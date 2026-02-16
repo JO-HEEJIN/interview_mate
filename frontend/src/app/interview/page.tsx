@@ -66,6 +66,13 @@ export default function PracticePage() {
     const [qaPairs, setQaPairs] = useState<QAPair[]>([]);
     const [contextLoaded, setContextLoaded] = useState(false);
     const [processingState, setProcessingState] = useState<'idle' | 'transcribing' | 'detecting' | 'generating'>('idle');
+    const [captureSystemAudio, setCaptureSystemAudio] = useState<boolean>(() => {
+        if (typeof window !== 'undefined') {
+            return localStorage.getItem('captureSystemAudio') === 'true';
+        }
+        return false;
+    });
+    const [systemAudioError, setSystemAudioError] = useState<string | null>(null);
 
     // Refs to track streaming state (avoids closure issues)
     const streamingAnswerRef = useRef<string>('');
@@ -181,6 +188,22 @@ export default function PracticePage() {
         },
     });
 
+    // System audio handlers
+    const handleCaptureSystemAudioChange = useCallback((enabled: boolean) => {
+        setCaptureSystemAudio(enabled);
+        localStorage.setItem('captureSystemAudio', String(enabled));
+    }, []);
+
+    const handleSystemAudioError = useCallback((error: string) => {
+        setSystemAudioError(error);
+        setTimeout(() => setSystemAudioError(null), 5000);
+    }, []);
+
+    const handleSystemAudioStopped = useCallback(() => {
+        setSystemAudioError('System audio sharing stopped. Continuing with microphone only.');
+        setTimeout(() => setSystemAudioError(null), 5000);
+    }, []);
+
     // Handle silence detection
     const handleSilenceDetected = useCallback(() => {
         console.log('Silence detected in practice page, finalizing audio');
@@ -193,6 +216,7 @@ export default function PracticePage() {
         isPaused,
         audioLevel,
         error: recordingError,
+        isCapturingSystemAudio,
         startRecording,
         stopRecording,
         pauseRecording,
@@ -204,6 +228,9 @@ export default function PracticePage() {
         sampleRate: 16000,
         silenceThreshold: 5,
         silenceDuration: 800,
+        captureSystemAudio,
+        onSystemAudioError: handleSystemAudioError,
+        onSystemAudioStopped: handleSystemAudioStopped,
     });
 
     // Check authentication on mount
@@ -462,6 +489,13 @@ export default function PracticePage() {
                     </div>
                 )}
 
+                {/* System audio warning */}
+                {systemAudioError && (
+                    <div className="mb-4 rounded-lg bg-amber-50 p-4 text-amber-700 dark:bg-amber-950 dark:text-amber-300">
+                        {systemAudioError}
+                    </div>
+                )}
+
                 {/* Credits Display */}
                 {!featuresLoading && (
                     <div className="mb-4 text-sm text-zinc-500 dark:text-zinc-400">
@@ -477,6 +511,9 @@ export default function PracticePage() {
                             isPaused={isPaused}
                             isConnected={isConnected}
                             disabled={featuresLoading}
+                            captureSystemAudio={captureSystemAudio}
+                            isCapturingSystemAudio={isCapturingSystemAudio}
+                            onCaptureSystemAudioChange={handleCaptureSystemAudioChange}
                             onStart={handleStart}
                             onStop={handleStop}
                             onPause={pauseRecording}

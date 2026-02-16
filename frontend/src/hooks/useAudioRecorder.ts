@@ -1,6 +1,7 @@
 /**
  * Custom hook for audio recording with Web Audio API
  * Enhanced with better audio processing, error handling, and performance monitoring
+ * Supports system audio capture via getDisplayMedia for Zoom/Meet interviews
  */
 
 import { useState, useRef, useCallback, useEffect } from 'react';
@@ -14,6 +15,9 @@ interface UseAudioRecorderOptions {
     format?: 'webm' | 'wav';
     silenceThreshold?: number; // Audio level below this is silence
     silenceDuration?: number; // ms of silence to trigger detection
+    captureSystemAudio?: boolean;
+    onSystemAudioError?: (error: string) => void;
+    onSystemAudioStopped?: () => void;
 }
 
 interface UseAudioRecorderReturn {
@@ -21,6 +25,7 @@ interface UseAudioRecorderReturn {
     isPaused: boolean;
     audioLevel: number;
     error: string | null;
+    isCapturingSystemAudio: boolean;
     startRecording: () => Promise<void>;
     stopRecording: () => void;
     pauseRecording: () => void;
@@ -37,14 +42,19 @@ export function useAudioRecorder(options: UseAudioRecorderOptions = {}): UseAudi
         format = 'webm',
         silenceThreshold = 5, // Audio level below this is silence
         silenceDuration = 800, // 800ms of silence triggers detection
+        captureSystemAudio = false,
+        onSystemAudioError,
+        onSystemAudioStopped,
     } = options;
 
     const [isRecording, setIsRecording] = useState(false);
     const [isPaused, setIsPaused] = useState(false);
     const [audioLevel, setAudioLevel] = useState(0);
     const [error, setError] = useState<string | null>(null);
+    const [isCapturingSystemAudio, setIsCapturingSystemAudio] = useState(false);
 
     const mediaStreamRef = useRef<MediaStream | null>(null);
+    const displayStreamRef = useRef<MediaStream | null>(null);
     const audioContextRef = useRef<AudioContext | null>(null);
     const analyserRef = useRef<AnalyserNode | null>(null);
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -56,9 +66,57 @@ export function useAudioRecorder(options: UseAudioRecorderOptions = {}): UseAudi
     const audioChunksCountRef = useRef<number>(0);
     const silenceStartRef = useRef<number | null>(null);
     const lastSilenceDetectionRef = useRef<number>(0);
+    const micSourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
+    const displaySourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
+    const destinationRef = useRef<MediaStreamAudioDestinationNode | null>(null);
+
+    // Acquire display media for system audio capture
+    const acquireDisplayMedia = useCallback(async (): Promise<MediaStream | null> => {
+        try {
+            // Check browser support
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+                onSystemAudioError?.('Your browser does not support system audio capture.');
+                return null;
+            }
+
+            // video: true is required for browser compat, we'll stop video tracks immediately
+            const stream = await navigator.mediaDevices.getDisplayMedia({
+                audio: true,
+                video: true,
+            });
+
+            // Stop video tracks immediately to save resources
+            stream.getVideoTracks().forEach(track => track.stop());
+
+            // Check if we got audio tracks
+            const audioTracks = stream.getAudioTracks();
+            if (audioTracks.length === 0) {
+                onSystemAudioError?.('No audio track found. Make sure to share a tab or window with audio.');
+                stream.getTracks().forEach(track => track.stop());
+                return null;
+            }
+
+            return stream;
+        } catch (err) {
+            if (err instanceof Error) {
+                if (err.name === 'NotAllowedError') {
+                    // User cancelled the picker — not an error, just continue mic-only
+                    console.log('User cancelled screen share picker');
+                    return null;
+                }
+                if (err.name === 'NotSupportedError') {
+                    onSystemAudioError?.('System audio capture is not supported in this browser.');
+                    return null;
+                }
+                onSystemAudioError?.(err.message);
+            }
+            return null;
+        }
+    }, [onSystemAudioError]);
 
     // Initialize audio context and worklet for better audio processing
-    const initializeAudioContext = useCallback(async (stream: MediaStream) => {
+    // Returns the stream to use for MediaRecorder (mixed if display stream present, mic otherwise)
+    const initializeAudioContext = useCallback(async (micStream: MediaStream, displayStream: MediaStream | null): Promise<MediaStream> => {
         try {
             audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({
                 sampleRate,
@@ -70,8 +128,22 @@ export function useAudioRecorder(options: UseAudioRecorderOptions = {}): UseAudi
             analyserRef.current.fftSize = 256;
             analyserRef.current.smoothingTimeConstant = 0.8;
 
-            const source = audioContextRef.current.createMediaStreamSource(stream);
-            source.connect(analyserRef.current);
+            // Create mic source
+            micSourceRef.current = audioContextRef.current.createMediaStreamSource(micStream);
+            micSourceRef.current.connect(analyserRef.current);
+
+            // If we have a display stream, create a mixing destination
+            if (displayStream) {
+                destinationRef.current = audioContextRef.current.createMediaStreamDestination();
+
+                // Connect mic to destination
+                micSourceRef.current.connect(destinationRef.current);
+
+                // Connect display audio to both analyser and destination
+                displaySourceRef.current = audioContextRef.current.createMediaStreamSource(displayStream);
+                displaySourceRef.current.connect(analyserRef.current);
+                displaySourceRef.current.connect(destinationRef.current);
+            }
 
             // Try to use AudioWorklet for better processing if available
             try {
@@ -83,7 +155,7 @@ export function useAudioRecorder(options: UseAudioRecorderOptions = {}): UseAudi
 
                 await audioContextRef.current.audioWorklet.addModule('/audio-processor.js');
                 audioWorkletRef.current = new AudioWorkletNode(audioContextRef.current, 'audio-processor');
-                source.connect(audioWorkletRef.current);
+                micSourceRef.current.connect(audioWorkletRef.current);
                 audioWorkletRef.current.connect(audioContextRef.current.destination);
 
                 audioWorkletRef.current.port.onmessage = (event) => {
@@ -98,7 +170,7 @@ export function useAudioRecorder(options: UseAudioRecorderOptions = {}): UseAudi
                 // Fallback to ScriptProcessorNode
                 const bufferSize = 4096;
                 const processor = audioContextRef.current.createScriptProcessor(bufferSize, 1, 1);
-                source.connect(processor);
+                micSourceRef.current.connect(processor);
                 processor.connect(audioContextRef.current.destination);
 
                 processor.onaudioprocess = (event) => {
@@ -113,6 +185,12 @@ export function useAudioRecorder(options: UseAudioRecorderOptions = {}): UseAudi
                     onAudioLevel?.(level);
                 };
             }
+
+            // Return the mixed stream if available, otherwise the mic stream
+            if (destinationRef.current) {
+                return destinationRef.current.stream;
+            }
+            return micStream;
         } catch (err) {
             console.error('Error initializing audio context:', err);
             throw err;
@@ -168,7 +246,7 @@ export function useAudioRecorder(options: UseAudioRecorderOptions = {}): UseAudi
             setError(null);
 
             // Request microphone access with specific constraints
-            const stream = await navigator.mediaDevices.getUserMedia({
+            const micStream = await navigator.mediaDevices.getUserMedia({
                 audio: {
                     sampleRate,
                     channelCount: 1,
@@ -178,10 +256,35 @@ export function useAudioRecorder(options: UseAudioRecorderOptions = {}): UseAudi
                 },
             });
 
-            mediaStreamRef.current = stream;
+            mediaStreamRef.current = micStream;
 
-            // Initialize audio context for level analysis
-            await initializeAudioContext(stream);
+            // Acquire display media if system audio capture is enabled
+            let displayStream: MediaStream | null = null;
+            if (captureSystemAudio) {
+                displayStream = await acquireDisplayMedia();
+                if (displayStream) {
+                    displayStreamRef.current = displayStream;
+                    setIsCapturingSystemAudio(true);
+
+                    // Listen for user clicking "Stop sharing" mid-recording
+                    const audioTrack = displayStream.getAudioTracks()[0];
+                    if (audioTrack) {
+                        audioTrack.onended = () => {
+                            console.log('System audio track ended (user stopped sharing)');
+                            setIsCapturingSystemAudio(false);
+                            displayStreamRef.current = null;
+                            if (displaySourceRef.current) {
+                                try { displaySourceRef.current.disconnect(); } catch {}
+                                displaySourceRef.current = null;
+                            }
+                            onSystemAudioStopped?.();
+                        };
+                    }
+                }
+            }
+
+            // Initialize audio context for level analysis (returns mixed stream if display is present)
+            const recordingStream = await initializeAudioContext(micStream, displayStream);
 
             // Set up MediaRecorder with appropriate MIME type
             // Try different formats in order of preference
@@ -206,7 +309,7 @@ export function useAudioRecorder(options: UseAudioRecorderOptions = {}): UseAudi
                 }
                 : undefined;
 
-            const mediaRecorder = new MediaRecorder(stream, recorderOptions);
+            const mediaRecorder = new MediaRecorder(recordingStream, recorderOptions);
 
             mediaRecorder.ondataavailable = (event) => {
                 if (event.data.size > 0) {
@@ -267,7 +370,7 @@ export function useAudioRecorder(options: UseAudioRecorderOptions = {}): UseAudi
             setError(message);
             console.error('Recording error:', err);
         }
-    }, [sampleRate, chunkInterval, format, onAudioData, initializeAudioContext, analyzeAudioLevel]);
+    }, [sampleRate, chunkInterval, format, onAudioData, initializeAudioContext, analyzeAudioLevel, captureSystemAudio, acquireDisplayMedia, onSystemAudioStopped]);
 
     // Stop recording
     const stopRecording = useCallback(() => {
@@ -300,6 +403,27 @@ export function useAudioRecorder(options: UseAudioRecorderOptions = {}): UseAudi
             chunksRef.current = [];
         }
 
+        // Stop display stream tracks
+        if (displayStreamRef.current) {
+            displayStreamRef.current.getTracks().forEach(track => {
+                try { track.stop(); } catch (err) {
+                    console.error('Error stopping display track:', err);
+                }
+            });
+            displayStreamRef.current = null;
+        }
+
+        // Disconnect source nodes
+        if (micSourceRef.current) {
+            try { micSourceRef.current.disconnect(); } catch {}
+            micSourceRef.current = null;
+        }
+        if (displaySourceRef.current) {
+            try { displaySourceRef.current.disconnect(); } catch {}
+            displaySourceRef.current = null;
+        }
+        destinationRef.current = null;
+
         // Stop media stream
         if (mediaStreamRef.current) {
             mediaStreamRef.current.getTracks().forEach(track => {
@@ -325,6 +449,7 @@ export function useAudioRecorder(options: UseAudioRecorderOptions = {}): UseAudi
         setIsRecording(false);
         setIsPaused(false);
         setAudioLevel(0);
+        setIsCapturingSystemAudio(false);
 
         console.log(`Recording stopped. Processed ${audioChunksCountRef.current} audio chunks.`);
     }, [format, onAudioData]);
@@ -366,6 +491,7 @@ export function useAudioRecorder(options: UseAudioRecorderOptions = {}): UseAudi
         isPaused,
         audioLevel,
         error,
+        isCapturingSystemAudio,
         startRecording,
         stopRecording,
         pauseRecording,
