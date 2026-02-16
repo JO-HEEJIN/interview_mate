@@ -115,6 +115,11 @@ export function RecordingControls({
                     </span>
                 </div>
             )}
+            {!isRecording && captureSystemAudio && onCaptureSystemAudioChange && (
+                <p className="px-1 text-xs text-amber-600 dark:text-amber-400">
+                    When the browser dialog appears, make sure to check &quot;Also share system audio&quot; to capture the interviewer&apos;s voice.
+                </p>
+            )}
 
             {/* System Audio Active Indicator — shown during recording when capturing */}
             {isRecording && isCapturingSystemAudio && (
