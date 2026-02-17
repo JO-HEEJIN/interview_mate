@@ -766,29 +766,42 @@ Generate a suggested answer ({instruction}):"""
         # Detect question type
         yes_no_phrases = ["yes or no", "correct?", "is this", "is that", "would you tell"]
         direct_phrases = ["what is", "what would", "when did", "where is", "how much", "how many"]
-        deep_dive_phrases = ["walk me through", "explain how", "tell me about", "describe", "talk about"]
+        deep_dive_phrases = [
+            "walk me through", "explain how", "tell me about", "describe", "talk about",
+            "can you share", "share with", "how does your", "how would you",
+            "why do you", "what excites", "what draws you", "what motivates",
+            "how did you", "how do you", "what makes you",
+        ]
         clarification_phrases = ["what do you mean", "can you clarify", "i don't understand"]
+
+        # Detect compound questions (two+ parts joined by "and how", "and what", "and why")
+        is_compound = bool(
+            " and how " in question_lower
+            or " and what " in question_lower
+            or " and why " in question_lower
+            or " and can you " in question_lower
+        )
 
         if any(phrase in question_lower for phrase in yes_no_phrases):
             qtype = "yes_no"
             max_tokens = 20 if is_frustrated else 30
             instruction = "CRITICAL: YES/NO question - Answer in MAXIMUM 5-10 WORDS"
-        elif any(phrase in question_lower for phrase in direct_phrases):
+        elif any(phrase in question_lower for phrase in direct_phrases) and not is_compound:
             qtype = "direct"
-            max_tokens = 40 if is_frustrated else 80
-            instruction = "CRITICAL: Direct question - Answer in MAXIMUM 20 WORDS"
-        elif any(phrase in question_lower for phrase in deep_dive_phrases):
+            max_tokens = 40 if is_frustrated else 100
+            instruction = "Direct question - Answer concisely using PREP structure"
+        elif any(phrase in question_lower for phrase in deep_dive_phrases) or is_compound:
             qtype = "deep_dive"
-            max_tokens = 80 if is_frustrated else 150
-            instruction = "Deep-dive question - Answer in MAXIMUM 60 WORDS (30 seconds)"
+            max_tokens = 100 if is_frustrated else 300
+            instruction = "Deep-dive question - Give a thorough answer using your specific background and prepared answers"
         elif any(phrase in question_lower for phrase in clarification_phrases):
             qtype = "clarification"
             max_tokens = 50 if is_frustrated else 100
             instruction = "Clarification - Answer in MAXIMUM 30 WORDS"
         else:
             qtype = "general"
-            max_tokens = 100 if is_frustrated else 150
-            instruction = "Answer in MAXIMUM 60 WORDS (30 seconds)"
+            max_tokens = 100 if is_frustrated else 250
+            instruction = "Answer using your specific background and experiences"
 
         # If frustrated, add explicit warning
         if is_frustrated:
@@ -869,14 +882,15 @@ Generate a suggested answer ({instruction}):"""
 
 **Match the question type:**
 - Yes/no → "Yes" or "No, [1-sentence correction]" (under 10 words)
-- Direct question → Answer directly using PREP structure (30-60 words)
-- Behavioral → Use STAR: Situation + Action + Result (50-60 words)
+- Direct question → Answer directly using PREP structure (30-80 words)
+- Behavioral → Use STAR: Situation + Action + Result (60-120 words)
+- Compound/multi-part → Address each part using your specific experiences (100-150 words)
 
 **Answer style: {style}**
 {style_guide}
 
 **Core rules:**
-1. Answer ONLY what's asked - don't volunteer extra info
+1. ALWAYS draw from your specific background, prepared Q&A pairs, and STAR stories — never give generic answers
 2. CRITICAL: Use EXACT numbers and details from your background - NEVER round, simplify, or change them
 3. If your background has specific metrics (e.g., "92.6% reduction"), use those EXACT numbers
 4. If your background provides context (e.g., "test vs production"), include that nuance
