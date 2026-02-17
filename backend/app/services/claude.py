@@ -34,32 +34,32 @@ def calculate_similarity(str1: str, str2: str) -> float:
     Calculate similarity ratio between two strings with intelligent matching.
 
     Uses multiple strategies:
-    1. Exact substring matching (if shorter string is in longer string)
-    2. Token-based overlap (shared words / total words)
+    1. Exact substring matching (only if shorter string is substantial)
+    2. Token-based overlap (Jaccard similarity)
     3. Sequence matching (difflib)
 
     Returns a value between 0 and 1, where 1 is identical.
     """
-    # Strategy 1: Check if one is a substring of the other
-    if str1 in str2 or str2 in str1:
-        return 0.95  # Very high match if one contains the other
+    shorter = min(str1, str2, key=len)
+    longer = max(str1, str2, key=len)
 
-    # Strategy 2: Token-based overlap (good for "tell me about yourself" vs "tell me a bit about yourself")
+    # Strategy 1: Substring matching — only when shorter string is substantial
+    # (at least 5 words AND at least 40% of the longer string's length)
+    # This prevents "why" matching "why do you want to work here"
+    if shorter in longer:
+        shorter_tokens = len(shorter.split())
+        if shorter_tokens >= 5 and len(shorter) >= len(longer) * 0.4:
+            return 0.95
+
+    # Strategy 2: Token-based overlap (Jaccard only — no containment)
+    # Containment was causing false positives with short queries
     tokens1 = set(str1.split())
     tokens2 = set(str2.split())
 
     if tokens1 and tokens2:
         intersection = tokens1 & tokens2
         union = tokens1 | tokens2
-        jaccard = len(intersection) / len(union)
-
-        # Also calculate containment (smaller set contained in larger)
-        smaller = min(tokens1, tokens2, key=len)
-        larger = max(tokens1, tokens2, key=len)
-        containment = len(smaller & larger) / len(smaller) if smaller else 0
-
-        # Use max of jaccard and containment
-        token_similarity = max(jaccard, containment)
+        token_similarity = len(intersection) / len(union)
     else:
         token_similarity = 0.0
 
@@ -627,8 +627,8 @@ Examples:
                 max_total_results=5
             )
 
-            # If we found a good match (>= 55% similarity), use the stored answer directly
-            if relevant_qa_pairs and relevant_qa_pairs[0].get('similarity', 0) >= 0.55:
+            # If we found a good match (>= 70% similarity), use the stored answer directly
+            if relevant_qa_pairs and relevant_qa_pairs[0].get('similarity', 0) >= 0.70:
                 best_match = relevant_qa_pairs[0]
                 logger.info(f"Using stored answer ({best_match.get('similarity', 0):.0%} match)")
                 yield best_match['answer']
