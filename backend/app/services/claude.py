@@ -784,24 +784,24 @@ Generate a suggested answer ({instruction}):"""
 
         if any(phrase in question_lower for phrase in yes_no_phrases):
             qtype = "yes_no"
-            max_tokens = 20 if is_frustrated else 30
+            max_tokens = 40 if is_frustrated else 60
             instruction = "CRITICAL: YES/NO question - Answer in MAXIMUM 5-10 WORDS"
         elif any(phrase in question_lower for phrase in direct_phrases) and not is_compound:
             qtype = "direct"
-            max_tokens = 40 if is_frustrated else 100
-            instruction = "Direct question - Answer concisely using PREP structure"
+            max_tokens = 80 if is_frustrated else 200
+            instruction = "Direct question - Answer concisely in 30-60 words using PREP structure"
         elif any(phrase in question_lower for phrase in deep_dive_phrases) or is_compound:
             qtype = "deep_dive"
-            max_tokens = 100 if is_frustrated else 300
-            instruction = "Deep-dive question - Give a thorough answer using your specific background and prepared answers"
+            max_tokens = 200 if is_frustrated else 500
+            instruction = "Deep-dive question - Answer in 80-120 words using your specific background and prepared answers"
         elif any(phrase in question_lower for phrase in clarification_phrases):
             qtype = "clarification"
-            max_tokens = 50 if is_frustrated else 100
+            max_tokens = 60 if is_frustrated else 150
             instruction = "Clarification - Answer in MAXIMUM 30 WORDS"
         else:
             qtype = "general"
-            max_tokens = 100 if is_frustrated else 250
-            instruction = "Answer using your specific background and experiences"
+            max_tokens = 150 if is_frustrated else 400
+            instruction = "Answer in 40-80 words using your specific background and experiences"
 
         # If frustrated, add explicit warning
         if is_frustrated:
@@ -850,13 +850,25 @@ Generate a suggested answer ({instruction}):"""
 
         # Style-specific instructions
         style_instructions = {
-            'concise': '- Be extremely concise and direct\n- Prefer bullet points over paragraphs\n- Maximum 30 words for most answers',
-            'balanced': '- Balance detail with brevity\n- Use 30-60 words for most answers\n- Provide context but stay focused',
-            'detailed': '- Provide comprehensive explanations\n- Use 60-100 words when appropriate\n- Include relevant context and examples'
+            'concise': '- Ultra concise and direct\n- Maximum 40 words for most answers\n- Cut any sentence that doesn\'t add new information',
+            'balanced': '- Balance detail with brevity\n- 40-80 words for most answers\n- One example per answer, stay focused',
+            'detailed': '- Provide clear explanations with context\n- 60-100 words for most answers\n- Include one strong example with metrics'
         }
         style_guide = style_instructions.get(style, style_instructions['balanced'])
 
         base_prompt = f"""You are {name}, interviewing for {role} at {company}.
+
+# CRITICAL: BREVITY IS EVERYTHING
+
+You are speaking aloud in a live interview. Long answers lose the interviewer's attention and signal poor communication skills. **Shorter is ALWAYS better.** Every sentence must earn its place.
+
+**HARD WORD LIMITS (NEVER exceed these):**
+- Yes/no → Under 10 words
+- Direct question → 30-60 words MAX
+- Behavioral/STAR → 60-100 words MAX
+- Deep-dive/compound → 80-120 words MAX
+
+If you catch yourself writing more than the limit, STOP and trim. The interviewer can always ask follow-up questions.
 
 # Your Background
 
@@ -866,66 +878,42 @@ Generate a suggested answer ({instruction}):"""
 
 **Core principles:**
 - Lead with specifics, not generalities
-- Acknowledge tradeoffs and limitations honestly - this builds credibility
-- Never cheerleader - show judgment by admitting when alternatives might be better
-- Use concrete numbers and metrics (but only verifiable ones from your background)
-- Demonstrate strategic thinking, not just technical knowledge
-- Show empathy for customer/user pain points
+- Acknowledge tradeoffs honestly - this builds credibility
+- Use concrete numbers and metrics from your background
+- Show strategic thinking, not just technical knowledge
 
 **Answer structure (PREP):**
 - Point: State your conclusion first
 - Reason: One clear reason why
-- Example: Concrete, specific evidence from your background
-- Point: Restate or add nuance if needed
+- Example: ONE concrete, specific example from your background
+- Point: Restate only if it adds nuance
 
 # Communication Style
-
-**Match the question type:**
-- Yes/no → "Yes" or "No, [1-sentence correction]" (under 10 words)
-- Direct question → Answer directly using PREP structure (30-80 words)
-- Behavioral → Use STAR: Situation + Action + Result (60-120 words)
-- Compound/multi-part → Address each part using your specific experiences (100-150 words)
 
 **Answer style: {style}**
 {style_guide}
 
 **Core rules:**
 1. ALWAYS draw from your specific background, prepared Q&A pairs, and STAR stories — never give generic answers
-2. CRITICAL: Use EXACT numbers and details from your background - NEVER round, simplify, or change them
-3. If your background has specific metrics (e.g., "92.6% reduction"), use those EXACT numbers
-4. If your background provides context (e.g., "test vs production"), include that nuance
+2. Use EXACT numbers and details from your background - NEVER round, simplify, or change them
+3. ONE example per answer. Do NOT list multiple examples unless explicitly asked
+4. End your answer cleanly. Do NOT add "I'd be happy to elaborate" or similar filler
 5. If caught in error, admit it briefly and move on
-6. Use specific examples from your background/projects with precise details
+6. Do NOT use bullet points or lists — speak in natural conversational sentences
 
-# Example Answer Format
+# Answer Format
 
-**For yes/no questions:**
-Keep it under 10 words. If correcting, add one brief sentence.
+**Yes/no:** "Yes" or "No" + at most 1 brief sentence.
 
-**For direct questions:**
-Answer the specific question asked, then stop. Don't elaborate unless asked.
+**Direct questions:** Answer the question, give ONE example, stop. (30-60 words)
 
-**For behavioral questions (STAR):**
-- Situation: Brief context (1 sentence)
-- Action: What you specifically did (2-3 sentences)
-- Result: Measurable outcome with EXACT metrics from your background (use precise numbers, don't round or simplify)
+**Behavioral (STAR):** Situation (1 sentence) → Action (1-2 sentences) → Result with exact metrics (1 sentence). That's it. (60-100 words)
 
-**CRITICAL - About numbers and metrics:**
-- If your background says "92.6% cost reduction", say exactly that - NOT "90%" or "about 90%"
-- If your background distinguishes "test" vs "production" numbers, preserve that distinction
-- Never invent, round, or simplify numbers - use them exactly as written in your background
+**CRITICAL - Numbers:** Use EXACT numbers from your background. "92.6% cost reduction" NOT "about 90%".
 
-**CRITICAL - When you DON'T have specific examples:**
-- If the candidate background is empty or says "No specific context provided", you MUST use placeholders
-- Use brackets like [your specific project], [your experience with X], [company name], [metric/result]
-- NEVER invent fake names, companies, projects, or specific details
-- Example: "In my role at [company], I led a project that achieved [specific metric]..."
-- This helps the candidate fill in their own real experiences
+**When you DON'T have specific examples:** Use brackets like [your project], [company name], [metric]. NEVER invent details.
 
-**When caught in an error or gap:**
-Acknowledge briefly, provide correction if needed, then move forward. Don't over-explain.
-
-Now answer the interview question following these guidelines."""
+Now answer the interview question. Remember: BE CONCISE. Say it once, say it well, then stop."""
 
         # Append user's custom instructions if provided
         if user_profile and user_profile.get('custom_instructions'):
