@@ -39,7 +39,7 @@ class Settings(BaseSettings):
     # ZhipuAI (GLM-4.6)
     ZHIPUAI_API_KEY: str = ""
     GLM_MODEL: str = "glm-4-flashx"  # glm-4-flashx, glm-4-airx, glm-4-plus
-    LLM_SERVICE: str = "hybrid"  # "claude" or "glm" or "hybrid"
+    LLM_SERVICE: str = "claude"  # "claude" or "glm" or "hybrid"
 
     # JWT
     JWT_SECRET: str = "development-secret-change-in-production"
