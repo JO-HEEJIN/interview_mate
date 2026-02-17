@@ -663,6 +663,14 @@ Examples:
                 for qa in relevant_qa_pairs[:5]
             ])
             context_parts.append(f"RELEVANT PREPARED ANSWERS (combine and adapt as needed):\n{qa_text}")
+        elif qa_pairs:
+            # Fallback: RAG found nothing, include all Q&A pairs so Claude can reference them
+            qa_text = "\n\n".join([
+                f"Q: {qa.get('question', '')}\n"
+                f"A: {qa.get('answer', '')}"
+                for qa in qa_pairs[:15]
+            ])
+            context_parts.append(f"CANDIDATE'S PREPARED Q&A PAIRS (use these as reference for your answer):\n{qa_text}")
 
         # Add session history (to avoid repeating same examples)
         if session_history:
