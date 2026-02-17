@@ -214,7 +214,7 @@ class ClaudeService:
     def __init__(self, supabase: Optional[Client] = None, qdrant_service=None):
         self.client = Anthropic(api_key=settings.ANTHROPIC_API_KEY)
         self.openai_client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
-        self.model = "claude-sonnet-4-20250514"
+        self.model = "claude-opus-4-20250514"
 
         # Initialize vector search service (Qdrant only)
         self.qdrant_service = qdrant_service
