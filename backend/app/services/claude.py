@@ -226,10 +226,10 @@ class ClaudeService:
         self._cache_similarity_threshold = 0.85  # 85% similarity to use cached answer
         self._max_cache_size = 50  # Limit cache size to prevent memory issues
 
-        # In-memory Q&A index for fast lookup (Phase 1.1 optimization)
-        # Format: {normalized_question: qa_pair_dict}
-        self._qa_index = {}
-        self._qa_pairs_list = []  # Original list for similarity fallback
+        # Per-user Q&A index for fast lookup (Phase 1.1 optimization)
+        # Format: {user_id: {normalized_question: qa_pair_dict}}
+        self._qa_indices = {}
+        self._qa_pairs_lists = {}  # {user_id: [qa_pairs]} for similarity fallback
 
         logger.info("Claude service initialized with OpenAI Embeddings and Anthropic Prompt Caching")
 
@@ -489,31 +489,35 @@ Examples:
         logger.info(f"Cached answer for: '{question}' (user: {user_id}, cache size: {len(self._answer_cache)})")
 
     def clear_cache(self):
-        """Clear the answer cache."""
+        """Clear the answer cache and all per-user Q&A indices."""
         self._answer_cache.clear()
+        self._qa_indices.clear()
+        self._qa_pairs_lists.clear()
         logger.info("Answer cache cleared")
 
-    def build_qa_index(self, qa_pairs: list):
+    def build_qa_index(self, qa_pairs: list, user_id: str = None):
         """
-        Build in-memory index of Q&A pairs for fast lookup.
+        Build per-user in-memory index of Q&A pairs for fast lookup.
         Call this when context is updated with Q&A pairs.
 
         Args:
             qa_pairs: List of Q&A pair dicts from database
+            user_id: User ID to scope the index (prevents cross-user contamination)
 
         Performance: O(n*m) where n = number of Q&A pairs, m = avg variations per pair
         This runs once when context is loaded, enabling O(1) exact match
         and faster similarity matching afterward.
         """
-        self._qa_index.clear()
-        self._qa_pairs_list = qa_pairs
+        key = user_id or "__anonymous__"
+        self._qa_indices[key] = {}
+        self._qa_pairs_lists[key] = qa_pairs
 
         total_entries = 0
         for qa_pair in qa_pairs:
             # Index main question
             question = qa_pair.get("question", "")
             normalized = normalize_question(question)
-            self._qa_index[normalized] = qa_pair
+            self._qa_indices[key][normalized] = qa_pair
             total_entries += 1
 
             # Index all question variations
@@ -522,14 +526,14 @@ Examples:
                 for variation in variations:
                     if variation and variation.strip():
                         normalized_var = normalize_question(variation)
-                        self._qa_index[normalized_var] = qa_pair
+                        self._qa_indices[key][normalized_var] = qa_pair
                         total_entries += 1
 
-        logger.info(f"Built Q&A index with {total_entries} entries from {len(qa_pairs)} Q&A pairs (including variations)")
+        logger.info(f"Built Q&A index for user {key} with {total_entries} entries from {len(qa_pairs)} Q&A pairs (including variations)")
 
-    def find_matching_qa_pair_fast(self, question: str) -> Optional[dict]:
+    def find_matching_qa_pair_fast(self, question: str, user_id: str = None) -> Optional[dict]:
         """
-        OPTIMIZED: Find matching Q&A pair using pre-built index.
+        OPTIMIZED: Find matching Q&A pair using pre-built per-user index.
 
         Performance comparison:
         - Old find_matching_qa_pair(): 500ms (O(n) similarity checks)
@@ -537,28 +541,32 @@ Examples:
 
         Args:
             question: The detected interview question
+            user_id: User ID to scope the lookup (prevents cross-user contamination)
 
         Returns:
             Matching Q&A pair if found (similarity >= 85%), None otherwise
         """
-        if not self._qa_index:
-            logger.warning("Q&A index not built - call build_qa_index() first")
+        key = user_id or "__anonymous__"
+        qa_index = self._qa_indices.get(key, {})
+
+        if not qa_index:
+            logger.warning(f"Q&A index not built for user {key} - call build_qa_index() first")
             return None
 
         normalized_q = normalize_question(question)
         threshold = 0.85  # 85% similarity threshold
 
         # Step 1: O(1) exact match check using hash index
-        if normalized_q in self._qa_index:
-            qa_pair = self._qa_index[normalized_q]
-            logger.info(f"✓ Exact Q&A match: '{question}' (took <1ms)")
+        if normalized_q in qa_index:
+            qa_pair = qa_index[normalized_q]
+            logger.info(f"✓ Exact Q&A match: '{question}' (user: {key}, took <1ms)")
             return qa_pair
 
         # Step 2: Similarity matching with early exit optimization
         best_match = None
         best_similarity = 0.0
 
-        for normalized_qa, qa_pair in self._qa_index.items():
+        for normalized_qa, qa_pair in qa_index.items():
             similarity = calculate_similarity(normalized_q, normalized_qa)
 
             if similarity > best_similarity:
@@ -567,15 +575,15 @@ Examples:
 
                 # Early exit: if we find a very high match, stop searching
                 if similarity >= 0.95:
-                    logger.info(f"✓ Near-exact Q&A match ({similarity:.2%}): '{question}' (early exit)")
+                    logger.info(f"✓ Near-exact Q&A match ({similarity:.2%}): '{question}' (user: {key}, early exit)")
                     return best_match
 
         # Step 3: Return best match if above threshold
         if best_similarity >= threshold:
-            logger.info(f"✓ Similar Q&A match ({best_similarity:.2%}): '{question}' ~ '{best_match['question']}'")
+            logger.info(f"✓ Similar Q&A match ({best_similarity:.2%}): '{question}' ~ '{best_match['question']}' (user: {key})")
             return best_match
 
-        logger.debug(f"No Q&A match found (best: {best_similarity:.2%})")
+        logger.debug(f"No Q&A match found for user {key} (best: {best_similarity:.2%})")
         return None
 
     async def generate_answer_stream(

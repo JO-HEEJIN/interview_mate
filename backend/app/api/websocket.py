@@ -440,7 +440,7 @@ async def websocket_transcribe(websocket: WebSocket):
 
                         # Auto-generate answer
                         # Step 1: Check fast QA pair match first (same as manual path)
-                        matched_qa = claude_service.find_matching_qa_pair_fast(question)
+                        matched_qa = claude_service.find_matching_qa_pair_fast(question, user_id)
 
                         if matched_qa:
                             # Fast path: return stored answer directly
@@ -730,8 +730,7 @@ async def websocket_transcribe(websocket: WebSocket):
 
                             # OPTIMIZATION (Phase 1.1): Build Q&A index for fast lookup
                             # This takes <1ms and enables O(1) exact matching + faster similarity search
-                            if user_context["qa_pairs"]:
-                                claude_service.build_qa_index(user_context["qa_pairs"])
+                            claude_service.build_qa_index(user_context["qa_pairs"], user_id)
 
                             logger.info(
                                 f"Context updated: {len(user_context['star_stories'])} stories, "
@@ -759,7 +758,7 @@ async def websocket_transcribe(websocket: WebSocket):
                             last_processed_question = ""
                             user_context["qa_pairs"] = []
                             claude_service.clear_cache()
-                            claude_service.build_qa_index([])  # Clear Q&A index
+                            claude_service.build_qa_index([], user_id)  # Clear Q&A index
                             logger.info("Session cleared, including answer cache and Q&A index")
                             await manager.send_json(websocket, {
                                 "type": "cleared",
@@ -803,7 +802,7 @@ async def websocket_transcribe(websocket: WebSocket):
                                 })
 
                                 # 2. Check for uploaded Q&A match (OPTIMIZED: <1ms lookup)
-                                matched_qa = claude_service.find_matching_qa_pair_fast(question)
+                                matched_qa = claude_service.find_matching_qa_pair_fast(question, user_id)
 
                                 if matched_qa:
                                     # 3a. Return uploaded answer (instant)
