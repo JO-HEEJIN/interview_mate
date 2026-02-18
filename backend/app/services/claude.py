@@ -214,7 +214,7 @@ class ClaudeService:
     def __init__(self, supabase: Optional[Client] = None, qdrant_service=None):
         self.client = Anthropic(api_key=settings.ANTHROPIC_API_KEY)
         self.openai_client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
-        self.model = "claude-opus-4-20250514"
+        self.model = "claude-sonnet-4-6"
 
         # Initialize vector search service (Qdrant only)
         self.qdrant_service = qdrant_service
@@ -784,23 +784,23 @@ Generate a suggested answer ({instruction}):"""
 
         if any(phrase in question_lower for phrase in yes_no_phrases):
             qtype = "yes_no"
-            max_tokens = 20 if is_frustrated else 30
+            max_tokens = 40 if is_frustrated else 60
             instruction = "CRITICAL: YES/NO question - Answer in MAXIMUM 5-10 WORDS"
         elif any(phrase in question_lower for phrase in direct_phrases) and not is_compound:
             qtype = "direct"
-            max_tokens = 40 if is_frustrated else 100
+            max_tokens = 80 if is_frustrated else 200
             instruction = "Direct question - Answer concisely using PREP structure"
         elif any(phrase in question_lower for phrase in deep_dive_phrases) or is_compound:
             qtype = "deep_dive"
-            max_tokens = 100 if is_frustrated else 300
+            max_tokens = 200 if is_frustrated else 500
             instruction = "Deep-dive question - Give a thorough answer using your specific background and prepared answers"
         elif any(phrase in question_lower for phrase in clarification_phrases):
             qtype = "clarification"
-            max_tokens = 50 if is_frustrated else 100
+            max_tokens = 60 if is_frustrated else 150
             instruction = "Clarification - Answer in MAXIMUM 30 WORDS"
         else:
             qtype = "general"
-            max_tokens = 100 if is_frustrated else 250
+            max_tokens = 150 if is_frustrated else 400
             instruction = "Answer using your specific background and experiences"
 
         # If frustrated, add explicit warning
