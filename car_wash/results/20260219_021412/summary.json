@@ -1,0 +1,62 @@
+{
+  "A_bare": {
+    "total": 20,
+    "primary_pass": 0,
+    "primary_fail": 0,
+    "primary_ambiguous": 20,
+    "primary_pass_rate": 0.0,
+    "challenged": 20,
+    "recovered": 15,
+    "recovery_rate": 0.75,
+    "median_latency_ms": 4365,
+    "description": "No system prompt. Baseline."
+  },
+  "B_role_only": {
+    "total": 20,
+    "primary_pass": 0,
+    "primary_fail": 0,
+    "primary_ambiguous": 20,
+    "primary_pass_rate": 0.0,
+    "challenged": 20,
+    "recovered": 6,
+    "recovery_rate": 0.3,
+    "median_latency_ms": 7447,
+    "description": "Role definition only."
+  },
+  "C_role_star": {
+    "total": 20,
+    "primary_pass": 0,
+    "primary_fail": 0,
+    "primary_ambiguous": 20,
+    "primary_pass_rate": 0.0,
+    "challenged": 20,
+    "recovered": 0,
+    "recovery_rate": 0.0,
+    "median_latency_ms": 7972,
+    "description": "Role + STAR reasoning framework."
+  },
+  "D_role_profile": {
+    "total": 20,
+    "primary_pass": 0,
+    "primary_fail": 0,
+    "primary_ambiguous": 20,
+    "primary_pass_rate": 0.0,
+    "challenged": 20,
+    "recovered": 9,
+    "recovery_rate": 0.45,
+    "median_latency_ms": 8712,
+    "description": "Role + user physical context profile."
+  },
+  "E_full_stack": {
+    "total": 20,
+    "primary_pass": 0,
+    "primary_fail": 0,
+    "primary_ambiguous": 20,
+    "primary_pass_rate": 0.0,
+    "challenged": 20,
+    "recovered": 0,
+    "recovery_rate": 0.0,
+    "median_latency_ms": 8292,
+    "description": "Full stack: role + STAR + profile + RAG context."
+  }
+}
