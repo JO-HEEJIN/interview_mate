@@ -43,6 +43,7 @@ backend/*$py.class
 backend/.Python
 backend/env/
 backend/venv/
+backend/.venv/
 backend/ENV/
 backend/build/
 backend/develop-eggs/
@@ -82,6 +83,9 @@ backend/uploads/*
 *.tmp
 *.temp
 .cache/
+
+# Test/experiment scripts
+ab_test_*
 
 # Documentation builds
 docs/_build/
