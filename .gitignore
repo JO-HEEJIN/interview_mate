@@ -22,6 +22,10 @@ yarn-error.log*
 .env
 .env.local
 .env.*.local
+RAILWAY_ENV_VARS.txt
+
+# Secrets
+secret/
 
 # Frontend (Node.js / Next.js)
 frontend/node_modules/
