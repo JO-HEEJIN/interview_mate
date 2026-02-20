@@ -57,7 +57,7 @@ The car wash problem is a perfect proxy — it's a simple question with a defini
 - **Correct answer:** Drive (the car needs to be physically present at the car wash)
 - **Challenge prompt** (given only to models that fail): "How will I get my car washed if I am walking?"
 
-We isolated 5 prompt conditions, each adding one layer:
+We designed 5 prompt conditions to isolate specific architectural layers and their combinations:
 
 | Condition | What's in the system prompt |
 |---|---|
@@ -137,7 +137,7 @@ The scoring was rewritten to match **RECOMMENDATION INTENT**, not bare mentions:
 \b(answer|solution)\s+is\s+to\s+walk\b
 ```
 
-**Additional fix:** Markdown bold markup (`** **`) was stripped before matching, because Claude often writes `"You should **walk**"` where the asterisks would prevent `\bwalk\b` from matching.
+**Additional fix:** Markdown bold markup (`** **`) was stripped before matching, because Claude often writes `"You should **walk**"` where the asterisks interfere with whitespace matching (`\s+`) in multi-word intent patterns (e.g., `\bshould\s+walk\b` fails to match `should **walk**` due to `**` inserted between words).
 
 ```python
 lower = re.sub(r'\*{1,2}', '', text.lower())
@@ -170,7 +170,7 @@ lower = re.sub(r'\*{1,2}', '', text.lower())
 | E_full_stack | 98% | **100%** (20/20) | n/a | 8,347ms |
 
 - **Pass** = first response recommends "drive"
-- **Recovery** = after failing, self-corrects when challenged with "How will I get my car washed if I am walking?"
+- **Recovery** = after failing or yielding an ambiguous result, self-corrects when challenged with "How will I get my car washed if I am walking?"
 
 ### Per-trial breakdown
 
@@ -490,7 +490,64 @@ The model says "you can drive your car through the wash bay when you arrive" —
 
 ---
 
-## 10. Implications for InterviewMate
+## 10. Why STAR Works — Mechanistic Analysis
+
+Without STAR, the model's generation path is:
+
+```
+"100 meters" → distance heuristic fires → "it's close, so walk"
+```
+
+The model jumps from input to conclusion. The purpose ("wash the car") is present in the input, but the model has no obligation to process it explicitly — so it skips straight to distance optimization.
+
+With STAR, the model must write the **Task step** before reaching a conclusion:
+
+```
+Situation: Car needs washing, car wash is 100m away
+Task: _____ ← must explicitly state the goal here
+Action: _____
+Result: _____
+```
+
+This is where the fork happens. The raw data shows two distinct patterns:
+
+**When Task focuses on the car (17/20 passes):**
+> "Task: Get your car to the car wash for cleaning."
+
+The car becomes the grammatical subject. The physical constraint — the car must be present — surfaces naturally. "Drive" follows as the only logical action.
+
+**When Task includes the person (3/20 failures):**
+> "Task: Get yourself and your car to the car wash efficiently."
+
+The word "yourself" dilutes the focus. The model can now optimize for human transportation, and "walk" becomes a valid option again.
+
+**The mechanism is forced goal articulation.** In autoregressive generation, once the model has produced "Task: Get your car to the car wash," all subsequent tokens are conditioned on this context. The implicit prerequisite ("the car must physically be there") has been converted into explicit text. The model doesn't need to "reason" about it — it has already written it.
+
+This explains why Profile (D) only achieves 30%. Profile gives the model more *facts* (Sarah, Honda Civic, driveway), but doesn't force it to *use* those facts in a structured sequence. The model can absorb all the profile information and still default to the distance heuristic, because nothing in the generation path forces it to connect "car in driveway" → "car needs to be at car wash" → "drive." It's not about having more information — it's about the **order in which the model is forced to process it**.
+
+---
+
+## 11. InterviewMate Production Architecture
+
+A natural question arises: if STAR is the key driver in this experiment, does InterviewMate's production system actually use STAR?
+
+**Yes — STAR was never removed.** The current production system prompt uses a question-type routing architecture:
+
+```
+Question type classification
+├── Yes/No       → Under 10 words
+├── Direct       → PREP structure (Point → Reason → Example → Point)
+├── Behavioral   → STAR structure (Situation → Action → Result)
+└── Compound     → Per-part answers
+```
+
+STAR is specifically applied to behavioral interview questions ("Tell me about a time when..."). The Q&A pairs that were added later are a separate RAG layer — they don't replace STAR but provide pre-prepared answers that can be matched to incoming questions.
+
+This means the production architecture maps directly to E_full_stack: Role + reasoning structure (STAR/PREP) + Profile + RAG (Q&A pairs). The 100% pass rate in E_full_stack is consistent with the production system's behavior when it correctly answered "drive" during the original interview practice session.
+
+---
+
+## 12. Implications for InterviewMate
 
 1. **The core differentiator is reasoning structure design.** Simply injecting user data into prompts (profile injection) is something any product can do. Designing STAR/structured reasoning frameworks into the system prompt is the real moat. Any competitor can copy "inject the user's resume" but the reasoning framework that forces the model to think through Situation → Task → Action → Result is what produces reliable, grounded answers.
 
@@ -502,7 +559,7 @@ The model says "you can drive your car through the wash bay when you arrive" —
 
 ---
 
-## 11. Technical Details
+## 13. Technical Details
 
 **Experiment code:** [`car_wash/experiment.py`](experiment.py)
 - Uses Anthropic Python SDK directly (`anthropic.Anthropic`)
@@ -544,7 +601,7 @@ def score_response(text: str) -> str:
 
 ---
 
-## 12. Conclusion
+## 14. Conclusion
 
 The car wash problem is not just a toy failure case for LLMs. It's a precise instrument for measuring how different prompt architecture layers contribute to grounded, common-sense reasoning.
 

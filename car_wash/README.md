@@ -40,7 +40,7 @@ Inspired by [ryan-allen/car-wash-evals](https://github.com/ryan-allen/car-wash-e
 - **Correct answer:** Drive (the car needs to be at the car wash to get washed)
 - **Model:** `claude-sonnet-4-5-20250929` | Temperature: 0.7 | 20 runs per condition
 
-We isolated 5 prompt layers and tested each independently:
+We designed 5 prompt conditions to isolate specific architectural layers and their combinations:
 
 | Condition | Components | System Prompt Summary |
 |-----------|-----------|----------------------|
@@ -63,7 +63,7 @@ We isolated 5 prompt layers and tested each independently:
 | E_full_stack | 98% | **100%** (20/20) | n/a | 8,347ms |
 
 - **Pass** = First response recommends "drive"
-- **Recovery** = After failing, rate of self-correction when challenged with "How will I get my car washed if I am walking?"
+- **Recovery** = After failing or yielding an ambiguous result, rate of self-correction when challenged with "How will I get my car washed if I am walking?"
 
 ---
 
@@ -71,7 +71,7 @@ We isolated 5 prompt layers and tested each independently:
 
 ### 1. Reasoning Structure (STAR) >> Context Injection (Profile)
 
-C_role_star **(85%)** vs D_role_profile **(30%)**: The STAR framework was **2.8x more effective** than profile injection.
+C_role_star **(85%)** vs D_role_profile **(30%)**: In this exploratory study (N=20 per condition), the STAR framework showed a **2.8x higher pass rate** than profile injection.
 
 - When STAR forces the model to think in "Situation → Task → Action" order, it naturally derives "Task: wash the car → Action: the car must be there"
 - In contrast, providing the profile (car model, location, etc.) still leaves the model at surface-level judgment: "100m is close, so walk"
@@ -116,7 +116,7 @@ This holds consistently across different accounts and sessions:
 
 1. **The core differentiator is reasoning structure design.** Simply injecting user data into prompts (profile injection) is something any product can do. Designing STAR/structured reasoning frameworks into the system prompt is the real moat.
 
-2. **Profile is auxiliary but essential.** Profile alone (30%) is weak, but it's the final piece needed to reach 100% when combined with STAR. Do not remove it.
+2. **Profile + RAG context is auxiliary but essential.** Profile alone (30%) is weak, but combined with RAG context it's the final piece needed to reach 100% when layered on top of STAR. Note: because E adds both Profile and RAG simultaneously, the +15pp lift cannot be attributed to Profile alone (see [see.md](see.md), Limitations).
 
 3. **Per-layer contribution is measurable.** Applying this experimental framework to the interview domain enables quantitative measurement of "which prompt element contributes to answer quality."
 
