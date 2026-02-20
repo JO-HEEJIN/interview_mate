@@ -18,7 +18,11 @@ The post hit the front page of **Hacker News** ([1,499 points, 943 comments](htt
 - [Original Mastodon post](https://mastodon.world/@knowmadd/116072773118828295)
 - [Hacker News discussion](https://news.ycombinator.com/item?id=47031580)
 
-The InterviewMate team analyzed this from a prompt architecture perspective: **which prompt layer actually solves this "common-sense reasoning failure"?**
+During a routine interview practice session, we posed the same question to InterviewMate. It answered **drive** immediately. Every other LLM had failed. Ours did not.
+
+We shared this publicly. But after the post went live, a harder question surfaced: we did not actually know **why** it worked. InterviewMate's system prompt has multiple layers — role definition, STAR framework, user profile, RAG context — and any one of them could have been the factor. Without understanding which layer actually produced the correct answer, we couldn't defend the result, replicate it, or improve on it.
+
+The InterviewMate team saw this differently: we design multi-layered prompt architectures daily. Our question was not "why do LLMs fail?" but rather **"WHICH prompt layer actually fixes this?"** That's what led to this variable isolation experiment.
 
 ---
 
