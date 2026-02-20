@@ -147,6 +147,18 @@ lower = re.sub(r'\*{1,2}', '', text.lower())
 
 ---
 
+### Known Limitations of This Study
+
+1. **DeepSeek version unrecorded.** The prediction experiment used DeepSeek (version unrecorded). Exact model ID was not logged at time of experiment.
+
+2. **E_full_stack confound.** The 85%→100% lift cannot be attributed to Profile alone. E adds STAR + Profile + RAG simultaneously. A separate "C + Profile (no RAG)" condition would be needed to isolate Profile's contribution. This remains a future work item.
+
+3. **N=20 per condition.** Results reflect exploratory behavioral patterns, not statistically validated findings. This study focuses on qualitative behavioral shifts across prompt layers rather than p-value testing, which would require a larger sample.
+
+4. **Anthropomorphic language.** Recovery paradox descriptions ("stuck in reasoning chain") are analogies, not mechanistic claims. Technically, prior STAR-structured tokens influence subsequent attention weights, making trajectory correction harder — not because the model is "convinced," but because the autoregressive generation is conditioned on its own prior output.
+
+---
+
 ## 5. Final Results (Run 2 — Fixed Scoring)
 
 | Condition | DeepSeek Predicted | Actual Pass Rate | Recovery Rate | Median Latency |
@@ -380,7 +392,7 @@ The RAG context addition (*"User's Honda Civic needs washing after a long road t
 
 **C_role_star (85%) vs D_role_profile (30%)**
 
-STAR was **2.83x more effective** than profile injection.
+In this exploratory study (N=20 per condition), STAR showed **2.83x higher pass rate** than profile injection.
 
 When STAR forces "Situation → Task → Action" order, the model naturally derives: *"Task: wash the car → Action: the car must be there → drive."*
 
@@ -393,7 +405,7 @@ This proves that the "implicit context failure" identified in the HN discussion 
 - D_role_profile alone: **30%** (weak)
 - E_full_stack (STAR + Profile + RAG): **100%** (perfect)
 
-Profile contributes **+15% lift** when added to STAR (from 85% to 100%), but achieves only 30% on its own. It's auxiliary but essential — the final piece needed for reliability.
+Profile and RAG context together contribute **+15 percentage points** when layered on top of STAR (from 85% to 100%), but Profile alone achieves only 30%. Note: because E adds both Profile and RAG simultaneously, this lift cannot be attributed to Profile alone (see Limitations, point 2). A separate "STAR + Profile (no RAG)" condition would be needed to isolate each contribution. This remains a future work item.
 
 ### Finding 3: The Recovery Paradox
 
@@ -410,11 +422,11 @@ Conditions A/B/D fail with simple, unstructured responses. When challenged, the 
 
 But C fails with STAR-structured responses that already walked through Situation/Task/Action steps. When challenged, the model is "stuck" in its own reasoning chain and finds it harder to fully reverse.
 
-**Lesson:** Structured reasoning that leads to the wrong answer is harder to correct than unstructured gut reactions. This is analogous to humans who are harder to convince when they've "thought it through" — even if their reasoning was flawed.
+**Lesson:** Structured reasoning that leads to the wrong answer is harder to correct than unstructured gut reactions. This behavioral pattern is analogous to — but not mechanistically identical to — human cognitive commitment bias. Technically, the model's autoregressive generation is conditioned on its own prior STAR-structured tokens, making trajectory correction harder.
 
 ### Finding 4: DeepSeek Prediction Accuracy
 
-DeepSeek was asked to predict pass rates before the experiment ran:
+DeepSeek (version unrecorded; exact model ID was not logged at time of experiment) was asked to predict pass rates before the experiment ran:
 
 | Condition | Predicted | Actual | Delta |
 |---|:---:|:---:|---|
