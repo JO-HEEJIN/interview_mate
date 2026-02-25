@@ -1,0 +1,14 @@
+{
+  "F_role_star_profile": {
+    "total": 20,
+    "primary_pass": 19,
+    "primary_fail": 0,
+    "primary_ambiguous": 1,
+    "primary_pass_rate": 0.95,
+    "challenged": 1,
+    "recovered": 0,
+    "recovery_rate": 0.0,
+    "median_latency_ms": 9056,
+    "description": "Role + STAR + Profile (no RAG). Isolates Profile contribution."
+  }
+}

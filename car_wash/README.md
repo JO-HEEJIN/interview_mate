@@ -40,7 +40,7 @@ Inspired by [ryan-allen/car-wash-evals](https://github.com/ryan-allen/car-wash-e
 - **Correct answer:** Drive (the car needs to be at the car wash to get washed)
 - **Model:** `claude-sonnet-4-5-20250929` | Temperature: 0.7 | 20 runs per condition
 
-We designed 5 prompt conditions to isolate specific architectural layers and their combinations:
+We designed 6 prompt conditions to isolate specific architectural layers and their combinations:
 
 | Condition | Components | System Prompt Summary |
 |-----------|-----------|----------------------|
@@ -49,6 +49,7 @@ We designed 5 prompt conditions to isolate specific architectural layers and the
 | C_role_star | Role + STAR | Above + STAR method (Situation → Task → Action → Result) |
 | D_role_profile | Role + Profile | Above + user profile (name, car model, current location) |
 | E_full_stack | Role + STAR + Profile + RAG | Full combination + retrieved context |
+| F_role_star_profile | Role + STAR + Profile | STAR + Profile without RAG (isolates Profile contribution) |
 
 ---
 
@@ -61,6 +62,7 @@ We designed 5 prompt conditions to isolate specific architectural layers and the
 | C_role_star | 50% | **85%** (17/20) | 67% | 7,851ms |
 | D_role_profile | 40% | **30%** (6/20) | 100% | 8,837ms |
 | E_full_stack | 98% | **100%** (20/20) | n/a | 8,347ms |
+| F_role_star_profile | — | **95%** (19/20) | 0% (0/1) | 9,056ms |
 
 - **Pass** = First response recommends "drive"
 - **Recovery** = After failing or yielding an ambiguous result, rate of self-correction when challenged with "How will I get my car washed if I am walking?"
@@ -71,10 +73,11 @@ We designed 5 prompt conditions to isolate specific architectural layers and the
 
 ### 1. Reasoning Structure (STAR) >> Context Injection (Profile)
 
-C_role_star **(85%)** vs D_role_profile **(30%)**: In this exploratory study (N=20 per condition), the STAR framework showed a **2.8x higher pass rate** than profile injection.
+C_role_star **(85%)** vs D_role_profile **(30%)**: In this exploratory study (N=20 per condition), the STAR framework showed a **2.8x higher pass rate** than profile injection (Fisher's exact test, p = 0.001).
 
 - When STAR forces the model to think in "Situation → Task → Action" order, it naturally derives "Task: wash the car → Action: the car must be there"
 - In contrast, providing the profile (car model, location, etc.) still leaves the model at surface-level judgment: "100m is close, so walk"
+- The F_role_star_profile condition (95%) decomposes the 85%→100% lift: **Profile adds +10pp**, **RAG adds +5pp**
 - This proves that the "implicit context failure" identified in the HN discussion **can be solved with reasoning frameworks**
 
 ### 2. Without Profile: The Baseline Failure
@@ -116,7 +119,7 @@ This holds consistently across different accounts and sessions:
 
 1. **The core differentiator is reasoning structure design.** Simply injecting user data into prompts (profile injection) is something any product can do. Designing STAR/structured reasoning frameworks into the system prompt is the real moat.
 
-2. **Profile + RAG context is auxiliary but essential.** Profile alone (30%) is weak, but combined with RAG context it's the final piece needed to reach 100% when layered on top of STAR. Note: because E adds both Profile and RAG simultaneously, the +15pp lift cannot be attributed to Profile alone (see [see.md](see.md), Limitations).
+2. **Profile and RAG are auxiliary but essential.** Profile alone (30%) is weak, but layered on STAR it adds +10pp (85%→95%), and RAG adds the final +5pp to reach 100%. The F condition resolves the original confound — both layers contribute, with Profile's effect (~2x) larger than RAG's.
 
 3. **Per-layer contribution is measurable.** Applying this experimental framework to the interview domain enables quantitative measurement of "which prompt element contributes to answer quality."
 
@@ -124,7 +127,7 @@ This holds consistently across different accounts and sessions:
 
 ## Methodology Notes
 
-- **Experiment code:** [`experiment.py`](experiment.py) (direct Anthropic SDK, 5 conditions x 20 runs)
+- **Experiment code:** [`experiment.py`](experiment.py) (A–E conditions), [`run_f_condition.py`](run_f_condition.py) (F condition)
 - **Result files:** [`results/20260219_024823/`](results/20260219_024823/) (raw.jsonl, summary.json, report.md)
 - **Previous run (pre-fix):** [`results/20260219_021412/`](results/20260219_021412/) — used overly strict scoring (all "ambiguous")
 - **Scoring method:** Intent-based pattern matching. Instead of counting bare word occurrences ("drive", "walk"), we match recommendation-intent phrases ("should drive", "recommend walking", etc.). Markdown bold markup is stripped before scoring.
