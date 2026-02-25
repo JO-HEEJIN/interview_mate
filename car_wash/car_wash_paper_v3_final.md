@@ -2,6 +2,7 @@
 
 **Author:** Heejin Jo
 **Affiliation:** Independent Researcher
+**Email:** info@birth2death.com
 **URL:** https://www.heejinjo.me
 **Date:** 2026-02-25
 **Model Tested:** claude-sonnet-4-5-20250929
