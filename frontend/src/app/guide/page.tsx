@@ -100,24 +100,6 @@ export default function GuidePage() {
         </div>
       </section>
 
-      {/* Ready Callout */}
-      <section className="px-6 pb-20">
-        <div className="mx-auto max-w-4xl rounded-xl bg-zinc-900 p-8 text-center dark:bg-zinc-100">
-          <h2 className="text-2xl font-bold text-white dark:text-zinc-900">
-            Then you&apos;re ready!
-          </h2>
-          <p className="mt-2 text-zinc-300 dark:text-zinc-600">
-            Start your interview and get real-time AI answers as questions come in.
-          </p>
-          <Link
-            href="/interview"
-            className="mt-6 inline-flex items-center justify-center rounded-full bg-white px-8 py-3 text-sm font-semibold text-zinc-900 transition-colors hover:bg-zinc-200 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
-          >
-            Go to Interview
-          </Link>
-        </div>
-      </section>
-
       {/* Settings Prompt Templates */}
       <section className="px-6 pb-20">
         <div className="mx-auto max-w-4xl">
@@ -376,6 +358,24 @@ Output ONLY the Custom Instructions text — no explanations, no markdown header
               </svg>
             </a>
           </div>
+        </div>
+      </section>
+
+      {/* Ready Callout */}
+      <section className="px-6 py-20">
+        <div className="mx-auto max-w-4xl rounded-xl bg-zinc-900 p-8 text-center dark:bg-zinc-100">
+          <h2 className="text-2xl font-bold text-white dark:text-zinc-900">
+            Then you&apos;re ready!
+          </h2>
+          <p className="mt-2 text-zinc-300 dark:text-zinc-600">
+            Start your interview and get real-time AI answers as questions come in.
+          </p>
+          <Link
+            href="/interview"
+            className="mt-6 inline-flex items-center justify-center rounded-full bg-white px-8 py-3 text-sm font-semibold text-zinc-900 transition-colors hover:bg-zinc-200 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
+          >
+            Go to Interview
+          </Link>
         </div>
       </section>
     </div>
