@@ -14,13 +14,6 @@ export default function Home() {
             school admissions - get AI-powered answers in under 2 seconds while you&apos;re being interviewed.
           </p>
 
-          {/* Launch Discount Banner */}
-          <div className="w-full max-w-2xl rounded-xl border-2 border-green-500 bg-green-50 p-5 dark:bg-green-950 dark:border-green-400">
-            <p className="text-base font-semibold text-green-800 dark:text-green-200">
-              Launch Special: Use code LAUNCH50 for 50% off all plans. Valid until January 30, 2026.
-            </p>
-          </div>
-
           {/* Main Value Proposition */}
           <div className="w-full max-w-2xl rounded-xl border-2 border-blue-500 bg-blue-50 p-8 dark:bg-blue-950 dark:border-blue-400">
             <h2 className="text-2xl font-bold text-blue-900 dark:text-blue-100 mb-4">
@@ -228,17 +221,17 @@ export default function Home() {
             Start at Just $0.20 per Session
           </h2>
           <p className="text-xl text-zinc-600 dark:text-zinc-400 mb-8 max-w-2xl mx-auto">
-            10 sessions for just $2 with LAUNCH50 discount (regular $4).
+            10 sessions for just $4.
             Works for any interview type. No subscription. Pay as you go.
           </p>
 
           <div className="rounded-2xl border-2 border-zinc-200 bg-zinc-50 p-10 dark:border-zinc-700 dark:bg-zinc-900 mb-10">
             <div className="text-6xl font-bold text-zinc-900 dark:text-zinc-100 mb-2">
-              $2
+              $4
               <span className="text-2xl font-normal text-zinc-500 dark:text-zinc-400"> / 10 sessions</span>
             </div>
             <p className="text-zinc-500 dark:text-zinc-400 mb-6">
-              <span className="line-through">$4</span> with code LAUNCH50
+              Just $0.40 per session
             </p>
             <ul className="text-left max-w-md mx-auto space-y-3 mb-8">
               <li className="flex items-center gap-3 text-zinc-700 dark:text-zinc-300">

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Providers } from "@/components/providers";
 import { Header } from "@/components/layout/Header";
+import { Footer } from "@/components/layout/Footer";
 import { defaultMetadata } from "@/config/metadata";
 import "./globals.css";
 
@@ -30,7 +31,7 @@ const jsonLd = {
     "@type": "Offer",
     "price": "4.00",
     "priceCurrency": "USD",
-    "description": "Starting at $4 for 10 sessions. Use code LAUNCH50 for 50% off until January 30, 2026.",
+    "description": "Starting at $4 for 10 sessions.",
     "availability": "https://schema.org/InStock"
   },
   "aggregateRating": {
@@ -73,6 +74,7 @@ export default function RootLayout({
         <Providers>
           <Header />
           {children}
+          <Footer />
         </Providers>
       </body>
     </html>
