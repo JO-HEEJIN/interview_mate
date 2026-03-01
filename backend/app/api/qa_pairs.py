@@ -240,7 +240,7 @@ async def bulk_upload_qa_pairs(
                 "user_id": user_id,
                 "question": pair.question,
                 "answer": pair.answer,
-                "question_type": pair.question_type,
+                "question_type": pair.question_type.lower(),
                 "source": pair.source,
                 "question_variations": pair.question_variations or [],
                 "profile_id": pair.profile_id or request.profile_id,  # Individual or batch-level

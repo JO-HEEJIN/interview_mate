@@ -1249,7 +1249,7 @@ Text to parse:
                 qa_pairs.append({
                     "question": pair.question,
                     "answer": pair.answer,
-                    "question_type": pair.question_type,
+                    "question_type": pair.question_type.lower(),
                     "source": "bulk_upload"
                 })
 
