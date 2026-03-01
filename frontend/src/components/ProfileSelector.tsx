@@ -83,7 +83,7 @@ export function ProfileSelector({ compact = false }: ProfileSelectorProps) {
             <button
                 onClick={() => setIsOpen(!isOpen)}
                 className={`flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 ${
-                    compact ? 'w-full justify-between' : ''
+                    compact ? 'w-full justify-between' : 'max-w-[200px]'
                 }`}
             >
                 <div className="flex items-center gap-2 min-w-0">
