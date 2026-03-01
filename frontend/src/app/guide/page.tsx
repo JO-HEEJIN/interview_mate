@@ -118,6 +118,101 @@ export default function GuidePage() {
         </div>
       </section>
 
+      {/* Custom Instruction Helper */}
+      <section className="px-6 pb-20">
+        <div className="mx-auto max-w-4xl">
+          <h2 className="text-3xl font-bold text-zinc-900 dark:text-zinc-100 text-center">
+            Need Help Writing Your Custom Instructions?
+          </h2>
+          <p className="mx-auto mt-4 max-w-2xl text-center text-zinc-600 dark:text-zinc-400">
+            The <strong>Custom Instructions</strong> field in{' '}
+            <Link href="/profile/interview-settings" className="text-blue-600 underline dark:text-blue-400">
+              Settings
+            </Link>{' '}
+            controls how the AI generates answers during your interview. Copy the prompt
+            below, fill in the blanks, and paste it into your favorite AI (ChatGPT, Claude,
+            Gemini, etc.) along with your resume and the job/program description. Then paste
+            the result straight into InterviewMate.
+          </p>
+
+          <div className="mt-8 rounded-xl border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950">
+            {/* Prompt header */}
+            <div className="flex items-center justify-between border-b border-zinc-200 px-6 py-4 dark:border-zinc-800">
+              <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                Prompt Template
+              </h3>
+              <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                Copy &rarr; fill in blanks &rarr; send to any AI with your resume
+              </span>
+            </div>
+
+            {/* Prompt body */}
+            <div className="p-6">
+              <pre className="whitespace-pre-wrap text-sm leading-relaxed text-zinc-700 dark:text-zinc-300 font-mono">
+{`I'm using InterviewMate — a real-time interview assistant that listens to interviewer questions and generates answers live. It has a "Custom Instructions" field that gets appended to the AI system prompt under "# YOUR SPECIFIC INTERVIEW CONTEXT & STYLE".
+
+Write Custom Instructions for my profile. Here's my info:
+
+- Name: [Your name]
+- Position I'm applying for: [e.g., Software Engineer, PhD Candidate, MBA Applicant]
+- Target company/school: [e.g., Google, MIT, US Embassy]
+- Interview type: [Job interview / PhD defense / Visa interview / School admission]
+- Interview language: [e.g., English, Korean, etc.]
+- Key things I want to emphasize: [e.g., leadership experience, specific project, research outcomes]
+- Preferred answer tone: [e.g., confident, humble, fact-driven, conversational]
+
+Also attached:
+- My resume/CV
+- The job posting / program description / any relevant context
+
+Based on all of this, generate a Custom Instructions block I can paste directly into InterviewMate's Settings. It should include:
+1. Answer style rules (tone, length, structure)
+2. Domain-specific context (industry jargon, frameworks, methodologies to reference)
+3. Personal branding notes (strengths, achievements, stories to weave in)
+4. Cultural or format considerations (e.g., STAR format for behavioral Qs, brief answers for visa interviews)
+5. Any "always do / never do" rules
+
+Output ONLY the Custom Instructions text — no explanations, no markdown headers. Just the raw text I can paste in.`}
+              </pre>
+            </div>
+          </div>
+
+          {/* Step-by-step instructions */}
+          <div className="mt-8 grid gap-4 sm:grid-cols-3">
+            <div className="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+              <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-sm font-bold text-blue-700 dark:bg-blue-900 dark:text-blue-300">
+                1
+              </div>
+              <h4 className="font-medium text-zinc-900 dark:text-zinc-100">Copy the prompt</h4>
+              <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+                Fill in the bracketed fields with your real information.
+              </p>
+            </div>
+            <div className="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+              <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-sm font-bold text-blue-700 dark:bg-blue-900 dark:text-blue-300">
+                2
+              </div>
+              <h4 className="font-medium text-zinc-900 dark:text-zinc-100">Send to any AI</h4>
+              <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+                Paste it into ChatGPT, Claude, Gemini, etc. — attach your resume and the job description too.
+              </p>
+            </div>
+            <div className="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+              <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-sm font-bold text-blue-700 dark:bg-blue-900 dark:text-blue-300">
+                3
+              </div>
+              <h4 className="font-medium text-zinc-900 dark:text-zinc-100">Paste the result</h4>
+              <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+                Copy the AI&apos;s output and paste it into the Custom Instructions field in{' '}
+                <Link href="/profile/interview-settings" className="text-blue-600 underline dark:text-blue-400">
+                  Settings
+                </Link>.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Real-World Example */}
       <section className="bg-zinc-50 px-6 py-20 dark:bg-zinc-950">
         <div className="mx-auto max-w-4xl">
