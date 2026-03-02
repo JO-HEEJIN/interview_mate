@@ -742,7 +742,8 @@ Generate a suggested answer ({instruction}):"""
                 for text in stream.text_stream:
                     yield text
 
-            logger.info("Streaming complete")
+            final_message = stream.get_final_message()
+            logger.info(f"[Streaming] Requested: {self.model} | Actual: {final_message.model} | Usage: input={final_message.usage.input_tokens}, output={final_message.usage.output_tokens}")
 
         except Exception as e:
             logger.error(f"Claude streaming error: {str(e)}", exc_info=True)
@@ -1115,6 +1116,7 @@ Generate a suggested answer ({instruction}):"""
                 ]
             )
 
+            logger.info(f"[Non-streaming] Requested: {self.model} | Actual: {response.model} | Usage: input={response.usage.input_tokens}, output={response.usage.output_tokens}")
             answer = response.content[0].text
             logger.info(f"Generated answer: {len(answer)} chars")
 
