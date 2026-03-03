@@ -95,3 +95,6 @@ docs/.doctrees/
 .claude/
 .vercel
 .env*.local
+
+# Swift build
+overlay/.build/
