@@ -10,18 +10,22 @@ APP_NAME="InterviewMate Overlay.app"
 APP_DIR=".build/$APP_NAME"
 CONTENTS_DIR="$APP_DIR/Contents"
 MACOS_DIR="$CONTENTS_DIR/MacOS"
+RESOURCES_DIR="$CONTENTS_DIR/Resources"
 
 # Clean previous bundle
 rm -rf "$APP_DIR"
 
 # Create .app bundle structure
-mkdir -p "$MACOS_DIR"
+mkdir -p "$MACOS_DIR" "$RESOURCES_DIR"
 
 # Copy binary
 cp .build/debug/InterviewMateOverlay "$MACOS_DIR/"
 
 # Copy Info.plist
 cp Resources/Info.plist "$CONTENTS_DIR/"
+
+# Copy app icon
+cp Resources/AppIcon.icns "$RESOURCES_DIR/"
 
 echo ""
 echo "Built: $APP_DIR"

@@ -1,21 +1,23 @@
 import AppKit
+import Carbon
 import WebKit
 
-class AppDelegate: NSObject, NSApplicationDelegate {
+class AppDelegate: NSObject, NSApplicationDelegate, OverlayWindowDelegate {
     private var window: OverlayWindow!
     private var webViewController: WebViewController!
     private var statusItem: NSStatusItem!
     private var opacitySlider: NSSlider!
     private var alwaysOnTopItem: NSMenuItem!
     private var clickThroughItem: NSMenuItem!
-    private var defaultURL = URL(string: "https://interviewmate.ing")!
+    private var defaultURL = URL(string: "https://interviewmate.tech")!
+    private var hotKeyRef: EventHotKeyRef?
 
     // MARK: - App Lifecycle
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         setupWindow()
         setupMenuBar()
-        setupKeyboardShortcuts()
+        setupGlobalShortcut()
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
     }
@@ -41,6 +43,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         )
 
         window = OverlayWindow(contentRect: contentRect)
+        window.shortcutDelegate = self
         webViewController = WebViewController(url: defaultURL)
         window.contentViewController = webViewController
     }
@@ -119,37 +122,47 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem.menu = menu
     }
 
-    // MARK: - Keyboard Shortcuts
+    // MARK: - Global Hotkey (Carbon RegisterEventHotKey — no accessibility permission needed)
 
-    private func setupKeyboardShortcuts() {
-        // ⌘↑ Increase opacity
-        NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-            guard let self else { return event }
-            let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+    private func setupGlobalShortcut() {
+        let hotKeyID = EventHotKeyID(signature: OSType(0x494D4F56), id: 1) // "IMOV"
 
-            // ⌘↑ Increase opacity
-            if flags == .command && event.keyCode == 126 {
-                self.adjustOpacity(by: 0.1)
-                return nil
-            }
-            // ⌘↓ Decrease opacity
-            if flags == .command && event.keyCode == 125 {
-                self.adjustOpacity(by: -0.1)
-                return nil
-            }
-            // ⌘⇧T Click-through toggle
-            if flags == [.command, .shift] && event.charactersIgnoringModifiers?.lowercased() == "t" {
-                self.toggleClickThrough()
-                return nil
-            }
-            // ⌘⇧P Always-on-top toggle
-            if flags == [.command, .shift] && event.charactersIgnoringModifiers?.lowercased() == "p" {
-                self.toggleAlwaysOnTop()
-                return nil
-            }
+        var eventType = EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: UInt32(kEventHotKeyPressed))
 
-            return event
-        }
+        // Install handler that calls back into our AppDelegate
+        let handlerResult = InstallEventHandler(GetApplicationEventTarget(), { _, event, userData -> OSStatus in
+            guard let userData else { return OSStatus(eventNotHandledErr) }
+            let appDelegate = Unmanaged<AppDelegate>.fromOpaque(userData).takeUnretainedValue()
+
+            var hotKeyID = EventHotKeyID()
+            GetEventParameter(event, EventParamName(kEventParamDirectObject), EventParamType(typeEventHotKeyID),
+                              nil, MemoryLayout<EventHotKeyID>.size, nil, &hotKeyID)
+
+            if hotKeyID.id == 1 {
+                DispatchQueue.main.async { appDelegate.toggleClickThrough() }
+            }
+            return noErr
+        }, 1, &eventType, Unmanaged.passUnretained(self).toOpaque(), nil)
+
+        guard handlerResult == noErr else { return }
+
+        // ⌘⇧T — keyCode 17 = 'T', cmdKey + shiftKey
+        RegisterEventHotKey(UInt32(kVK_ANSI_T), UInt32(cmdKey | shiftKey), hotKeyID,
+                            GetApplicationEventTarget(), 0, &hotKeyRef)
+    }
+
+    // MARK: - OverlayWindowDelegate
+
+    func overlayWindowAdjustOpacity(by delta: Double) {
+        adjustOpacity(by: delta)
+    }
+
+    func overlayWindowToggleClickThrough() {
+        toggleClickThrough()
+    }
+
+    func overlayWindowToggleAlwaysOnTop() {
+        toggleAlwaysOnTop()
     }
 
     // MARK: - Actions

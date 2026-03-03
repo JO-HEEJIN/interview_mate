@@ -72,22 +72,12 @@ export function useAudioRecorder(options: UseAudioRecorderOptions = {}): UseAudi
 
     // Acquire display media for system audio capture
     const acquireDisplayMedia = useCallback(async (): Promise<MediaStream | null> => {
-        try {
-            // Check browser support
-            if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
-                onSystemAudioError?.('Your browser does not support system audio capture.');
-                return null;
-            }
+        const constraints = { audio: true, video: true };
 
-            // video: true is required for browser compat, we'll stop video tracks immediately
-            const stream = await navigator.mediaDevices.getDisplayMedia({
-                audio: true,
-                video: true,
-            });
-
+        const doCapture = async (): Promise<MediaStream | null> => {
+            const stream = await navigator.mediaDevices.getDisplayMedia(constraints);
             // Stop video tracks immediately to save resources
             stream.getVideoTracks().forEach(track => track.stop());
-
             // Check if we got audio tracks
             const audioTracks = stream.getAudioTracks();
             if (audioTracks.length === 0) {
@@ -95,10 +85,63 @@ export function useAudioRecorder(options: UseAudioRecorderOptions = {}): UseAudi
                 stream.getTracks().forEach(track => track.stop());
                 return null;
             }
-
             return stream;
+        };
+
+        try {
+            // Check browser support
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+                onSystemAudioError?.('Your browser does not support system audio capture.');
+                return null;
+            }
+
+            return await doCapture();
         } catch (err) {
             if (err instanceof Error) {
+                // WKWebView blocks getDisplayMedia outside direct user gestures.
+                // Show a click-to-allow prompt so the user provides a fresh gesture.
+                if (err.message.includes('user gesture')) {
+                    return new Promise<MediaStream | null>((resolve) => {
+                        const overlay = document.createElement('div');
+                        overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:2147483647;display:flex;align-items:center;justify-content:center;';
+
+                        const box = document.createElement('div');
+                        box.style.cssText = 'background:white;border-radius:16px;padding:32px;text-align:center;max-width:360px;box-shadow:0 8px 32px rgba(0,0,0,0.3);';
+
+                        const title = document.createElement('div');
+                        title.textContent = 'System Audio Capture';
+                        title.style.cssText = 'font-size:18px;font-weight:700;margin-bottom:8px;color:#1a1a1a;';
+
+                        const desc = document.createElement('div');
+                        desc.textContent = 'Click the button below to share your screen audio for interview capture.';
+                        desc.style.cssText = 'font-size:14px;color:#666;margin-bottom:20px;line-height:1.5;';
+
+                        const btn = document.createElement('button');
+                        btn.textContent = 'Enable Screen Sharing';
+                        btn.style.cssText = 'padding:12px 28px;font-size:16px;font-weight:600;border-radius:10px;border:none;background:#4F46E5;color:white;cursor:pointer;';
+                        btn.onmouseenter = () => { btn.style.background = '#4338CA'; };
+                        btn.onmouseleave = () => { btn.style.background = '#4F46E5'; };
+                        btn.onclick = async () => {
+                            overlay.remove();
+                            try {
+                                resolve(await doCapture());
+                            } catch (retryErr) {
+                                console.error('Screen sharing retry failed:', retryErr);
+                                resolve(null);
+                            }
+                        };
+
+                        const cancel = document.createElement('button');
+                        cancel.textContent = 'Skip';
+                        cancel.style.cssText = 'padding:8px 20px;font-size:14px;border-radius:8px;border:1px solid #ddd;background:white;color:#666;cursor:pointer;margin-top:12px;display:block;margin-left:auto;margin-right:auto;';
+                        cancel.onclick = () => { overlay.remove(); resolve(null); };
+
+                        box.append(title, desc, btn, cancel);
+                        overlay.appendChild(box);
+                        document.body.appendChild(overlay);
+                    });
+                }
+
                 if (err.name === 'NotAllowedError') {
                     // User cancelled the picker — not an error, just continue mic-only
                     console.log('User cancelled screen share picker');
@@ -245,20 +288,9 @@ export function useAudioRecorder(options: UseAudioRecorderOptions = {}): UseAudi
         try {
             setError(null);
 
-            // Request microphone access with specific constraints
-            const micStream = await navigator.mediaDevices.getUserMedia({
-                audio: {
-                    sampleRate,
-                    channelCount: 1,
-                    echoCancellation: true,
-                    noiseSuppression: true,
-                    autoGainControl: true,
-                },
-            });
-
-            mediaStreamRef.current = micStream;
-
-            // Acquire display media if system audio capture is enabled
+            // IMPORTANT: getDisplayMedia MUST be the first await in the click handler
+            // because WKWebView (and some browsers) lose the user gesture context after
+            // the first async boundary. Calling getUserMedia first would consume the gesture.
             let displayStream: MediaStream | null = null;
             if (captureSystemAudio) {
                 displayStream = await acquireDisplayMedia();
@@ -282,6 +314,19 @@ export function useAudioRecorder(options: UseAudioRecorderOptions = {}): UseAudi
                     }
                 }
             }
+
+            // Request microphone access (after getDisplayMedia to preserve user gesture)
+            const micStream = await navigator.mediaDevices.getUserMedia({
+                audio: {
+                    sampleRate,
+                    channelCount: 1,
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    autoGainControl: true,
+                },
+            });
+
+            mediaStreamRef.current = micStream;
 
             // Initialize audio context for level analysis (returns mixed stream if display is present)
             const recordingStream = await initializeAudioContext(micStream, displayStream);
