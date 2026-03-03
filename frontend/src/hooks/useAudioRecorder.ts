@@ -188,6 +188,7 @@ export function useAudioRecorder(options: UseAudioRecorderOptions = {}): UseAudi
                     // Direct native audio integration — read from shared queue
                     // This avoids cross-AudioContext MediaStream issues in WebKit
                     console.log('[NativeAudio] Using direct queue integration');
+                    let nativeProcessCount = 0;
                     const nativeProcessor = audioContextRef.current.createScriptProcessor(4096, 1, 1);
                     nativeProcessor.onaudioprocess = (e: AudioProcessingEvent) => {
                         const output = e.outputBuffer.getChannelData(0);
@@ -202,6 +203,15 @@ export function useAudioRecorder(options: UseAudioRecorderOptions = {}): UseAudi
                             }
                         }
                         for (let j = offset; j < output.length; j++) output[j] = 0;
+
+                        nativeProcessCount++;
+                        if (nativeProcessCount % 50 === 0) {
+                            let maxVal = 0;
+                            for (let k = 0; k < output.length; k++) {
+                                if (Math.abs(output[k]) > maxVal) maxVal = Math.abs(output[k]);
+                            }
+                            console.log(`[NativeAudio] Frontend processor #${nativeProcessCount}: filled ${offset}/${output.length}, maxAmp=${maxVal.toFixed(6)}, queueLen=${nativeQueue.length}`);
+                        }
                     };
                     nativeProcessor.connect(analyserRef.current);
                     nativeProcessor.connect(destinationRef.current);
