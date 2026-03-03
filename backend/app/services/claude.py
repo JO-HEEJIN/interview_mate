@@ -235,79 +235,43 @@ class ClaudeService:
 
     async def decompose_question(self, question: str) -> List[str]:
         """
-        Decompose a complex interview question into simpler, atomic sub-questions.
+        Decompose a compound interview question into atomic sub-questions.
 
-        This is critical for handling compound questions like:
-        "Introduce yourself and tell me why you're the right fit"
-        -> ["Tell me about yourself", "Why are you the right fit for this role?"]
-
-        Uses OpenAI Structured Outputs with timeout and heuristic fallback.
+        Uses fast heuristic split (regex) instead of LLM call.
+        Saves 500-2000ms per question by avoiding gpt-4o API round-trip.
 
         Args:
-            question: The potentially complex interview question
+            question: The potentially compound interview question
 
         Returns:
-            List of atomic sub-questions (max 3, or single-item list if already simple)
+            List of atomic sub-questions (max 3, or single-item list if simple)
         """
-        import re
+        # Detect compound signals
+        compound_patterns = [
+            r'\b(?:and also|and then|and how|and why|and what|and tell)\b',
+            r'\b(?:but also|as well as)\b',
+            r'[?].*[?]',  # Multiple question marks
+        ]
+        is_compound = any(re.search(p, question, re.IGNORECASE) for p in compound_patterns)
 
-        def heuristic_split(q: str) -> List[str]:
-            """Simple heuristic: split on conjunctions"""
-            # Split on common conjunctions
-            parts = re.split(r'\s+(?:and|however|also|but)\s+', q, flags=re.IGNORECASE)
-            return [p.strip() for p in parts if p.strip()]
+        if not is_compound:
+            # Single-intent question: search as-is (most interview questions)
+            return [question]
 
-        try:
-            logger.info(f"Decomposing question ({len(question)} chars): '{question[:80]}...'")
+        # Compound question: split on conjunctions
+        parts = re.split(
+            r'\s+(?:and\s+(?:also|then|how|why|what|tell)|but\s+also|as\s+well\s+as|however|also)\s+',
+            question,
+            flags=re.IGNORECASE
+        )
+        queries = [p.strip() for p in parts if p.strip() and len(p.strip()) > 10]
 
-            # Add 10s timeout to prevent hanging
-            async with asyncio.timeout(10.0):
-                completion = await self.openai_client.beta.chat.completions.parse(
-                    model="gpt-4o-2024-08-06",
-                    messages=[
-                        {
-                            "role": "system",
-                            "content": """You are an expert at analyzing interview questions.
+        if len(queries) <= 1:
+            # Split didn't produce multiple meaningful parts
+            return [question]
 
-Your task: Break down complex interview questions into simple, standalone sub-questions.
-
-Rules:
-1. If the question asks about ONE thing, return it as-is in a single-item list
-2. If the question asks about MULTIPLE things, separate them into atomic questions
-3. Keep the original tone and context
-4. Don't add questions that weren't asked
-5. Maximum 3 sub-questions
-
-Examples:
-- "Tell me about yourself" -> ["Tell me about yourself"]
-- "Introduce yourself and explain why you want this role" -> ["Tell me about yourself", "Why do you want this role?"]
-- "Describe your leadership experience and how you handle conflict" -> ["Describe your leadership experience", "How do you handle conflict?"]
-"""
-                        },
-                        {"role": "user", "content": f"Decompose this question: {question}"}
-                    ],
-                    response_format=DecomposedQueries,
-                )
-
-                queries = completion.choices[0].message.parsed.queries
-
-                # Limit to max 3 sub-questions
-                if len(queries) > 3:
-                    logger.warning(f"Truncating {len(queries)} sub-questions to 3")
-                    queries = queries[:3]
-
-                logger.info(f"Decomposed into {len(queries)} sub-questions")
-                return queries
-
-        except asyncio.TimeoutError:
-            logger.warning("Decomposition timed out (10s), using heuristic split")
-            queries = heuristic_split(question)
-            return queries[:3] if len(queries) > 3 else queries
-
-        except Exception as e:
-            logger.error(f"Question decomposition failed: {str(e)}, using heuristic")
-            queries = heuristic_split(question)
-            return queries[:3] if len(queries) > 3 else (queries if queries else [question])
+        logger.info(f"Heuristic split: {len(queries)} sub-questions from compound question")
+        return queries[:3]
 
     async def find_relevant_qa_pairs(
         self,

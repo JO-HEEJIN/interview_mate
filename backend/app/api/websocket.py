@@ -490,9 +490,14 @@ async def websocket_transcribe(websocket: WebSocket):
                             # 2. Generate answer using RAG
                             logger.info("No fast Q&A match, generating with RAG approach")
 
-                            # Get session history and examples for context
-                            session_history = await get_session_history(session_id) if session_id else []
-                            session_examples = await get_session_examples(session_id) if session_id else []
+                            # Get session history and examples in parallel
+                            if session_id:
+                                session_history, session_examples = await asyncio.gather(
+                                    get_session_history(session_id),
+                                    get_session_examples(session_id)
+                                )
+                            else:
+                                session_history, session_examples = [], []
                             logger.info(f"Using session context: {len(session_history)} messages, {len(session_examples)} examples used")
 
                             # Signal streaming start
