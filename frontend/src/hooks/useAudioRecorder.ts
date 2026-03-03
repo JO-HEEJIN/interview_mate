@@ -182,10 +182,40 @@ export function useAudioRecorder(options: UseAudioRecorderOptions = {}): UseAudi
                 // Connect mic to destination
                 micSourceRef.current.connect(destinationRef.current);
 
-                // Connect display audio to both analyser and destination
-                displaySourceRef.current = audioContextRef.current.createMediaStreamSource(displayStream);
-                displaySourceRef.current.connect(analyserRef.current);
-                displaySourceRef.current.connect(destinationRef.current);
+                // Check if native audio queue is available (WKWebView overlay app)
+                const nativeQueue = (window as any).__nativeAudioQueue as Float32Array[] | undefined;
+                if (nativeQueue && (window as any).__nativeAudioCapturing) {
+                    // Direct native audio integration — read from shared queue
+                    // This avoids cross-AudioContext MediaStream issues in WebKit
+                    console.log('[NativeAudio] Using direct queue integration');
+                    const nativeProcessor = audioContextRef.current.createScriptProcessor(4096, 1, 1);
+                    nativeProcessor.onaudioprocess = (e: AudioProcessingEvent) => {
+                        const output = e.outputBuffer.getChannelData(0);
+                        let offset = 0;
+                        while (offset < output.length && nativeQueue.length > 0) {
+                            const chunk = nativeQueue.shift()!;
+                            const copyLen = Math.min(chunk.length, output.length - offset);
+                            output.set(chunk.subarray(0, copyLen), offset);
+                            offset += copyLen;
+                            if (copyLen < chunk.length) {
+                                nativeQueue.unshift(chunk.subarray(copyLen));
+                            }
+                        }
+                        for (let j = offset; j < output.length; j++) output[j] = 0;
+                    };
+                    nativeProcessor.connect(analyserRef.current);
+                    nativeProcessor.connect(destinationRef.current);
+                    // Keep processor alive
+                    const silentGain = audioContextRef.current.createGain();
+                    silentGain.gain.value = 0;
+                    nativeProcessor.connect(silentGain);
+                    silentGain.connect(audioContextRef.current.destination);
+                } else {
+                    // Standard browser: connect display stream via MediaStreamSource
+                    displaySourceRef.current = audioContextRef.current.createMediaStreamSource(displayStream);
+                    displaySourceRef.current.connect(analyserRef.current);
+                    displaySourceRef.current.connect(destinationRef.current);
+                }
             }
 
             // Try to use AudioWorklet for better processing if available
