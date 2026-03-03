@@ -317,7 +317,7 @@ class ClaudeService:
                         matches = await self.qdrant_service.search_similar_qa_pairs(
                             query_text=sub_q,
                             user_id=user_id,
-                            similarity_threshold=0.45,
+                            similarity_threshold=0.55,
                             limit=3
                         )
 
@@ -634,7 +634,7 @@ class ClaudeService:
                 f"(Similarity: {qa.get('similarity', 0):.1%})"
                 for qa in relevant_qa_pairs[:5]
             ])
-            context_parts.append(f"RELEVANT PREPARED ANSWERS (combine and adapt as needed):\n{qa_text}")
+            context_parts.append(f"RELEVANT PREPARED ANSWERS (use ONLY if directly relevant to the question — if none match, ignore them and answer from STAR stories/background instead):\n{qa_text}")
         elif qa_pairs:
             # Fallback: RAG found nothing, include all Q&A pairs so Claude can reference them
             qa_text = "\n\n".join([
@@ -863,12 +863,13 @@ Generate a suggested answer ({instruction}):"""
 {style_guide}
 
 **Core rules:**
-1. ALWAYS draw from your specific background, prepared Q&A pairs, and STAR stories — never give generic answers
-2. CRITICAL: Use EXACT numbers and details from your background - NEVER round, simplify, or change them
-3. If your background has specific metrics (e.g., "92.6% reduction"), use those EXACT numbers
-4. If your background provides context (e.g., "test vs production"), include that nuance
-5. If caught in error, admit it briefly and move on
-6. Use specific examples from your background/projects with precise details
+1. ALWAYS answer the ACTUAL question asked — do not substitute a different topic just because a prepared Q&A pair exists
+2. Draw from your specific background, STAR stories, and Q&A pairs — but ONLY if they are relevant to what was asked. If prepared answers don't match, ignore them completely
+3. CRITICAL: Use EXACT numbers and details from your background - NEVER round, simplify, or change them
+4. If your background has specific metrics (e.g., "92.6% reduction"), use those EXACT numbers
+5. If your background provides context (e.g., "test vs production"), include that nuance
+6. If caught in error, admit it briefly and move on
+7. Use specific examples from your background/projects with precise details
 
 # Example Answer Format
 
@@ -1017,7 +1018,7 @@ Now answer the interview question following these guidelines."""
                 f"(Similarity: {qa.get('similarity', 0):.1%})"
                 for qa in relevant_qa_pairs[:5]  # Top 5 most relevant
             ])
-            context_parts.append(f"RELEVANT PREPARED ANSWERS (combine and adapt as needed):\n{qa_text}")
+            context_parts.append(f"RELEVANT PREPARED ANSWERS (use ONLY if directly relevant to the question — if none match, ignore them and answer from STAR stories/background instead):\n{qa_text}")
 
         # Add session history (to avoid repeating same examples)
         if session_history:

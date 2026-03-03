@@ -6,6 +6,8 @@ class SystemAudioCapture: NSObject, SCStreamDelegate, SCStreamOutput {
     private var stream: SCStream?
     private var isCapturing = false
     private var bufferCount = 0
+    private var silentBufferCount = 0
+    private let silentThreshold = 500  // ~10 seconds at 50 buffers/sec
 
     /// Called with base64-encoded Float32 PCM audio data
     var onAudioData: ((String) -> Void)?
@@ -13,7 +15,13 @@ class SystemAudioCapture: NSObject, SCStreamDelegate, SCStreamOutput {
     var onStopped: (() -> Void)?
 
     func startCapture() async {
-        guard !isCapturing else { return }
+        // Always clean up any existing stream first to prevent resource conflicts
+        if stream != nil || isCapturing {
+            NSLog("SystemAudioCapture: cleaning up previous stream before starting")
+            isCapturing = false
+            try? await stream?.stopCapture()
+            stream = nil
+        }
 
         do {
             let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
@@ -37,8 +45,10 @@ class SystemAudioCapture: NSObject, SCStreamDelegate, SCStreamOutput {
 
             isCapturing = true
             bufferCount = 0
+            silentBufferCount = 0
             NSLog("SystemAudioCapture: started (display: %dx%d)", Int(display.width), Int(display.height))
         } catch {
+            NSLog("SystemAudioCapture: startCapture FAILED: %@", error.localizedDescription)
             onError?("Failed to start audio capture: \(error.localizedDescription)")
         }
     }
@@ -70,17 +80,36 @@ class SystemAudioCapture: NSObject, SCStreamDelegate, SCStreamOutput {
 
         bufferCount += 1
 
-        // Log every 100th buffer to track data flow without flooding
+        // Check amplitude for silence detection
+        let floatCount = length / 4
+        let floatPointer = UnsafeRawPointer(dataPointer).bindMemory(to: Float32.self, capacity: floatCount)
+        var maxAmplitude: Float32 = 0
+        for i in 0..<floatCount {
+            let abs = Swift.abs(floatPointer[i])
+            if abs > maxAmplitude { maxAmplitude = abs }
+        }
+
+        // Track prolonged silence for auto-restart
+        if maxAmplitude < 0.0001 {
+            silentBufferCount += 1
+        } else {
+            silentBufferCount = 0
+        }
+
+        // Log every 100th buffer
         if bufferCount % 100 == 1 {
-            // Check if audio has non-zero samples (not silence)
-            let floatCount = length / 4
-            let floatPointer = UnsafeRawPointer(dataPointer).bindMemory(to: Float32.self, capacity: floatCount)
-            var maxAmplitude: Float32 = 0
-            for i in 0..<floatCount {
-                let abs = Swift.abs(floatPointer[i])
-                if abs > maxAmplitude { maxAmplitude = abs }
+            NSLog("SystemAudioCapture: buffer #%d, %d bytes (%d samples), maxAmp=%.6f, silent=%d/%d",
+                  bufferCount, length, floatCount, maxAmplitude, silentBufferCount, silentThreshold)
+        }
+
+        // Auto-restart if sustained silence detected (stream went stale)
+        if silentBufferCount >= silentThreshold {
+            NSLog("SystemAudioCapture: sustained silence detected (%d buffers) — auto-restarting stream", silentBufferCount)
+            silentBufferCount = 0
+            Task { [weak self] in
+                await self?.startCapture()
             }
-            NSLog("SystemAudioCapture: buffer #%d, %d bytes (%d samples), maxAmp=%.6f", bufferCount, length, floatCount, maxAmplitude)
+            return
         }
 
         let data = Data(bytes: dataPointer, count: length)

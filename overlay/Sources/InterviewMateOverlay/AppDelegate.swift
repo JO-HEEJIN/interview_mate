@@ -1,5 +1,6 @@
 import AppKit
 import Carbon
+import ScreenCaptureKit
 import WebKit
 
 class AppDelegate: NSObject, NSApplicationDelegate, OverlayWindowDelegate {
@@ -19,8 +20,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, OverlayWindowDelegate {
         setupWindow()
         setupMenuBar()
         setupGlobalShortcut()
+        preCheckScreenRecordingPermission()
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+    }
+
+    func applicationWillTerminate(_ notification: Notification) {
+        // Clean up ScreenCaptureKit stream so next launch starts fresh
+        NSLog("App terminating — stopping audio capture")
+        webViewController.stopAudioCapture()
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
@@ -249,5 +257,37 @@ class AppDelegate: NSObject, NSApplicationDelegate, OverlayWindowDelegate {
 
     @objc private func reloadPage() {
         webViewController.webView.reload()
+    }
+
+    // MARK: - TCC Pre-check
+
+    /// Trigger Screen Recording permission dialog at launch instead of failing silently later
+    private func preCheckScreenRecordingPermission() {
+        // CGRequestScreenCaptureAccess triggers the macOS permission prompt reliably
+        let hasAccess = CGRequestScreenCaptureAccess()
+        NSLog("Screen Recording permission (CGRequestScreenCaptureAccess): %@", hasAccess ? "granted" : "NOT granted")
+
+        if !hasAccess {
+            // Also try ScreenCaptureKit to double-check
+            Task {
+                do {
+                    _ = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
+                    NSLog("Screen Recording permission (SCShareableContent): granted")
+                } catch {
+                    NSLog("Screen Recording permission (SCShareableContent): NOT granted — %@", error.localizedDescription)
+                    await MainActor.run {
+                        let alert = NSAlert()
+                        alert.messageText = "Screen Recording Permission Required"
+                        alert.informativeText = "InterviewMate Overlay needs Screen Recording permission to capture system audio.\n\nPlease:\n1. Open System Settings > Privacy & Security > Screen & System Audio Recording\n2. Remove InterviewMate Overlay from the list (click −)\n3. Re-add it (click +) and select the app\n4. Restart the app"
+                        alert.alertStyle = .warning
+                        alert.addButton(withTitle: "Open System Settings")
+                        alert.addButton(withTitle: "Later")
+                        if alert.runModal() == .alertFirstButtonReturn {
+                            NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture")!)
+                        }
+                    }
+                }
+            }
+        }
     }
 }

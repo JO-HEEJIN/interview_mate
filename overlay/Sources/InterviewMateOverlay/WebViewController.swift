@@ -6,6 +6,11 @@ class WebViewController: NSViewController, WKNavigationDelegate, WKUIDelegate, W
     private var currentURL: URL
     private let audioCapture = SystemAudioCapture()
 
+    /// Called by AppDelegate on app termination to clean up ScreenCaptureKit resources
+    func stopAudioCapture() {
+        audioCapture.stopCapture()
+    }
+
     init(url: URL) {
         self.currentURL = url
         super.init(nibName: nil, bundle: nil)
@@ -186,7 +191,17 @@ class WebViewController: NSViewController, WKNavigationDelegate, WKUIDelegate, W
                             var videoTrack = videoStream.getVideoTracks()[0];
 
                             var combinedStream = new MediaStream();
-                            stream.getAudioTracks().forEach(function(t) { combinedStream.addTrack(t); });
+                            stream.getAudioTracks().forEach(function(t) {
+                                combinedStream.addTrack(t);
+                                // Auto-stop native capture when track ends (recording stops)
+                                t.onended = function() {
+                                    console.log('[NativeAudio] Dummy track ended — stopping native capture');
+                                    isCapturing = false;
+                                    window.__nativeAudioCapturing = false;
+                                    audioQueue.length = 0;
+                                    try { window.webkit.messageHandlers.stopSystemAudio.postMessage({}); } catch(e) {}
+                                };
+                            });
                             if (videoTrack) combinedStream.addTrack(videoTrack);
 
                             console.log('[NativeAudio] Returning dummy stream. Real audio via __nativeAudioQueue');
