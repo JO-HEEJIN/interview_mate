@@ -15,6 +15,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, OverlayWindowDelegate {
     // MARK: - App Lifecycle
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        setupMainMenu()
         setupWindow()
         setupMenuBar()
         setupGlobalShortcut()
@@ -27,6 +28,26 @@ class AppDelegate: NSObject, NSApplicationDelegate, OverlayWindowDelegate {
             window.makeKeyAndOrderFront(nil)
         }
         return true
+    }
+
+    // Quit when the window is closed
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        return true
+    }
+
+    // MARK: - Main Menu (enables ⌘Q)
+
+    private func setupMainMenu() {
+        let mainMenu = NSMenu()
+
+        let appMenu = NSMenu()
+        appMenu.addItem(NSMenuItem(title: "Quit InterviewMate Overlay", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
+
+        let appMenuItem = NSMenuItem()
+        appMenuItem.submenu = appMenu
+        mainMenu.addItem(appMenuItem)
+
+        NSApp.mainMenu = mainMenu
     }
 
     // MARK: - Window Setup
