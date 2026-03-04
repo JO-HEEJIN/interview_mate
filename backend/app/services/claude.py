@@ -560,7 +560,8 @@ class ClaudeService:
         format: str = "paragraph",
         user_profile: Optional[dict] = None,
         session_history: list = None,
-        examples_used: list = None
+        examples_used: list = None,
+        pre_fetched_qa_pairs: list = None
     ):
         """
         Generate streaming answer with Claude API (REAL-TIME DISPLAY).
@@ -588,23 +589,27 @@ class ClaudeService:
         session_history = session_history or []
         examples_used = examples_used or []
 
-        # RAG APPROACH: Find multiple relevant Q&A pairs
+        # RAG APPROACH: Use pre-fetched results if available (parallelized by caller)
         user_id = user_profile.get('user_id') if user_profile else None
-        relevant_qa_pairs = []
 
-        if user_id and self.qdrant_service:
-            relevant_qa_pairs = await self.find_relevant_qa_pairs(
-                question=question,
-                user_id=user_id,
-                max_total_results=5
-            )
+        if pre_fetched_qa_pairs is not None:
+            relevant_qa_pairs = pre_fetched_qa_pairs
+            logger.info(f"Using pre-fetched RAG results: {len(relevant_qa_pairs)} pairs")
+        else:
+            relevant_qa_pairs = []
+            if user_id and self.qdrant_service:
+                relevant_qa_pairs = await self.find_relevant_qa_pairs(
+                    question=question,
+                    user_id=user_id,
+                    max_total_results=5
+                )
 
-            # If we found a good match (>= 70% similarity), use the stored answer directly
-            if relevant_qa_pairs and relevant_qa_pairs[0].get('similarity', 0) >= 0.70:
-                best_match = relevant_qa_pairs[0]
-                logger.info(f"Using stored answer ({best_match.get('similarity', 0):.0%} match)")
-                yield best_match['answer']
-                return
+        # If we found a good match (>= 70% similarity), use the stored answer directly
+        if relevant_qa_pairs and relevant_qa_pairs[0].get('similarity', 0) >= 0.70:
+            best_match = relevant_qa_pairs[0]
+            logger.info(f"Using stored answer ({best_match.get('similarity', 0):.0%} match)")
+            yield best_match['answer']
+            return
 
         logger.debug(f"Generating new answer for: '{question[:50]}...' ({len(relevant_qa_pairs)} RAG results)")
 

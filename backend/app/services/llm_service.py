@@ -56,7 +56,8 @@ class LLMService:
         format: str = "bullet",
         user_profile: Optional[dict] = None,
         session_history: list = None,
-        examples_used: list = None
+        examples_used: list = None,
+        pre_fetched_qa_pairs: list = None
     ) -> AsyncIterator[str]:
         """
         Generate streaming answer with automatic failover.
@@ -100,6 +101,8 @@ class LLMService:
                     kwargs["session_history"] = session_history
                 if "examples_used" in sig.parameters:
                     kwargs["examples_used"] = examples_used
+                if "pre_fetched_qa_pairs" in sig.parameters:
+                    kwargs["pre_fetched_qa_pairs"] = pre_fetched_qa_pairs
 
                 async for chunk in self.primary_service.generate_answer_stream(**kwargs):
                     yield chunk

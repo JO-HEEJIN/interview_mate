@@ -490,15 +490,33 @@ async def websocket_transcribe(websocket: WebSocket):
                             # 2. Generate answer using RAG
                             logger.info("No fast Q&A match, generating with RAG approach")
 
-                            # Get session history and examples in parallel
+                            # Run RAG search + session DB queries in PARALLEL
+                            rag_user_id = user_profile.get('user_id') if user_profile else None
+                            parallel_tasks = []
+                            task_keys = []
+
                             if session_id:
-                                session_history, session_examples = await asyncio.gather(
-                                    get_session_history(session_id),
-                                    get_session_examples(session_id)
-                                )
+                                parallel_tasks.append(get_session_history(session_id))
+                                task_keys.append("history")
+                                parallel_tasks.append(get_session_examples(session_id))
+                                task_keys.append("examples")
+
+                            if rag_user_id and claude_service.qdrant_service:
+                                parallel_tasks.append(claude_service.find_relevant_qa_pairs(
+                                    question=question, user_id=rag_user_id, max_total_results=5
+                                ))
+                                task_keys.append("rag")
+
+                            if parallel_tasks:
+                                results = await asyncio.gather(*parallel_tasks)
+                                result_map = dict(zip(task_keys, results))
                             else:
-                                session_history, session_examples = [], []
-                            logger.info(f"Using session context: {len(session_history)} messages, {len(session_examples)} examples used")
+                                result_map = {}
+
+                            session_history = result_map.get("history", [])
+                            session_examples = result_map.get("examples", [])
+                            pre_fetched_qa = result_map.get("rag", [])
+                            logger.info(f"Parallel fetch done: {len(session_history)} history, {len(session_examples)} examples, {len(pre_fetched_qa)} RAG results")
 
                             # Signal streaming start
                             await manager.send_json(websocket, {
@@ -507,25 +525,19 @@ async def websocket_transcribe(websocket: WebSocket):
                                 "source": "generated"
                             })
 
-                            # Debug logging
-                            logger.warning("=" * 80)
-                            logger.warning(f"RAG_DEBUG: Starting answer generation for question: {question}")
-                            logger.warning(f"RAG_DEBUG: Context has {len(user_context.get('qa_pairs', []))} Q&A pairs")
-                            logger.warning(f"RAG_DEBUG: user_id={user_profile.get('user_id') if user_profile else 'None'}")
-                            logger.warning("=" * 80)
-
-                            # Stream answer chunks in real-time with RAG
+                            # Stream answer chunks in real-time (RAG already done)
                             generated_answer = ""
                             async for chunk in llm_service.generate_answer_stream(
                                 question=question,
                                 resume_text=user_context["resume_text"],
                                 star_stories=user_context["star_stories"],
                                 talking_points=user_context["talking_points"],
-                                qa_pairs=user_context["qa_pairs"],  # Pass Q&A pairs for RAG
-                                format="bullet",  # Bullet point format for real-time interview
+                                qa_pairs=user_context["qa_pairs"],
+                                format="bullet",
                                 user_profile=user_profile,
                                 session_history=session_history,
-                                examples_used=session_examples
+                                examples_used=session_examples,
+                                pre_fetched_qa_pairs=pre_fetched_qa
                             ):
                                 generated_answer += chunk
                                 await manager.send_json(websocket, {
@@ -829,9 +841,33 @@ async def websocket_transcribe(websocket: WebSocket):
                                     # 3b. Generate with streaming LLM (Phase 1.3)
                                     logger.info("No matching Q&A found, generating with streaming LLM")
 
-                                    # NEW: Get session history and examples
-                                    session_history = await get_session_history(session_id) if session_id else []
-                                    session_examples = await get_session_examples(session_id) if session_id else []
+                                    # Run RAG search + session DB queries in PARALLEL
+                                    manual_parallel_tasks = []
+                                    manual_task_keys = []
+
+                                    if session_id:
+                                        manual_parallel_tasks.append(get_session_history(session_id))
+                                        manual_task_keys.append("history")
+                                        manual_parallel_tasks.append(get_session_examples(session_id))
+                                        manual_task_keys.append("examples")
+
+                                    manual_rag_user_id = user_profile.get('user_id') if user_profile else None
+                                    if manual_rag_user_id and claude_service.qdrant_service:
+                                        manual_parallel_tasks.append(claude_service.find_relevant_qa_pairs(
+                                            question=question,
+                                            user_id=manual_rag_user_id,
+                                            max_total_results=5
+                                        ))
+                                        manual_task_keys.append("rag")
+
+                                    manual_result_map = {}
+                                    if manual_parallel_tasks:
+                                        manual_results = await asyncio.gather(*manual_parallel_tasks)
+                                        manual_result_map = dict(zip(manual_task_keys, manual_results))
+
+                                    session_history = manual_result_map.get("history", [])
+                                    session_examples = manual_result_map.get("examples", [])
+                                    manual_pre_fetched_qa = manual_result_map.get("rag")
 
                                     # Signal streaming start
                                     await manager.send_json(websocket, {
@@ -840,18 +876,19 @@ async def websocket_transcribe(websocket: WebSocket):
                                         "source": "generated"
                                     })
 
-                                    # Stream answer chunks in real-time
+                                    # Stream answer chunks in real-time (RAG already done)
                                     generated_answer = ""
                                     async for chunk in llm_service.generate_answer_stream(
                                         question=question,
                                         resume_text=user_context["resume_text"],
                                         star_stories=user_context["star_stories"],
                                         talking_points=user_context["talking_points"],
-                                        qa_pairs=user_context["qa_pairs"],  # Pass Q&A pairs for reference
-                                        format="bullet",  # Bullet point format for real-time interview
+                                        qa_pairs=user_context["qa_pairs"],
+                                        format="bullet",
                                         user_profile=user_profile,
                                         session_history=session_history,
-                                        examples_used=session_examples
+                                        examples_used=session_examples,
+                                        pre_fetched_qa_pairs=manual_pre_fetched_qa
                                     ):
                                         generated_answer += chunk
                                         await manager.send_json(websocket, {
