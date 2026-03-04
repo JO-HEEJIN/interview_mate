@@ -381,6 +381,19 @@ async def websocket_transcribe(websocket: WebSocket):
             if not sent:
                 return
 
+            # Save final transcripts to session for review
+            if is_final and session_id and accumulated_text:
+                try:
+                    await save_session_message(
+                        session_id=session_id,
+                        role="interviewer",
+                        message_type="transcription",
+                        content=accumulated_text,
+                        source="detected"
+                    )
+                except Exception as save_err:
+                    logger.warning(f"Failed to save transcription: {save_err}")
+
             # Only process questions on final transcripts
             if is_final and not is_processing:
                 is_processing = True
