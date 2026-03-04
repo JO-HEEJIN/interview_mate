@@ -93,6 +93,7 @@ docs/.doctrees/
 
 # Claude
 .claude/
+!.claude/skills/
 .vercel
 .env*.local
 
