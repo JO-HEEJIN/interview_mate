@@ -1,8 +1,5 @@
 # InterviewMate - Technical Research Document
 
-> Hiring manager call prep: 코드베이스 전체를 분석한 팩트시트.
-> 모든 수치, 모델명, 설정값은 실제 코드에서 확인한 것.
-
 ---
 
 ## 1. High-Level Architecture
