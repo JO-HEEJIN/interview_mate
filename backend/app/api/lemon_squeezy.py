@@ -13,6 +13,7 @@ import logging
 from datetime import datetime
 from app.core.config import settings
 from app.core.supabase import get_supabase_client
+from app.core.rate_limit import limiter
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/lemon-squeezy", tags=["lemon-squeezy"])
@@ -39,7 +40,8 @@ class CheckoutSessionResponse(BaseModel):
 # ============================================================================
 
 @router.post("/create-checkout-session", response_model=CheckoutSessionResponse)
-async def create_checkout_session(request: CreateCheckoutRequest):
+@limiter.limit("10/minute")
+async def create_checkout_session(request: Request, body: CreateCheckoutRequest):
     """
     Create a Lemon Squeezy checkout session for purchasing credits or features.
     """
@@ -58,7 +60,7 @@ async def create_checkout_session(request: CreateCheckoutRequest):
         # Get plan details
         plan_result = supabase.table("pricing_plans")\
             .select("*")\
-            .eq("plan_code", request.plan_code)\
+            .eq("plan_code", body.plan_code)\
             .eq("is_active", True)\
             .execute()
 
@@ -68,16 +70,15 @@ async def create_checkout_session(request: CreateCheckoutRequest):
         plan = plan_result.data[0]
 
         # Get Lemon Squeezy product variant ID for this plan
-        # You'll need to create products in Lemon Squeezy dashboard and store variant IDs
-        variant_id = get_variant_id_for_plan(request.plan_code)
+        variant_id = get_variant_id_for_plan(body.plan_code)
 
         if not variant_id:
             raise HTTPException(
                 status_code=500,
-                detail=f"Lemon Squeezy product not configured for plan: {request.plan_code}"
+                detail=f"Lemon Squeezy product not configured for plan: {body.plan_code}"
             )
 
-        logger.info(f"Creating checkout for plan: {request.plan_code}, variant: {variant_id}, store: {settings.LEMON_SQUEEZY_STORE_ID}")
+        logger.info(f"Creating checkout for plan: {body.plan_code}, variant: {variant_id}, store: {settings.LEMON_SQUEEZY_STORE_ID}")
 
         # Create Lemon Squeezy checkout
         async with httpx.AsyncClient() as client:
@@ -93,12 +94,12 @@ async def create_checkout_session(request: CreateCheckoutRequest):
                         "type": "checkouts",
                         "attributes": {
                             "product_options": {
-                                "redirect_url": request.success_url
+                                "redirect_url": body.success_url
                             },
                             "checkout_data": {
                                 "custom": {
-                                    "user_id": request.user_id,
-                                    "plan_code": request.plan_code,
+                                    "user_id": body.user_id,
+                                    "plan_code": body.plan_code,
                                     "plan_type": plan['plan_type'],
                                     "credits_amount": str(plan['credits_amount']) if plan['credits_amount'] else "0"
                                 }
@@ -133,7 +134,7 @@ async def create_checkout_session(request: CreateCheckoutRequest):
         checkout_url = checkout_data['data']['attributes']['url']
         order_id = checkout_data['data']['id']
 
-        logger.info(f"Created Lemon Squeezy checkout: {order_id} for user {request.user_id}")
+        logger.info(f"Created Lemon Squeezy checkout: {order_id} for user {body.user_id}")
 
         return CheckoutSessionResponse(
             checkout_url=checkout_url,

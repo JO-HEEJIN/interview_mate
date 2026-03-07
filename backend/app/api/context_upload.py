@@ -5,11 +5,12 @@ Handle file uploads, text input, and context management for Q&A generation
 
 import logging
 from typing import List, Optional
-from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form
+from fastapi import APIRouter, HTTPException, Depends, Request, UploadFile, File, Form
 from pydantic import BaseModel
 
 from app.core.supabase import get_supabase_client
 from app.services.upload_service import upload_service
+from app.core.rate_limit import limiter
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +37,9 @@ class UploadResponse(BaseModel):
     metadata: dict
 
 @router.post("/{user_id}/upload-resume")
+@limiter.limit("10/minute")
 async def upload_resume(
+    request: Request,
     user_id: str,
     file: UploadFile = File(...),
     profile_id: Optional[str] = Form(None)
@@ -384,9 +387,11 @@ class GenerateQARequest(BaseModel):
 
 
 @router.post("/{user_id}/generate-qa")
+@limiter.limit("5/minute")
 async def generate_qa_pairs(
+    request: Request,
     user_id: str,
-    request: Optional[GenerateQARequest] = None
+    body: Optional[GenerateQARequest] = None
 ):
     """
     Generate initial 30 Q&A pairs from all uploaded contexts.
@@ -408,7 +413,7 @@ async def generate_qa_pairs(
         400: Resume required
         500: Generation failed
     """
-    profile_id = request.profile_id if request else None
+    profile_id = body.profile_id if body else None
     logger.info(f"Q&A generation requested for user {user_id}, profile {profile_id}")
 
     try:
@@ -456,9 +461,11 @@ class GenerateIncrementalRequest(BaseModel):
 
 
 @router.post("/{user_id}/generate-incremental")
+@limiter.limit("5/minute")
 async def generate_incremental_qa(
+    request: Request,
     user_id: str,
-    request: Optional[GenerateIncrementalRequest] = None
+    body: Optional[GenerateIncrementalRequest] = None
 ):
     """
     Generate 10 additional Q&A pairs after new context is added.
@@ -473,7 +480,7 @@ async def generate_incremental_qa(
 
     Args:
         user_id: User ID
-        request: Optional request body with profile_id and context IDs
+        body: Optional request body with profile_id and context IDs
 
     Returns:
         Batch ID, generated count, Q&A pairs
@@ -481,8 +488,8 @@ async def generate_incremental_qa(
     Raises:
         500: Generation failed
     """
-    profile_id = request.profile_id if request else None
-    new_context_ids = request.new_context_ids if request else None
+    profile_id = body.profile_id if body else None
+    new_context_ids = body.new_context_ids if body else None
     logger.info(f"Incremental Q&A generation requested for user {user_id}, profile {profile_id}")
 
     try:

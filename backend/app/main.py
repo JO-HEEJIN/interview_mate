@@ -15,11 +15,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.status import HTTP_500_INTERNAL_SERVER_ERROR
 
 from app.core.config import settings
+from app.core.rate_limit import limiter
 from app.api import websocket, profile, interview, qa_pairs, context_upload, interview_profile, subscriptions, payments, interview_sessions, lemon_squeezy
 
 # Setup logging using existing config
@@ -125,6 +128,10 @@ app = FastAPI(
     openapi_url="/openapi.json" if settings.is_development else None,
     lifespan=lifespan,
 )
+
+# Rate limiting
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Add middleware
 app.add_middleware(
