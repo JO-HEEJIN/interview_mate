@@ -1,0 +1,38 @@
+{
+  "A_star_anthropic": {
+    "total": 20,
+    "pass": 0,
+    "fail": 15,
+    "ambiguous": 5,
+    "pass_rate": 0.0,
+    "constraint_rate": 0.0,
+    "pass_with_constraint": 0,
+    "correct_reasoning_rate": 0.0,
+    "median_latency_ms": 3176,
+    "description": "InterviewMate STAR + Anthropic profile (FDE @ Anthropic)"
+  },
+  "B_star_default": {
+    "total": 20,
+    "pass": 6,
+    "fail": 1,
+    "ambiguous": 13,
+    "pass_rate": 0.3,
+    "constraint_rate": 0.35,
+    "pass_with_constraint": 2,
+    "correct_reasoning_rate": 0.1,
+    "median_latency_ms": 3337,
+    "description": "InterviewMate STAR + Default profile (SA @ OpenAI)"
+  },
+  "C_star_only": {
+    "total": 20,
+    "pass": 20,
+    "fail": 0,
+    "ambiguous": 0,
+    "pass_rate": 1.0,
+    "constraint_rate": 1.0,
+    "pass_with_constraint": 20,
+    "correct_reasoning_rate": 1.0,
+    "median_latency_ms": 7378,
+    "description": "Paper's C_role_star (STAR only, no profile) — reproduction on claude-sonnet-4-6"
+  }
+}

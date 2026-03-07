@@ -1,0 +1,10 @@
+{
+  "total": 100,
+  "pass": 100,
+  "fail": 0,
+  "ambiguous": 0,
+  "pass_rate": 1.0,
+  "constraint_rate": 1.0,
+  "pass_with_constraint": 100,
+  "correct_reasoning_rate": 1.0
+}

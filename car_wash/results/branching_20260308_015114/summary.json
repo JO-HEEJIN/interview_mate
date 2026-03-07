@@ -1,0 +1,140 @@
+{
+  "branching": {
+    "yes_no": {
+      "criteria_pass_rates": {
+        "starts_with_yes_or_no": 1.0,
+        "concise": 0.5,
+        "no_rambling": 0.5
+      },
+      "avg_criteria_pass": 0.667,
+      "reasoning_order": {
+        "conclusion_first": 10,
+        "reasoning_first": 0,
+        "mixed": 0
+      },
+      "avg_word_count": 15.6,
+      "median_latency_ms": 2051
+    },
+    "direct": {
+      "criteria_pass_rates": {
+        "answers_question": 1.0,
+        "specific": 1.0,
+        "appropriate_length": 0.3
+      },
+      "avg_criteria_pass": 0.767,
+      "reasoning_order": {
+        "conclusion_first": 10,
+        "reasoning_first": 0,
+        "mixed": 0
+      },
+      "avg_word_count": 75.1,
+      "median_latency_ms": 4243
+    },
+    "behavioral": {
+      "criteria_pass_rates": {
+        "has_situation": 1.0,
+        "has_action": 1.0,
+        "has_result": 1.0,
+        "uses_specific_example": 1.0
+      },
+      "avg_criteria_pass": 1.0,
+      "reasoning_order": {
+        "conclusion_first": 1,
+        "reasoning_first": 5,
+        "mixed": 4
+      },
+      "avg_word_count": 172.3,
+      "median_latency_ms": 8319
+    },
+    "compound": {
+      "criteria_pass_rates": {
+        "addresses_introduction": 1.0,
+        "addresses_motivation": 1.0,
+        "coherent_flow": 1.0
+      },
+      "avg_criteria_pass": 1.0,
+      "reasoning_order": {
+        "conclusion_first": 8,
+        "reasoning_first": 0,
+        "mixed": 2
+      },
+      "avg_word_count": 188.3,
+      "median_latency_ms": 8147
+    },
+    "constraint": {
+      "pass_rate": 0.5,
+      "constraint_rate": 0.4,
+      "avg_word_count": 17.2,
+      "median_latency_ms": 2075
+    }
+  },
+  "star_all": {
+    "yes_no": {
+      "criteria_pass_rates": {
+        "starts_with_yes_or_no": 1.0,
+        "concise": 0.0,
+        "no_rambling": 0.0
+      },
+      "avg_criteria_pass": 0.333,
+      "reasoning_order": {
+        "conclusion_first": 10,
+        "reasoning_first": 0,
+        "mixed": 0
+      },
+      "avg_word_count": 42.0,
+      "median_latency_ms": 3083
+    },
+    "direct": {
+      "criteria_pass_rates": {
+        "answers_question": 1.0,
+        "specific": 1.0,
+        "appropriate_length": 0.6
+      },
+      "avg_criteria_pass": 0.867,
+      "reasoning_order": {
+        "conclusion_first": 10,
+        "reasoning_first": 0,
+        "mixed": 0
+      },
+      "avg_word_count": 75.3,
+      "median_latency_ms": 4238
+    },
+    "behavioral": {
+      "criteria_pass_rates": {
+        "has_situation": 1.0,
+        "has_action": 1.0,
+        "has_result": 0.8,
+        "uses_specific_example": 1.0
+      },
+      "avg_criteria_pass": 0.95,
+      "reasoning_order": {
+        "conclusion_first": 6,
+        "reasoning_first": 1,
+        "mixed": 3
+      },
+      "avg_word_count": 150.6,
+      "median_latency_ms": 8061
+    },
+    "compound": {
+      "criteria_pass_rates": {
+        "addresses_introduction": 1.0,
+        "addresses_motivation": 1.0,
+        "coherent_flow": 1.0
+      },
+      "avg_criteria_pass": 1.0,
+      "reasoning_order": {
+        "conclusion_first": 9,
+        "reasoning_first": 0,
+        "mixed": 1
+      },
+      "avg_word_count": 192.8,
+      "median_latency_ms": 8075
+    },
+    "constraint": {
+      "pass_rate": 0.1,
+      "constraint_rate": 0.0,
+      "avg_word_count": 49.4,
+      "median_latency_ms": 3464
+    }
+  }
+}
