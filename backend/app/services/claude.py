@@ -179,13 +179,22 @@ def detect_question_fast(text: str) -> dict:
     is_question = has_question_mark or starts_with_question_word or (matched_type is not None)
 
     # Step 4: Determine confidence
+    # Questions with ? but no interview pattern and short length are "low" confidence
+    # so the caller can verify with Claude API whether it's actually an interview question
+    word_count = len(text_lower.split())
     if has_question_mark and matched_type:
         confidence = "high"
     elif matched_type:
         confidence = "high"
-    elif has_question_mark:
+    elif has_question_mark and starts_with_question_word and word_count >= 6:
         confidence = "medium"
-    elif starts_with_question_word:
+    elif starts_with_question_word and word_count >= 6:
+        confidence = "medium"
+    elif has_question_mark and word_count < 8 and not starts_with_question_word:
+        # Short question with ? but no interview pattern — likely not an interview question
+        # e.g., "Should I walk or drive?" "What time is it?"
+        confidence = "low"
+    elif has_question_mark:
         confidence = "medium"
     else:
         confidence = "low"
