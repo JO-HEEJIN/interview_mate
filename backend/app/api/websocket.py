@@ -278,25 +278,38 @@ def is_question_likely_complete(text: str) -> bool:
         return False
 
     text = text.strip()
-
-    # Check minimum word count (at least 5 words)
+    text_lower = text.lower()
     word_count = len(text.split())
+
+    if word_count < 2:
+        return False
+
+    # Question mark with 2+ words is always complete
+    if text.endswith('?') and word_count >= 2:
+        return True
+
+    # Common short interview commands: "tell me about yourself.", "describe your experience."
+    short_command_starters = [
+        'tell me', 'describe', 'explain', 'share', 'walk me through',
+        'talk about', 'give me', 'how do you', 'why do you', 'what is',
+        'what are', 'what was', 'what were', 'how would you',
+    ]
+    if any(text_lower.startswith(s) for s in short_command_starters) and word_count >= 3:
+        return True
+
+    # Standard threshold for other text
     if word_count < 5:
         return False
 
-    # Check if it ends with question mark or other terminal punctuation
-    # Some questions may not have ?, so we're lenient here
-    has_terminal_punctuation = text.endswith('?') or text.endswith('.') or text.endswith('!')
-
-    # If it has a question mark, it's likely complete
-    if text.endswith('?'):
+    # Terminal punctuation
+    if text.endswith('?') or text.endswith('.') or text.endswith('!'):
         return True
 
-    # If it has reasonable length and some punctuation or is long enough
+    # Long enough text is likely complete
     if word_count >= 8:
         return True
 
-    return has_terminal_punctuation
+    return False
 
 
 @router.websocket("/ws/transcribe")

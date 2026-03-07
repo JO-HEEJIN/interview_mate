@@ -66,12 +66,7 @@ export default function PracticePage() {
     const [qaPairs, setQaPairs] = useState<QAPair[]>([]);
     const [contextLoaded, setContextLoaded] = useState(false);
     const [processingState, setProcessingState] = useState<'idle' | 'transcribing' | 'detecting' | 'generating'>('idle');
-    const [captureSystemAudio, setCaptureSystemAudio] = useState<boolean>(() => {
-        if (typeof window !== 'undefined') {
-            return localStorage.getItem('captureSystemAudio') === 'true';
-        }
-        return false;
-    });
+    const [captureSystemAudio, setCaptureSystemAudio] = useState(false);
     const [systemAudioError, setSystemAudioError] = useState<string | null>(null);
 
     // Refs to track streaming state (avoids closure issues)
@@ -232,6 +227,13 @@ export default function PracticePage() {
         onSystemAudioError: handleSystemAudioError,
         onSystemAudioStopped: handleSystemAudioStopped,
     });
+
+    // Restore localStorage preferences on mount (client-only to avoid hydration mismatch)
+    useEffect(() => {
+        if (localStorage.getItem('captureSystemAudio') === 'true') {
+            setCaptureSystemAudio(true);
+        }
+    }, []);
 
     // Check authentication on mount
     useEffect(() => {
