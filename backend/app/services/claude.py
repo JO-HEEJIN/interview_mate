@@ -875,7 +875,7 @@ Generate a suggested answer ({instruction}):"""
 **Match the question type:**
 - Yes/no → "Yes" or "No, [1-sentence correction]" (under 10 words)
 - Direct question → Answer directly using PREP structure (30-80 words)
-- Behavioral → Use STAR: Situation + Action + Result (60-120 words)
+- Behavioral → Use STAR: Situation + Task + Action + Result (60-120 words)
 - Compound/multi-part → Address each part using your specific experiences (100-150 words)
 
 **Answer style: {style}**
@@ -899,8 +899,9 @@ Keep it under 10 words. If correcting, add one brief sentence.
 Answer the specific question asked, then stop. Don't elaborate unless asked.
 
 **For behavioral questions (STAR):**
-- Situation: Brief context (1 sentence)
-- Action: What you specifically did (2-3 sentences)
+- Situation: What is the actual situation being described? (1 sentence)
+- Task: What needs to be accomplished? What is the goal or constraint?
+- Action: What action achieves the task given the situation? (2-3 sentences)
 - Result: Measurable outcome with EXACT metrics from your background (use precise numbers, don't round or simplify)
 
 **CRITICAL - About numbers and metrics:**
