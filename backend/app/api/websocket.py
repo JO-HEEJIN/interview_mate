@@ -11,7 +11,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from app.services.deepgram_service import deepgram_service
 from app.services.claude import get_claude_service, detect_question_fast
 from app.services.llm_service import llm_service
-from app.core.supabase import get_supabase_client
+from app.core.supabase import get_supabase_client, verify_access_token
 
 # 로거 설정
 logger = logging.getLogger(__name__)
@@ -695,12 +695,30 @@ async def websocket_transcribe(websocket: WebSocket):
                             user_context["talking_points"] = data.get("talking_points", [])
                             user_context["qa_pairs"] = data.get("qa_pairs", [])
 
-                            # Extract user_id and profile_id if provided
-                            received_user_id = data.get("user_id")
+                            # Verify JWT token to authenticate user
+                            access_token = data.get("access_token")
                             received_profile_id = data.get("profile_id")
-                            logger.warning(f"[{connection_id}] CONTEXT_DEBUG: Received user_id from frontend: {received_user_id}, profile_id: {received_profile_id}")
-                            logger.warning(f"CONTEXT_DEBUG: Current user_id in WebSocket: {user_id}, profile_id: {profile_id}")
-                            logger.warning(f"CONTEXT_DEBUG: Full context message keys: {list(data.keys())}")
+
+                            if access_token:
+                                verified_user_id = await verify_access_token(access_token)
+                                if verified_user_id:
+                                    received_user_id = verified_user_id
+                                    logger.info(f"[{connection_id}] JWT verified: user_id={verified_user_id}")
+                                else:
+                                    logger.warning(f"[{connection_id}] Invalid JWT token provided")
+                                    await manager.send_json(websocket, {
+                                        "type": "error",
+                                        "message": "Authentication failed. Please log in again.",
+                                        "code": "auth_failed"
+                                    })
+                                    continue
+                            else:
+                                # Fallback for backward compatibility during deployment transition
+                                received_user_id = data.get("user_id")
+                                if received_user_id:
+                                    logger.warning(f"[{connection_id}] No JWT token provided, using client user_id (DEPRECATED)")
+
+                            logger.info(f"[{connection_id}] Context received: user_id={received_user_id}, profile_id={received_profile_id}")
 
                             # Check if user or profile changed
                             user_changed = received_user_id and received_user_id != user_id
@@ -708,7 +726,7 @@ async def websocket_transcribe(websocket: WebSocket):
 
                             if user_changed or profile_changed:
                                 if user_changed:
-                                    logger.warning(f"CONTEXT_DEBUG: Switching user_id from {user_id} to {received_user_id}")
+                                    logger.info(f"[{connection_id}] User authenticated: {received_user_id}")
                                     user_id = received_user_id
                                 if received_profile_id:
                                     profile_id = received_profile_id

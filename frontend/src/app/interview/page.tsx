@@ -297,17 +297,22 @@ export default function PracticePage() {
         fetchAll();
     }, [userId, activeProfile]);
 
-    // Send context when connected
+    // Send context when connected (with JWT auth)
     useEffect(() => {
         if (isConnected && contextLoaded && userId && activeProfile) {
-            sendContext({
-                user_id: userId,
-                profile_id: activeProfile.id,
-                resume_text: '',
-                star_stories: starStories,
-                talking_points: [],
-                qa_pairs: qaPairs
-            });
+            const sendAuthenticatedContext = async () => {
+                const { data: { session } } = await supabase.auth.getSession();
+                sendContext({
+                    user_id: userId,
+                    profile_id: activeProfile.id,
+                    access_token: session?.access_token,
+                    resume_text: '',
+                    star_stories: starStories,
+                    talking_points: [],
+                    qa_pairs: qaPairs
+                });
+            };
+            sendAuthenticatedContext();
         }
     }, [isConnected, contextLoaded, userId, activeProfile, starStories, qaPairs, sendContext]);
 
