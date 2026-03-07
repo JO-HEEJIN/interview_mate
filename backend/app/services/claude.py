@@ -40,16 +40,20 @@ def calculate_similarity(str1: str, str2: str) -> float:
 
     Returns a value between 0 and 1, where 1 is identical.
     """
-    shorter = min(str1, str2, key=len)
-    longer = max(str1, str2, key=len)
-
     # Strategy 1: Substring matching — only when shorter string is substantial
     # (at least 5 words AND at least 40% of the longer string's length)
     # This prevents "why" matching "why do you want to work here"
-    if shorter in longer:
-        shorter_tokens = len(shorter.split())
-        if shorter_tokens >= 5 and len(shorter) >= len(longer) * 0.4:
-            return 0.95
+    # CRITICAL: Must check str1 != str2 first — equal-length strings cause
+    # min/max(key=len) to return the same object, making "x in x" always True
+    if len(str1) != len(str2):
+        shorter = min(str1, str2, key=len)
+        longer = max(str1, str2, key=len)
+        if shorter in longer:
+            shorter_tokens = len(shorter.split())
+            if shorter_tokens >= 5 and len(shorter) >= len(longer) * 0.4:
+                return 0.95
+    elif str1 == str2:
+        return 1.0
 
     # Strategy 2: Token-based overlap (Jaccard only — no containment)
     # Containment was causing false positives with short queries
