@@ -10,9 +10,9 @@ interface UseWebSocketOptions {
     onQuestionDetected?: (question: string, type: string) => void;
     onTemporaryAnswer?: (question: string, answer: string) => void;
     onAnswer?: (question: string, answer: string, source?: string) => void;
-    onAnswerStreamStart?: (question: string) => void;
+    onAnswerStreamStart?: (question: string, source?: string) => void;
     onAnswerStreamChunk?: (chunk: string) => void;
-    onAnswerStreamEnd?: (question: string, hasPlaceholder?: boolean) => void;
+    onAnswerStreamEnd?: (question: string, hasPlaceholder?: boolean, source?: string) => void;
     onError?: (message: string) => void;
     onConnectionChange?: (connected: boolean) => void;
     onCreditConsumed?: (remainingCredits: number) => void;
@@ -68,13 +68,13 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
                     onAnswer?.(data.question, data.answer, data.source);
                     break;
                 case 'answer_stream_start':
-                    onAnswerStreamStart?.(data.question);
+                    onAnswerStreamStart?.(data.question, data.source);
                     break;
                 case 'answer_stream_chunk':
                     onAnswerStreamChunk?.(data.chunk);
                     break;
                 case 'answer_stream_end':
-                    onAnswerStreamEnd?.(data.question, data.has_placeholder);
+                    onAnswerStreamEnd?.(data.question, data.has_placeholder, data.source);
                     break;
                 case 'error':
                     onError?.(data.message);

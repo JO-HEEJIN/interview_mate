@@ -72,6 +72,7 @@ export default function PracticePage() {
     // Refs to track streaming state (avoids closure issues)
     const streamingAnswerRef = useRef<string>('');
     const streamingQuestionRef = useRef<string>('');
+    const streamingSourceRef = useRef<string>('generated');
 
     // WebSocket connection
     const {
@@ -119,10 +120,11 @@ export default function PracticePage() {
             setProcessingState('idle');
             setAccumulatedText('');
         },
-        onAnswerStreamStart: (question) => {
-            console.log('Streaming answer started for:', question);
+        onAnswerStreamStart: (question, source) => {
+            console.log('Streaming answer started for:', question, 'source:', source);
             streamingQuestionRef.current = question;
             streamingAnswerRef.current = '';
+            streamingSourceRef.current = source || 'generated';
             setStreamingQuestion(question);
             setStreamingAnswer('');
             setTemporaryAnswer(null);
@@ -134,18 +136,19 @@ export default function PracticePage() {
             streamingAnswerRef.current += chunk;
             setStreamingAnswer(prev => prev + chunk);
         },
-        onAnswerStreamEnd: (question, hasPlaceholder) => {
-            console.log('Streaming answer completed for:', question);
+        onAnswerStreamEnd: (question, hasPlaceholder, source) => {
+            console.log('Streaming answer completed for:', question, 'source:', source);
             // Move streaming answer to final answers using ref (avoids closure issue)
             const finalAnswer = streamingAnswerRef.current;
             const finalQuestion = streamingQuestionRef.current || question;
+            const finalSource = source || streamingSourceRef.current || 'generated';
 
             if (finalAnswer.trim()) {
                 setAnswers(prev => [{
                     question: finalQuestion,
                     answer: finalAnswer,
                     timestamp: new Date(),
-                    source: 'streamed',
+                    source: finalSource,
                     hasPlaceholder: hasPlaceholder || false,
                 }, ...prev]);
             } else {
@@ -155,6 +158,7 @@ export default function PracticePage() {
             // Clear refs and state
             streamingAnswerRef.current = '';
             streamingQuestionRef.current = '';
+            streamingSourceRef.current = 'generated';
             setStreamingAnswer('');
             setStreamingQuestion('');
             setIsGenerating(false);
@@ -166,6 +170,7 @@ export default function PracticePage() {
             setTemporaryAnswer(null);
             streamingAnswerRef.current = '';
             streamingQuestionRef.current = '';
+            streamingSourceRef.current = 'generated';
             setStreamingAnswer('');
             setStreamingQuestion('');
             setIsGenerating(false);

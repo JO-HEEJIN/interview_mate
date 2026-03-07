@@ -539,15 +539,15 @@ class ClaudeService:
 
                 # Early exit: if we find a very high match, stop searching
                 if similarity >= 0.95:
-                    logger.info(f"✓ Near-exact Q&A match ({similarity:.2%}): '{question}' (user: {key}, early exit)")
+                    logger.warning(f"QA_FAST_MATCH: Near-exact ({similarity:.2%}): '{question[:80]}' ~ '{qa_pair['question'][:80]}' (user: {key})")
                     return best_match
 
         # Step 3: Return best match if above threshold
         if best_similarity >= threshold:
-            logger.info(f"✓ Similar Q&A match ({best_similarity:.2%}): '{question}' ~ '{best_match['question']}' (user: {key})")
+            logger.warning(f"QA_FAST_MATCH: Similar ({best_similarity:.2%}): '{question[:80]}' ~ '{best_match['question'][:80]}' (user: {key})")
             return best_match
 
-        logger.debug(f"No Q&A match found for user {key} (best: {best_similarity:.2%})")
+        logger.info(f"QA_FAST_MATCH: No match for user {key} (best: {best_similarity:.2%}, needed: {threshold})")
         return None
 
     async def generate_answer_stream(
@@ -604,10 +604,11 @@ class ClaudeService:
                     max_total_results=5
                 )
 
-        # If we found a good match (>= 70% similarity), use the stored answer directly
-        if relevant_qa_pairs and relevant_qa_pairs[0].get('similarity', 0) >= 0.70:
+        # If we found a very high match (>= 85% similarity), use the stored answer directly
+        # 0.70 was too low — caused irrelevant Q&A pairs to bypass LLM generation
+        if relevant_qa_pairs and relevant_qa_pairs[0].get('similarity', 0) >= 0.85:
             best_match = relevant_qa_pairs[0]
-            logger.info(f"Using stored answer ({best_match.get('similarity', 0):.0%} match)")
+            logger.info(f"RAG direct match ({best_match.get('similarity', 0):.0%}): skipping LLM, using stored answer for '{question[:60]}'")
             yield best_match['answer']
             return
 
