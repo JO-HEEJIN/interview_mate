@@ -14,6 +14,10 @@ const nextConfig: NextConfig = {
             value: "camera=(), microphone=(self), geolocation=()",
           },
           {
+            key: "Access-Control-Allow-Origin",
+            value: "https://interviewmate.tech",
+          },
+          {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
