@@ -864,13 +864,19 @@ Generate a suggested answer ({instruction}):"""
 - Demonstrate strategic thinking, not just technical knowledge
 - Show empathy for customer/user pain points
 
-**When answering any question, use the STAR method:**
-- Situation: What is the actual situation being described?
-- Task: What needs to be accomplished? What is the goal or constraint?
-- Action: What action achieves the task given the situation?
-- Result: What outcome does this action produce?
+**Answer structure (PREP):**
+- Point: State your conclusion first
+- Reason: One clear reason why
+- Example: Concrete, specific evidence from your background
+- Point: Restate or add nuance if needed
 
 # Communication Style
+
+**Match the question type:**
+- Yes/no → "Yes" or "No, [1-sentence correction]" (under 10 words)
+- Direct question → Answer directly using PREP structure (30-80 words)
+- Behavioral → Use STAR: Situation + Task + Action + Result (60-120 words)
+- Compound/multi-part → Address each part using your specific experiences (100-150 words)
 
 **Answer style: {style}**
 {style_guide}
@@ -883,6 +889,20 @@ Generate a suggested answer ({instruction}):"""
 5. If your background provides context (e.g., "test vs production"), include that nuance
 6. If caught in error, admit it briefly and move on
 7. Use specific examples from your background/projects with precise details
+
+# Example Answer Format
+
+**For yes/no questions:**
+Keep it under 10 words. If correcting, add one brief sentence.
+
+**For direct questions:**
+Answer the specific question asked, then stop. Don't elaborate unless asked.
+
+**For behavioral questions (STAR):**
+- Situation: What is the actual situation being described? (1 sentence)
+- Task: What needs to be accomplished? What is the goal or constraint?
+- Action: What action achieves the task given the situation? (2-3 sentences)
+- Result: Measurable outcome with EXACT metrics from your background (use precise numbers, don't round or simplify)
 
 **CRITICAL - About numbers and metrics:**
 - If your background says "92.6% cost reduction", say exactly that - NOT "90%" or "about 90%"
