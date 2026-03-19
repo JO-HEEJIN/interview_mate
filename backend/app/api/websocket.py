@@ -869,6 +869,14 @@ async def websocket_transcribe(websocket: WebSocket):
                             })
 
                         elif msg_type == "start_recording":
+                            # Wait for user_id if not yet set (race condition with context message)
+                            if not user_id:
+                                logger.info("start_recording received before user_id set, waiting up to 2s...")
+                                for _ in range(20):  # 20 x 100ms = 2s max
+                                    await asyncio.sleep(0.1)
+                                    if user_id:
+                                        break
+
                             # Consume credit when recording starts
                             if user_id:
                                 credit_result = await consume_interview_credit(user_id, session_id)
@@ -886,7 +894,7 @@ async def websocket_transcribe(websocket: WebSocket):
                                         "message": "No interview credits available"
                                     })
                             else:
-                                logger.warning("start_recording received but no user_id set")
+                                logger.warning("start_recording received but no user_id set after 2s wait")
 
                         elif msg_type == "generate_answer":
                             # Manual answer generation request
