@@ -5,6 +5,7 @@ WebSocket endpoint for real-time audio transcription with session memory
 import json
 import asyncio
 import logging
+import time
 from datetime import datetime
 import uuid
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
@@ -12,6 +13,13 @@ from app.services.deepgram_service import deepgram_service
 from app.services.claude import get_claude_service, detect_question_fast
 from app.services.llm_service import llm_service
 from app.core.supabase import get_supabase_client, verify_access_token
+from app.services.statsig_service import (
+    get_variant,
+    log_session_started,
+    log_feedback_submitted,
+    log_session_completed,
+)
+from app.prompts.interview_prompts import get_prompt_for_variant
 
 # 로거 설정
 logger = logging.getLogger(__name__)
@@ -357,6 +365,11 @@ async def websocket_transcribe(websocket: WebSocket):
     session_id = None
     session_examples_used = []  # Track examples used to avoid repetition
 
+    # Statsig A/B test state
+    statsig_variant = "A"  # Will be set when user_id is known
+    session_turn_count = 0  # Track total Q&A turns for session_completed event
+    session_start_time = None  # Track session start for duration
+
     logger.info(f"[{connection_id}] WebSocket transcription session started")
 
     # Send immediate acknowledgment
@@ -544,6 +557,19 @@ async def websocket_transcribe(websocket: WebSocket):
                             pre_fetched_qa = result_map.get("rag", [])
                             logger.info(f"Parallel fetch done: {len(session_history)} history, {len(session_examples)} examples, {len(pre_fetched_qa)} RAG results")
 
+                            # Inject A/B test prompt into user_profile custom_instructions
+                            if user_profile is not None:
+                                profile_with_variant = dict(user_profile)
+                                profile_with_variant["custom_instructions"] = (
+                                    get_prompt_for_variant(statsig_variant)
+                                    + "\n\n"
+                                    + (user_profile.get("custom_instructions") or "")
+                                ).strip()
+                            else:
+                                profile_with_variant = {
+                                    "custom_instructions": get_prompt_for_variant(statsig_variant)
+                                }
+
                             # Signal streaming start
                             await manager.send_json(websocket, {
                                 "type": "answer_stream_start",
@@ -560,7 +586,7 @@ async def websocket_transcribe(websocket: WebSocket):
                                 talking_points=user_context["talking_points"],
                                 qa_pairs=user_context["qa_pairs"],
                                 format="bullet",
-                                user_profile=user_profile,
+                                user_profile=profile_with_variant,
                                 session_history=session_history,
                                 examples_used=session_examples,
                                 pre_fetched_qa_pairs=pre_fetched_qa
@@ -611,6 +637,7 @@ async def websocket_transcribe(websocket: WebSocket):
                                 "source": "generated",
                                 "has_placeholder": has_placeholder
                             })
+                            session_turn_count += 1
                 finally:
                     is_processing = False
 
@@ -789,6 +816,13 @@ async def websocket_transcribe(websocket: WebSocket):
                                     if session_id:
                                         logger.info(f"Created session {session_id} for user {user_id}, profile {profile_id}")
 
+                                # Assign Statsig variant for this session
+                                if user_id and statsig_variant == "A":
+                                    statsig_variant = get_variant(user_id)
+                                    log_session_started(user_id, statsig_variant)
+                                    logger.info(f"Statsig variant assigned: {statsig_variant} for user {user_id}")
+                                    session_start_time = time.time()
+
                             # OPTIMIZATION (Phase 1.1): Build Q&A index for fast lookup
                             # This takes <1ms and enables O(1) exact matching + faster similarity search
                             claude_service.build_qa_index(user_context["qa_pairs"], user_id)
@@ -806,6 +840,12 @@ async def websocket_transcribe(websocket: WebSocket):
                             logger.info(f"[{connection_id}] Context acknowledged for user {user_id}")
 
                         elif msg_type == "clear":
+                            # Log session completion to Statsig before clearing
+                            if session_id and user_id and session_start_time:
+                                duration = int(time.time() - session_start_time)
+                                log_session_completed(user_id, statsig_variant, duration, session_turn_count)
+                                session_start_time = None  # Prevent double logging
+
                             # NEW: End current session before clearing
                             if session_id:
                                 await end_interview_session(session_id)
@@ -913,6 +953,19 @@ async def websocket_transcribe(websocket: WebSocket):
                                     session_examples = manual_result_map.get("examples", [])
                                     manual_pre_fetched_qa = manual_result_map.get("rag")
 
+                                    # Inject A/B test prompt into user_profile custom_instructions
+                                    if user_profile is not None:
+                                        manual_profile_with_variant = dict(user_profile)
+                                        manual_profile_with_variant["custom_instructions"] = (
+                                            get_prompt_for_variant(statsig_variant)
+                                            + "\n\n"
+                                            + (user_profile.get("custom_instructions") or "")
+                                        ).strip()
+                                    else:
+                                        manual_profile_with_variant = {
+                                            "custom_instructions": get_prompt_for_variant(statsig_variant)
+                                        }
+
                                     # Signal streaming start
                                     await manager.send_json(websocket, {
                                         "type": "answer_stream_start",
@@ -929,7 +982,7 @@ async def websocket_transcribe(websocket: WebSocket):
                                         talking_points=user_context["talking_points"],
                                         qa_pairs=user_context["qa_pairs"],
                                         format="bullet",
-                                        user_profile=user_profile,
+                                        user_profile=manual_profile_with_variant,
                                         session_history=session_history,
                                         examples_used=session_examples,
                                         pre_fetched_qa_pairs=manual_pre_fetched_qa
@@ -976,6 +1029,15 @@ async def websocket_transcribe(websocket: WebSocket):
                                         "source": "generated",
                                         "has_placeholder": has_placeholder
                                     })
+                                    session_turn_count += 1
+
+                        elif msg_type == "feedback":
+                            # Handle thumbs up/down from user
+                            rating = data.get("rating")  # 1 or -1
+                            if user_id and session_id and rating in (1, -1):
+                                log_feedback_submitted(user_id, statsig_variant, rating, session_id)
+                                logger.info(f"Feedback logged: rating={rating}, variant={statsig_variant}")
+                            await manager.send_json(websocket, {"type": "feedback_ack"})
 
                         elif msg_type == "finalize":
                             # Signal end of audio stream to Deepgram
@@ -1015,6 +1077,12 @@ async def websocket_transcribe(websocket: WebSocket):
         except:
             pass
     finally:
+        # Log session completion to Statsig on disconnect
+        if session_id and user_id and session_start_time:
+            duration = int(time.time() - session_start_time)
+            log_session_completed(user_id, statsig_variant, duration, session_turn_count)
+            session_start_time = None  # Prevent double logging
+
         # End session on disconnect (credit already consumed at start)
         if session_id:
             await end_interview_session(session_id)

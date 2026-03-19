@@ -28,6 +28,7 @@ interface UseWebSocketReturn {
     requestAnswer: (question: string, question_type?: string) => void;
     clearSession: () => void;
     finalizeAudio: () => void;
+    sendFeedback: (rating: 1 | -1) => void;
     notifyStartRecording: () => void;
 }
 
@@ -200,6 +201,15 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
         }
     }, []);
 
+    const sendFeedback = useCallback((rating: 1 | -1) => {
+        if (wsRef.current?.readyState === WebSocket.OPEN) {
+            wsRef.current.send(JSON.stringify({
+                type: 'feedback',
+                rating,
+            }));
+        }
+    }, []);
+
     useEffect(() => {
         connect();
         return () => {
@@ -217,5 +227,6 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
         clearSession,
         finalizeAudio,
         notifyStartRecording,
+        sendFeedback,
     };
 }

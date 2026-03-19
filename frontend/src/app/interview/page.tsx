@@ -68,6 +68,7 @@ export default function PracticePage() {
     const [processingState, setProcessingState] = useState<'idle' | 'transcribing' | 'detecting' | 'generating'>('idle');
     const [captureSystemAudio, setCaptureSystemAudio] = useState(false);
     const [systemAudioError, setSystemAudioError] = useState<string | null>(null);
+    const [feedbackGiven, setFeedbackGiven] = useState<1 | -1 | null>(null);
 
     // Refs to track streaming state (avoids closure issues)
     const streamingAnswerRef = useRef<string>('');
@@ -85,6 +86,7 @@ export default function PracticePage() {
         clearSession,
         finalizeAudio,
         notifyStartRecording,
+        sendFeedback,
     } = useWebSocket({
         url: WS_URL,
         onTranscription: (text, accumulated) => {
@@ -567,6 +569,36 @@ export default function PracticePage() {
                             onStopGenerating={handleStopGenerating}
                             aiGeneratorAvailable={ai_generator_available}
                         />
+                        {answers.length > 0 && (
+                            <div className="mt-3 flex items-center gap-2">
+                                <span className="text-sm text-gray-500 dark:text-gray-400">Was this helpful?</span>
+                                <button
+                                    onClick={() => { sendFeedback(1); setFeedbackGiven(1); }}
+                                    disabled={feedbackGiven !== null}
+                                    className={`rounded px-2 py-1 text-sm transition-colors ${
+                                        feedbackGiven === 1
+                                            ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
+                                            : 'bg-gray-100 text-gray-600 hover:bg-green-50 hover:text-green-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-green-950 dark:hover:text-green-400'
+                                    }`}
+                                >
+                                    👍
+                                </button>
+                                <button
+                                    onClick={() => { sendFeedback(-1); setFeedbackGiven(-1); }}
+                                    disabled={feedbackGiven !== null}
+                                    className={`rounded px-2 py-1 text-sm transition-colors ${
+                                        feedbackGiven === -1
+                                            ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300'
+                                            : 'bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-red-950 dark:hover:text-red-400'
+                                    }`}
+                                >
+                                    👎
+                                </button>
+                                {feedbackGiven !== null && (
+                                    <span className="text-xs text-gray-400">Thanks for your feedback!</span>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </div>
 

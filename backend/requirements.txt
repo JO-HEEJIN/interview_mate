@@ -21,3 +21,4 @@ pgvector>=0.2.0
 numpy>=1.24.0
 qdrant-client>=1.7.0
 slowapi>=0.1.9
+statsig>=0.27.0

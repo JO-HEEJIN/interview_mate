@@ -848,3 +848,45 @@ Database (RLS bypassed by service_role)
 - 백엔드 CORS origins 명시적 화이트리스트 (4개 도메인만)
 - Server 헤더 제거
 - 결제 webhook HMAC 서명 검증 (Lemon Squeezy)
+
+---
+
+## 작업 중 발생한 사고 기록 (Post-Mortem)
+
+### 사고 1: CSP 헤더가 프론트엔드 API 호출 전면 차단
+
+**발생 시점:** 2026-03-07, CSP 헤더 추가 후 Vercel 배포 완료 시점
+**증상:** "No Profile Selected" — 모든 프로필/구독 데이터 미표시, 콘솔에 CSP 위반 에러 대량 발생
+**근본 원인:** `next.config.ts`의 `connect-src`에 Railway 백엔드 URL(`https://*.railway.app`)을 누락. `wss://*.railway.app`만 추가하고 `https://`를 빠뜨림. 또한 Google Fonts URL도 `style-src`/`font-src`에 누락.
+**영향:** 프론트엔드에서 백엔드 API 호출이 브라우저 CSP에 의해 전부 차단 → 사이트 사실상 사용 불가
+**해결:** `connect-src`에 `https://*.railway.app` 추가, `style-src`에 `https://fonts.googleapis.com`, `font-src`에 `https://fonts.gstatic.com` 추가 → 커밋 `140b6dd`
+**교훈:**
+- CSP 헤더 추가 시 반드시 **모든 외부 도메인**을 확인 (API, WebSocket, 폰트, 스타일시트 등)
+- CSP는 한 번에 배포하지 말고, 먼저 `Content-Security-Policy-Report-Only` 모드로 테스트 후 적용하는 것이 안전
+- 배포 직후 브라우저 개발자 도구 Console 확인 필수
+
+### 사고 2: Supabase "Harden Data API"로 스키마 노출 차단 시도 → 백엔드 장애 위험
+
+**발생 시점:** 2026-03-07, Supabase Dashboard에서 Harden Data API 실행
+**시도한 작업:** `public` 스키마를 Exposed schemas에서 제거하고 빈 `api` 스키마만 노출
+**위험:** 백엔드가 Supabase Python SDK(`supabase.table()`)를 사용하는데, 이는 내부적으로 PostgREST REST API를 호출. `public` 스키마가 Exposed schemas에서 제거되면 **service_role_key로도 테이블 접근 불가** (RLS bypass ≠ 스키마 노출 설정)
+**실제 결과:** 설정 페이지에서 `public`이 여전히 남아있어 실제 장애는 발생하지 않음 (Supabase UI가 자동 복구했거나 제거가 완전히 적용되지 않음)
+**교훈:**
+- Supabase Harden Data API는 **프론트엔드가 REST API를 직접 사용하지 않는 경우에만** 안전하게 적용 가능
+- 그러나 **백엔드가 Supabase SDK를 사용하면 PostgREST 의존** → public 스키마 제거 불가
+- 스키마 노출 차단의 대안: RLS 강화 + password_hash 제거로 실질적 위험 감소 (이미 완료)
+- Supabase 설정 변경 전 반드시 `supabase.table()` / `.rpc()` 사용 여부 확인
+
+### 사고 예방 체크리스트 (향후 참조)
+
+1. **CSP 헤더 추가 전:**
+   - 브라우저 Network 탭에서 모든 외부 도메인 목록 수집
+   - `Content-Security-Policy-Report-Only`로 먼저 테스트
+   - connect-src, style-src, font-src, img-src, script-src 각각 확인
+2. **Supabase 스키마 변경 전:**
+   - 백엔드가 PostgREST (SDK `supabase.table()`)를 사용하는지 확인
+   - 직접 PostgreSQL 연결(`psycopg2`/`asyncpg`)이면 스키마 노출 설정 무관
+   - PostgREST 사용 시 `public` 스키마 제거 불가
+3. **보안 변경 배포 전:**
+   - staging 환경에서 먼저 테스트 (없으면 로컬에서 production 설정으로 테스트)
+   - 배포 직후 핵심 유저 플로우 확인 (로그인 → 프로필 로드 → 인터뷰 시작)
