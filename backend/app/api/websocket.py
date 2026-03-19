@@ -729,6 +729,7 @@ async def websocket_transcribe(websocket: WebSocket):
                             })
 
                         elif msg_type == "context":
+                            logger.info(f"DEBUG: context handler reached")
                             # Update user context
                             user_context["resume_text"] = data.get("resume_text", "")
                             user_context["star_stories"] = data.get("star_stories", [])
