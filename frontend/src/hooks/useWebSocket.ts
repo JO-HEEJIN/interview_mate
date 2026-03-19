@@ -21,6 +21,7 @@ interface UseWebSocketOptions {
 
 interface UseWebSocketReturn {
     isConnected: boolean;
+    isAuthenticated: boolean;
     connect: () => void;
     disconnect: () => void;
     sendAudio: (data: Blob) => void;
@@ -49,6 +50,7 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
     } = options;
 
     const [isConnected, setIsConnected] = useState(false);
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
     const wsRef = useRef<WebSocket | null>(null);
 
     const handleMessage = useCallback((event: MessageEvent) => {
@@ -85,6 +87,9 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
                     break;
                 case 'no_credits':
                     onNoCredits?.();
+                    break;
+                case 'context_ack':
+                    setIsAuthenticated(true);
                     break;
             }
         } catch (err) {
@@ -149,6 +154,7 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
             wsRef.current = null;
         }
         setIsConnected(false);
+        setIsAuthenticated(false);
     }, []);
 
     const sendAudio = useCallback(async (data: Blob) => {
@@ -219,6 +225,7 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
 
     return {
         isConnected,
+        isAuthenticated,
         connect,
         disconnect,
         sendAudio,

@@ -78,6 +78,7 @@ export default function PracticePage() {
     // WebSocket connection
     const {
         isConnected,
+        isAuthenticated,
         connect,
         disconnect,
         sendAudio,
@@ -360,6 +361,14 @@ export default function PracticePage() {
             router.push('/pricing');
             return;
         }
+
+        // Wait for backend auth (context_ack) before consuming credits
+        if (!isAuthenticated) {
+            console.log('Waiting for backend authentication...');
+            setError('Connecting to server, please try again in a moment.');
+            return;
+        }
+
         setError(null);
         await startRecording();
         // Notify backend to consume credit when recording actually starts
