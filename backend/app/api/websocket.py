@@ -385,7 +385,7 @@ async def websocket_transcribe(websocket: WebSocket):
 
     # Deepgram transcript callback
     async def on_transcript(text: str, is_final: bool):
-        nonlocal accumulated_text, is_processing
+        nonlocal accumulated_text, is_processing, session_turn_count
 
         try:
             if not text.strip():
