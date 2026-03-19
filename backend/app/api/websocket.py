@@ -729,7 +729,7 @@ async def websocket_transcribe(websocket: WebSocket):
                             })
 
                         elif msg_type == "context":
-                            logger.info(f"DEBUG: context handler reached")
+                            logger.error(f"DEBUG: context handler reached")
                             # Update user context
                             user_context["resume_text"] = data.get("resume_text", "")
                             user_context["star_stories"] = data.get("star_stories", [])
@@ -819,7 +819,7 @@ async def websocket_transcribe(websocket: WebSocket):
 
                                 # Assign Statsig variant for this session
                                 if user_id and statsig_variant is None:
-                                    logger.info(f"DEBUG: about to call statsig for user_id={user_id}")
+                                    logger.error(f"DEBUG: about to call statsig for user_id={user_id}")
                                     statsig_variant = get_variant(user_id)
                                     logger.info(f"DEBUG: statsig variant = {statsig_variant}")
                                     log_session_started(user_id, statsig_variant)
