@@ -366,7 +366,7 @@ async def websocket_transcribe(websocket: WebSocket):
     session_examples_used = []  # Track examples used to avoid repetition
 
     # Statsig A/B test state
-    statsig_variant = "A"  # Will be set when user_id is known
+    statsig_variant = None  # None = not yet assigned, will be set when user_id is known
     session_turn_count = 0  # Track total Q&A turns for session_completed event
     session_start_time = None  # Track session start for duration
 
@@ -817,8 +817,10 @@ async def websocket_transcribe(websocket: WebSocket):
                                         logger.info(f"Created session {session_id} for user {user_id}, profile {profile_id}")
 
                                 # Assign Statsig variant for this session
-                                if user_id and statsig_variant == "A":
+                                if user_id and statsig_variant is None:
+                                    logger.info(f"DEBUG: about to call statsig for user_id={user_id}")
                                     statsig_variant = get_variant(user_id)
+                                    logger.info(f"DEBUG: statsig variant = {statsig_variant}")
                                     log_session_started(user_id, statsig_variant)
                                     logger.info(f"Statsig variant assigned: {statsig_variant} for user {user_id}")
                                     session_start_time = time.time()
