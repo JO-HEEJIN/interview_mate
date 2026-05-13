@@ -22,10 +22,13 @@ def _make_user(user_id: str):
     return StatsigUser(user_id=user_id)
 
 
-def _make_event(user_id: str, event_name: str, metadata: dict = None):
-    """Create a StatsigEvent object."""
+def _make_event(user_id: str, event_name: str, value=None, metadata: dict = None):
+    """Create a StatsigEvent object. `value` is the numeric metric value (used by Statsig
+    Sum/Mean metrics); `metadata` is for grouping/filtering only."""
     from statsig.statsig_event import StatsigEvent
     event = StatsigEvent(_make_user(user_id), event_name)
+    if value is not None:
+        event.value = value
     if metadata:
         event.metadata = metadata
     return event
@@ -74,9 +77,11 @@ def log_session_started(user_id: str, variant: str):
         if not _statsig_initialized:
             return
         from statsig import statsig
-        statsig.log_event(_make_event(user_id, "session_started", {
-            "variant": variant, "user_id": user_id
-        }))
+        statsig.log_event(_make_event(
+            user_id,
+            "session_started",
+            metadata={"variant": variant, "user_id": user_id},
+        ))
     except Exception as e:
         logger.error(f"Statsig log_session_started error: {e}")
 
@@ -84,33 +89,39 @@ def log_session_started(user_id: str, variant: str):
 def log_feedback_submitted(user_id: str, variant: str, rating: int, session_id: str):
     """
     Log thumbs up/down feedback.
-    rating: 1 for thumbs up, -1 for thumbs down.
+    rating: 1 for thumbs up, -1 for thumbs down. Sent as `value` so Statsig
+    can compute Mean/Sum metrics directly (avg rating per variant).
     """
     try:
         if not _statsig_initialized:
             return
         from statsig import statsig
-        statsig.log_event(_make_event(user_id, "feedback_submitted", {
-            "variant": variant,
-            "user_id": user_id,
-            "rating": str(rating),
-            "session_id": session_id
-        }))
+        statsig.log_event(_make_event(
+            user_id,
+            "feedback_submitted",
+            value=rating,
+            metadata={"variant": variant, "user_id": user_id, "session_id": session_id},
+        ))
     except Exception as e:
         logger.error(f"Statsig log_feedback_submitted error: {e}")
 
 
 def log_session_completed(user_id: str, variant: str, duration_seconds: int, total_turns: int):
-    """Log session completion with duration and turn count."""
+    """Log session completion. `total_turns` is the primary numeric (Socratic
+    hypothesis predicts more turns); duration kept in metadata for secondary analysis."""
     try:
         if not _statsig_initialized:
             return
         from statsig import statsig
-        statsig.log_event(_make_event(user_id, "session_completed", {
-            "variant": variant,
-            "user_id": user_id,
-            "session_duration_seconds": str(duration_seconds),
-            "total_turns": str(total_turns)
-        }))
+        statsig.log_event(_make_event(
+            user_id,
+            "session_completed",
+            value=total_turns,
+            metadata={
+                "variant": variant,
+                "user_id": user_id,
+                "session_duration_seconds": str(duration_seconds),
+            },
+        ))
     except Exception as e:
         logger.error(f"Statsig log_session_completed error: {e}")
