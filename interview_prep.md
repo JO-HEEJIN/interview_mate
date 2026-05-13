@@ -364,6 +364,93 @@ InterviewMate에서 실제 영향받은 테이블은 `star_stories`(사용자 ST
 
 ---
 
+## 사실 베이스라인 — arXiv Papers
+
+| 항목 | 실제 |
+|---|---|
+| 논문 1: arXiv:2602.21814 | "Prompt Architecture Determines Reasoning Quality" (2026-02-25) |
+| 논문 1 모델 | `claude-sonnet-4-5-20250929`, temp 0.7, max_tokens 512 |
+| 논문 1 design | 6 conditions × n=20 = 120 API calls |
+| 논문 1 핵심 결과 | STAR (85%) vs Profile (30%) = **2.83x**, Fisher's p=0.001 |
+| 논문 1 per-layer | STAR +85pp, Profile +10pp, RAG +5pp |
+| 논문 2: arXiv:2603.13351 | "Prompt Complexity Dilutes Structured Reasoning" (2026-03-08) |
+| 논문 2 모델 | `claude-sonnet-4-5-20250929` + `claude-sonnet-4-6` |
+| 논문 2 design | 3 conditions × n=20 + C_star_only **n=100 verification** |
+| 논문 2 핵심 결과 | STAR 100% (10-line prompt) → 0-30% (60-line production prompt) |
+| 논문 2 mechanism | "Conclusion-first ordering" — "Lead with specifics" 등이 STAR 순서 뒤집음 |
+| 논문 2 cross-model | Sonnet 4.5 (85%) → Sonnet 4.6 (100% at n=100) on same STAR prompt |
+| 통계 도구 | Fisher's exact test (scipy.stats.fisher_exact) |
+| 코드 위치 | `car_wash/experiment.py`, `run_f_condition.py`, `experiment_branching.py`, etc. |
+| Raw 데이터 | `car_wash/results/*/raw.jsonl, summary.json, report.md` |
+| 정직성 신호 | 논문 2 Section 8에서 논문 1의 4가지 주장 **명시적으로 정정** |
+| Publication 상태 | ⚠️ **arXiv preprint** — **peer-reviewed 아님** |
+| "multi-agent" 표현 | ⚠️ **기술적으로 부정확** — 실제는 multi-condition / variable isolation |
+| 단독 저자 여부 | ✅ 단독 저자 (Heejin Jo) |
+
+---
+
+## 답변 7 — arXiv Papers (이력서 bullet: "multi-agent prompt evaluation pipeline; published two arXiv papers...")
+
+> ⚠️ **이력서 표현의 fragile point 2개:**
+> 1. "multi-agent" — 실제는 multi-condition prompt evaluation (variable isolation). agent끼리 상호작용하는 시스템이 아님.
+> 2. "published" — arXiv preprint이지 peer-reviewed publication 아님.
+> 면접관이 직접 probe할 가능성 높으니 미리 정확히 표현 준비.
+
+### 1차 답변 (45초) — "두 논문 어떤 내용이에요?"
+
+"두 논문 다 같은 'car wash 문제'를 출발점으로 한 prompt architecture 연구입니다.
+
+질문 자체는 단순합니다 — '차를 세차하려고 한다. 세차장은 100미터 거리. 걸을까 운전할까?' 정답은 '운전'인데(차가 세차장에 있어야 하니까), 주요 LLM 전부 '걸어가라'고 답합니다.
+
+**첫 번째 논문 (arXiv:2602.21814)** 은 variable isolation 실험입니다. InterviewMate의 system prompt가 여러 레이어(role, STAR reasoning, user profile, RAG)로 구성돼있는데, **어느 레이어가 정답에 기여하는지** 분해했습니다. Claude Sonnet 4.5에 6 condition × n=20 trial = 120 API call. 결과: STAR(85%) vs Profile injection(30%) — structured reasoning이 context injection을 **2.83배** 앞섭니다 (Fisher's exact test, p=0.001).
+
+**두 번째 논문 (arXiv:2603.13351)** 은 첫 번째 논문의 후속입니다. 핵심 질문: 'STAR가 isolated 환경에서 잘 작동하는 건 봤는데, 60줄짜리 production prompt 안에 넣으면 어떻게 되나?' 결과: **0~30%로 무너집니다.** STAR 자체는 그대로인데, 'Lead with specifics' 같은 주변 지시문들이 conclusion-first 순서를 강제해서 reasoning이 결론 다음에 일어나게 만들어버립니다. n=100 verification까지 했습니다."
+
+### 2차 답변 (면접관이 더 깊이 물으면)
+
+"두 번째 논문이 흥미로운 부분은 **첫 번째 논문의 주장을 스스로 정정**한다는 점입니다. Section 8에 4가지 명시적 정정이 들어있어요:
+
+- '실제 production 시스템이 정답을 냈다'는 관찰은 reproducible하지 않다 (당시 prompt가 더 단순했음)
+- 첫 번째 논문의 per-layer 분해는 simple prompt에서만 valid하고 production prompt에는 generalize 안 됨
+- Prompt evolution이 confound로 작용했음
+
+이걸 'positive result publication bias'에 반대되는 접근이라고 보고 있습니다. 첫 논문이 더 화제가 됐는데, 후속 논문에서 그 결론의 한계를 직접 짚었어요.
+
+**Mechanism 측면**에서 가장 핵심적인 발견은 'conclusion-first ordering'입니다. Production prompt의 'Short answer: Walk.' → STAR breakdown 순서로 출력하는 경우를 실제로 캡쳐했는데, 이게 결정적 증거예요. STAR reasoning이 실행되긴 하는데 **이미 결론이 나온 뒤** 실행되니까, autoregressive generation에서 reasoning이 conclusion을 inform할 수 없습니다. 사후 합리화가 됩니다.
+
+이건 관련 연구(Chen et al. 2024의 premise order, Turpin et al. 2023의 chain-of-thought faithfulness, Tam et al. 2024의 format constraints가 reasoning을 저해)와 일관됩니다. 두 번째 논문은 이런 separate phenomena들이 production prompt 하나에서 동시 작용하는 걸 보여준 거예요."
+
+### 3차 답변 — "InterviewMate와 어떻게 연결?"
+
+"두 논문 모두 InterviewMate에서 발생한 관찰에서 출발했습니다.
+
+첫 논문: InterviewMate가 car wash 질문에 'drive'라고 답하는 걸 보고 — 다른 LLM들은 다 'walk'였는데 — '왜 우리 시스템만?'을 isolation해보고 싶었습니다.
+
+두 번째 논문: 첫 논문 발표 후 production에서 같은 질문이 다시 'walk'를 내기 시작했습니다. 처음에는 코드 버그인 줄 알고 4가지 fix(string similarity, RAG threshold, frontend source 전파, question detection)를 했는데, 그 다음에도 'walk'가 나왔어요. 그래서 prompt 자체를 봤더니 첫 논문 시절 대비 prompt가 10줄에서 60줄로 자란 상태였습니다. 그게 후속 논문의 motivation입니다.
+
+직접 연결: 두 번째 논문 결과는 **InterviewMate prompt를 어떻게 짜야 하는지** 정보로 직접 들어갑니다. 'STAR을 넣었다'가 아니라 'STAR을 conclusion-first 명령어로 둘러싸지 않았다'가 더 중요한 design decision입니다."
+
+### 🚨 절대 말하지 말 것 / 정확히 표현해야 할 것
+
+- ⚠️ **"multi-agent pipeline"** — 면접관이 "어떤 agent들이 어떻게 상호작용하나요?"로 들어오면 막힘. 실제는 **multi-condition variable isolation experiment**임. 솔직하게 말해야 함:
+  > "이력서 표현이 정확하지 않을 수 있는데, 실제 구조는 multi-agent가 아니라 같은 모델에 6가지 prompt condition을 각각 20회 적용한 variable isolation experiment입니다. Agent 간 상호작용은 없습니다."
+
+- ⚠️ **"published"** — peer-reviewed publication 아님. 정확히는:
+  > "**arXiv preprint** 두 편입니다. Peer-reviewed venue에 submit한 상태는 아니고, 독립 연구자로서 arXiv에 공개한 거예요."
+
+- ❌ "여러 모델 비교" — 이력서의 두 논문 자체는 Claude 모델만 사용. Cross-model 비교(GPT-4o, Gemini)는 **세 번째 미발표 논문**(`cross_model_paper.md`)이라 이력서 두 편에 포함 안 됨.
+
+- ❌ "Sample size 통계 유의성" — 첫 논문 n=20는 pilot study 규모. Fisher's exact test로 p=0.001 나왔지만 confidence interval은 넓음. 논문 자체도 limitations에서 명시. "20 trials per condition is sufficient for behavioral patterns but not high-precision rate estimation."
+
+### 💡 강력한 정직성 카드
+
+"제가 가장 자랑스럽게 생각하는 부분은 첫 논문 결론을 후속 논문에서 직접 정정한 점입니다. 첫 논문이 HN/Mastodon 출처라 더 화제가 됐는데, 그걸 그대로 두지 않고 'production에서 reproducible하지 않다'를 후속 논문 Section 8에 명시했습니다. 이건 academic integrity 측면에서 중요한 결정이었습니다."
+
+면접관이 "왜 이걸 후속 논문에 넣었나요?" 물으면:
+> "첫 논문이 production system을 validate하는 것처럼 읽힐 여지가 있었는데, 후속 실험으로 그게 사실이 아닌 걸 알게 됐습니다. 그걸 안 짚으면 future readers가 잘못된 결론을 build on할 위험이 있어서요. Single-author preprint니까 코멘트 단 사람이 없어서 더 신경 써야 한다고 봤습니다."
+
+---
+
 ## 키워드 흐름
 
 **답변 1:**
@@ -412,6 +499,16 @@ InterviewMate에서 실제 영향받은 테이블은 `star_stories`(사용자 ST
 - 정직 framing으로 다시 풀면: Advisor → code review → fix → 재사용 가능한 skill 문서화 (4단계지만 "블랙박스"가 아님)
 - 한계 인지: 실제 pentest 안 함, regression test 없음 — **추후 todo로 명시**
 - 학습: 자동화 도구가 'what you stopped thinking about' blind spot을 인간 reviewer보다 잘 찾음
+
+**답변 7:**
+- 두 논문 모두 실재. arXiv:2602.21814 (Feb 2026, variable isolation, n=120) + arXiv:2603.13351 (Mar 2026, complexity dilution, n=160+100 verification)
+- 핵심 발견 1: STAR (85%) vs Profile injection (30%) = 2.83x, Fisher's p=0.001
+- 핵심 발견 2: STAR 100% (10-line) → 0-30% (60-line production prompt) — conclusion-first ordering이 mechanism
+- ⚠️ **"multi-agent" 표현은 부정확** — 실제는 multi-condition variable isolation. Agent 상호작용 없음
+- ⚠️ **"published" = arXiv preprint** (peer-reviewed 아님) — 면접관이 venue 물으면 명확히 답
+- ❌ Cross-model 비교(GPT-4o, Gemini)는 **세 번째 미발표 논문** — 이력서 두 편에 미포함
+- 강력 정직 카드: 첫 논문 결론을 두 번째 논문 Section 8에서 직접 정정 (academic integrity)
+- InterviewMate와의 연결: 두 논문 모두 production observation에서 출발 → research → production prompt design으로 feedback
 
 ## 자기 룰 (이 답변의 핵심 가치)
 
