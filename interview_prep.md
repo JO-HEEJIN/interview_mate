@@ -1,10 +1,10 @@
-# Interview Prep — Directive vs Socratic & Statsig A/B Test
+# Interview Prep — Latency, Directive vs Socratic & Statsig A/B Test
 
 오늘(2026-05-13) 실제 코드/실험 상태 기반으로 작성. 검증 안 된 수치/존재하지 않는 기능 제외.
 
 ---
 
-## 사실 베이스라인 (답변 작성 시 절대 넘지 말 것)
+## 사실 베이스라인 — A/B Test (답변 작성 시 절대 넘지 말 것)
 
 | 항목 | 실제 상태 |
 |---|---|
@@ -23,6 +23,62 @@
 | Context-aware toggle | ❌ **존재하지 않음** |
 | User override UI | ❌ **존재하지 않음** |
 | 세션 타입(live vs practice) 기반 분기 | ❌ **존재하지 않음** |
+
+## 사실 베이스라인 — Latency Pipeline
+
+| 항목 | 실제 상태 | 위치 |
+|---|---|---|
+| MediaRecorder 내부 버퍼링 | 100ms | `frontend/src/hooks/useAudioRecorder.ts:417` |
+| WebSocket 청크 전송 간격 | **1000ms (1초)** | `useAudioRecorder.ts:41` (`chunkInterval = 1000`) |
+| Silence detection (프론트) | 800ms | `useAudioRecorder.ts:44` |
+| Silence detection (Deepgram EOT) | 800ms | `deepgram_service.py:59` (`eot_timeout_ms=800`) |
+| STT 모델 | Deepgram **Flux** (`flux-general-en`) | `deepgram_service.py:55` |
+| Fallback STT | Whisper-1 / Nova-3 | `deepgram_service.py:390` |
+| 오디오 포맷 변환 | FFmpeg, asyncio subprocess (비동기) | `deepgram_service.py:156, 176` |
+| Claude streaming | 활성화 (`messages.stream(...)`) | `claude.py:713-726` |
+| Claude 모델 | `claude-sonnet-4-6` | memory + config |
+| **End-to-end latency 측정** | ❌ **없음** | — |
+| Per-component latency 측정 | ❌ **없음** (session duration만 측정) | `websocket.py:827, 1092` |
+| "sub-500ms" 출처 | Deepgram 공식 marketing 수치, **자체 측정 아님** | — |
+| "2.5초", "800ms first token", "1.5-2s total" | **검증 불가**, 코드에 없음 | — |
+
+---
+
+## 답변 1 — Sub-500ms Latency 어떻게 달성?
+
+### 1차 답변 (30초)
+
+"정확히 말씀드리면, 이력서의 'sub-500ms'는 STT 레이어, 즉 Deepgram Flux의 공식 transcription latency 표방치를 기반으로 한 표현이고, 제가 production에서 직접 측정해서 확인한 숫자는 아닙니다.
+
+직접 검증한 건 아키텍처와 silence detection 동작입니다. 1초 단위 오디오 청크를 WebSocket으로 전송하면 백엔드가 FFmpeg를 asyncio subprocess로 비동기 변환해서 Deepgram streaming에 흘려보내고, 800ms 무음이 감지되면 end-of-turn으로 처리해서 Claude streaming 호출이 트리거됩니다. Claude streaming은 활성화돼있지만 first-token이나 total response time을 측정하는 instrumentation은 아직 안 깔려 있습니다."
+
+### 2차 답변 (면접관이 더 깊이 물으면)
+
+"파이프라인 구조를 분해하면 네 단계입니다.
+
+**1단계:** 프론트엔드 MediaRecorder가 100ms 단위로 audio chunk를 내부 버퍼링하고, 1초마다 WebSocket으로 백엔드에 전송합니다 (`useAudioRecorder.ts:41`).
+
+**2단계:** 백엔드가 WebM/Opus를 FFmpeg async subprocess로 linear16 PCM 변환합니다 (`deepgram_service.py:156`). 동기 처리하면 audio 입력이 막히기 때문에 `asyncio.create_subprocess_exec`로 백그라운드 conversion task를 띄웁니다.
+
+**3단계:** Deepgram Flux streaming STT입니다. `eot_timeout_ms=800`이라 800ms 무음이면 utterance 종료로 인식합니다. 프론트엔드 silence detection과 정확히 일치시켜서 양쪽이 같은 타이밍으로 turn을 끊도록 했습니다.
+
+**4단계:** Claude Sonnet 4.6 streaming입니다. `messages.stream()`으로 token 단위 yield해서 사용자가 첫 응답을 빨리 볼 수 있게 합니다.
+
+**솔직한 한계:** end-to-end latency나 단계별 latency를 측정하는 instrumentation을 아직 안 깔았습니다. 측정되는 건 session 전체 duration뿐이라 각 컴포넌트의 실제 latency 수치는 추정에 의존합니다. production scale-up 전에 OpenTelemetry 또는 자체 timing log를 컴포넌트별로 까는 게 우선 todo입니다. '2.5초 이내' 같은 wall은 사용자 행동 관찰에서 나온 design intent지 측정 결과가 아닙니다."
+
+### 🚨 절대 말하지 말 것 (원본 답변에 있던 검증 불가 수치)
+
+- ❌ "100ms 단위 오디오 청크를 WebSocket으로 전송" — **실제 1000ms (1초)**. 100ms는 MediaRecorder 내부 버퍼 단위지 WS 전송 주기 아님.
+- ❌ "전체 파이프라인 latency 약 2.5초 이내" — **측정 instrumentation 없음**. 검증 불가.
+- ❌ "first token까지 약 800ms, 전체 응답까지 1.5-2초" — **코드 어디에도 측정 없음**. 외부 벤치마크일 가능성.
+- ❌ "sub-500ms"를 본인이 측정한 것처럼 단정 — Deepgram **vendor claim**임을 반드시 명시.
+
+### 💡 이 답변의 강점
+
+1. **vendor claim과 자체 측정을 구분** — 면접관이 "어떻게 측정?" 물어도 안 막힘
+2. **검증된 숫자만 사용** (1000ms WS 인터벌, 800ms silence, 100ms 버퍼)
+3. **instrumentation gap을 자기가 짚음** — 시니어 신호
+4. **next step (OpenTelemetry) 명시** — 단순 비판이 아니라 개선 방향까지
 
 ---
 
@@ -113,6 +169,12 @@ SDK 호출되고 이벤트 들어오는 것까지는 됐는데, 메트릭 정의
 ---
 
 ## 키워드 흐름
+
+**답변 1:**
+- "sub-500ms"는 Deepgram Flux **vendor claim**, 자체 측정 아님 (정직성 카드)
+- 검증된 숫자: WS 1초 인터벌, MediaRecorder 100ms 버퍼, silence detection 800ms (프론트=백엔드 일치)
+- 아키텍처: WS → FFmpeg async → Deepgram Flux streaming → Claude streaming
+- Instrumentation gap 인정 + OpenTelemetry next-step 명시
 
 **답변 2:**
 - Directive = 직접 답, 인지 부하 낮음, 압박 상황
