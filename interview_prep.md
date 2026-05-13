@@ -225,6 +225,68 @@ Zero audio storage도 가장 명백한 contamination surface를 제거하는 결
 
 ---
 
+## 사실 베이스라인 — Supabase RLS 사건
+
+| 항목 | 실제 상태 | 위치 |
+|---|---|---|
+| 발견 경로 | **Supabase Security Advisor 자동 flag** (본인 발견 아님) | migration 038 주석 |
+| 실제 노출 테이블 수 | **3개** | `038_enable_rls_security_fix.sql` |
+| 노출 테이블 목록 | `questions`, `star_stories`, `talking_points` | migration 038 |
+| `qa_pairs` 노출 여부 | ❌ **노출 안 됨** (migration 002부터 RLS 있었음) | `migrations/002:25, 28-38` |
+| `interview_sessions` 노출 여부 | ❌ **노출 안 됨** (migration 032부터 RLS 있었음) | `migrations/032:77-90` |
+| 수정 마이그레이션 | `038_enable_rls_security_fix.sql` (2026-03-04) | — |
+| Anon key 브라우저 노출 | ✅ **의도된 설계** (`NEXT_PUBLIC_SUPABASE_ANON_KEY`) | `frontend/src/lib/supabase.ts:3-6` |
+| 백엔드 인증 방식 | **service_role key** (RLS 우회) | `backend/app/core/supabase.py:18` |
+| 백엔드 보호 메커니즘 | RLS 아님 → **application-layer user_id 필터링** | 모든 API route |
+| 현재 RLS 커버리지 | 17/17 테이블 모두 RLS + policy 적용 | 전체 migrations |
+| "2 critical vulnerabilities" 표현 | ⚠️ **repo에 없음** — 본인 해석 | — |
+| "schema exposure"를 vulnerability로 셈 | ⚠️ **generic Supabase 동작**이지 이 프로젝트 고유 취약점 아님 | — |
+
+---
+
+## 답변 5 — Supabase Anon Key RLS 사건
+
+### 1차 답변 (45초)
+
+"Supabase Security Advisor가 RLS가 비활성화된 3개 테이블을 flag해서 수정한 사건이었습니다.
+
+Supabase anon key는 브라우저에 노출되는 public JWT입니다. PostgREST가 자동 생성한 REST endpoint에 접근하는 자격증명인데, **RLS 정책이 없으면 그 anon key만으로 데이터를 읽고 쓸 수 있습니다.**
+
+InterviewMate에서 실제 영향받은 테이블은 `star_stories`(사용자 STAR 응답), `talking_points`(이력서 talking points), `questions`(공용 reference 데이터)였습니다. user-owned 데이터인 `qa_pairs`, `interview_sessions`는 처음부터 RLS가 적용돼있었지만, 이후에 추가된 테이블들에서 ENABLE RLS 구문이 빠져있던 게 원인이었습니다.
+
+수정은 `038_enable_rls_security_fix.sql`로 3개 테이블 모두 RLS + `auth.uid() = user_id` 정책 적용해서 해결했고, 그 이후로 모든 user-owned 테이블에 RLS를 일관되게 적용하는 워크플로를 정착시켰습니다."
+
+### 2차 답변 (면접관이 더 깊이 물으면)
+
+"이 사건에서 두 가지 학습이 있었습니다.
+
+**첫째, `public key` ≠ `safe without RLS`.** Anon key는 design상 브라우저에 노출되는 public credential이지만, '공개됐다'와 '안전하다'는 다른 명제입니다. RLS 없으면 anon key 하나로 데이터 read/write가 가능합니다. 그래서 이후로는 Supabase 테이블을 추가할 때 **`CREATE TABLE`과 같은 마이그레이션 안에서 `ENABLE ROW LEVEL SECURITY` + policy를 같이 작성**하는 패턴으로 굳혔습니다. 분리하면 잊어버립니다.
+
+**둘째, RLS만 의존하는 게 충분하지 않다는 점.** 백엔드 FastAPI는 `SUPABASE_SERVICE_ROLE_KEY`를 사용하는데, service role은 design상 RLS를 우회합니다. 즉 백엔드에서는 RLS가 안전망 역할을 못 합니다. 그래서 모든 백엔드 query에 `.eq('user_id', user_id)` 같은 application-layer 필터를 명시적으로 넣어서, RLS 우회 경로에서도 cross-user access가 안 되게 만들었습니다.
+
+정리하면 **다층 방어**입니다:
+- 프론트엔드 직접 쿼리 (anon key) → DB RLS가 막음
+- 백엔드 쿼리 (service_role) → application-layer user_id 필터가 막음
+- Qdrant 쿼리 → `must` filter가 막음 (RLS 아님, vector store filter)
+- In-memory cache → key prefix namespacing이 막음 (RLS 아님, application 패턴)
+
+각 레이어가 같은 원칙(user_id 격리)을 자기 메커니즘으로 enforce합니다."
+
+### 🚨 절대 말하지 말 것 (원본 답변 대비 정정 사항)
+
+- ❌ "2 critical vulnerabilities" — repo 어디에도 없는 표현. Supabase Security Advisor는 "**RLS disabled on 3 tables**"로 flag함. 정확한 표현 사용.
+- ❌ "schema 노출이 critical vulnerability 중 하나" — PostgREST의 generic 동작이지 이 프로젝트 고유 취약점이 아님. 면접관이 "그건 Supabase 기본 아닌가요?"로 반박 가능. **빼는 게 안전**.
+- ❌ "사용자 Q&A 프로필, 세션 기록, 인터뷰 응답 캐시가 cross-access 가능한 상태였다" — `qa_pairs`(migration 002)와 `interview_sessions`(migration 032)는 처음부터 RLS 있었음. 실제 노출 테이블은 `star_stories`, `talking_points`, `questions`. **사실관계 정정 필수**.
+- ⚠️ "user-scoped RLS를 모든 레이어에 적용했다 — DB, Qdrant, cache" — 개념은 OK지만 technically imprecise. Qdrant에는 RLS 개념 자체가 없음(filter clause). Cache도 RLS 아님(prefix namespace). 면접관이 "Qdrant에 RLS가 어떻게 적용되나요?"로 들어가면 막힘. **"각 레이어가 같은 원칙을 자기 메커니즘으로 enforce"라고 정확히 표현**.
+
+### 💡 강한 자체 인지 (선택 사용)
+
+면접관이 "어떻게 발견하셨나요?"라고 물으면:
+
+"**솔직히 제가 코드를 보다가 발견한 게 아니라, Supabase Security Advisor 대시보드가 flag한 걸 보고 수정한 케이스입니다.** 그게 오히려 학습 포인트였어요 — 보안 이슈는 자기 눈으로 못 잡는 경우가 많아서 자동화된 advisor / linter / scanner를 layer로 깔아두는 게 단일 reviewer보다 reliable하다는 점입니다. 이후로 Supabase 마이그레이션 추가할 때마다 Security Advisor 페이지를 routine check하는 게 워크플로에 들어갔습니다."
+
+---
+
 ## 키워드 흐름
 
 **답변 1:**
@@ -256,6 +318,15 @@ Zero audio storage도 가장 명백한 contamination surface를 제거하는 결
 - 다층 RLS: DB(Supabase auth.uid()) + 애플리케이션(user_id explicit pass) + cache(prefix namespace)
 - 알려진 갭: `clear_cache()` 글로벌 wipe = DoS 벡터 (contamination 아님)
 - 미세 보정: example dedup은 per-user 아닌 **per-session** scope
+
+**답변 5:**
+- Supabase Security Advisor가 flag → 3개 테이블 RLS missing (`questions`, `star_stories`, `talking_points`)
+- "2 critical vulnerabilities" 표현 X / "schema exposure"는 generic Supabase 동작이지 vulnerability 아님 — **둘 다 빼야**
+- 실제 노출된 데이터: STAR 응답, talking points (Q&A pairs/sessions는 처음부터 RLS 보호됨 — 정정 필요)
+- Fix: migration 038로 3개 테이블에 RLS + policy 적용
+- 핵심 인사이트: 'public key' ≠ 'safe without RLS' / 백엔드는 service_role 사용 → application-layer user_id 필터 필수
+- 다층 방어: DB RLS / app filter / Qdrant must filter / cache prefix — **각 레이어가 같은 원칙을 자기 메커니즘으로 enforce** (RLS 만능 아님)
+- 정직 카드: Security Advisor가 자동 발견한 거지 본인이 코드 보다 찾은 게 아님
 
 ## 자기 룰 (이 답변의 핵심 가치)
 
