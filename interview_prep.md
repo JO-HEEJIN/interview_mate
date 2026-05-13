@@ -287,6 +287,83 @@ InterviewMate에서 실제 영향받은 테이블은 `star_stories`(사용자 ST
 
 ---
 
+## 사실 베이스라인 — Security Audit 실제 과정
+
+| 항목 | 실제 상태 |
+|---|---|
+| 실제 audit 방식 | **white-box code review + Supabase Security Advisor 자동 진단** |
+| Postman collection / API 테스트 스크립트 | ❌ 없음 |
+| Endpoint inventory 문서 | ❌ 없음 |
+| RLS 검증 테스트 (without-auth assert 403) | ❌ 없음 |
+| Anon key 직접 hit 테스트 로그/스크립트 | ❌ 없음 |
+| Qdrant 컬렉션 이름 enumeration 테스트 | ❌ 없음 |
+| 재감사(re-audit) 스크립트 | ❌ 없음 |
+| `interviewmate_security_audit.docx` | ❌ `research.md:483`에 언급되지만 **실제 파일은 repo에 없음** |
+| 실제 9가지 finding 문서화 | ✅ `research.md` (사후 작성, 2026-03-07) |
+| Migration 038 (RLS fix on 3 tables) | ✅ 2026-03-04 |
+| Migration 039 (password_hash 제거) | ✅ 2026-03-07 |
+| WebSocket JWT verification | ✅ user_id spoofing 방지 |
+| CSP 보안 헤더 | ✅ frontend + backend |
+| `security.txt` (RFC 9116) | ✅ vulnerability disclosure endpoint |
+| `.claude/skills/supabase-security/SKILL.md` | ✅ 진단 가이드 (audit 도구 아님) |
+
+---
+
+## 답변 6 — 보안 감사 어떻게 수행?
+
+> **⚠️ 중요:** 원본 답변은 "블랙박스 audit"으로 포장했지만, 실제는 **white-box code review + Supabase Security Advisor**입니다. 면접관이 "어떤 Postman collection을 쓰셨나요?", "어떤 엔드포인트를 어떤 페이로드로 hit하셨나요?" 라고 물으면 답이 없어요. 진짜 한 일이 작은 게 아니라 *충분히 많은데* 잘못된 label로 약해진 케이스. 정직한 framing으로 다시 써야 함.
+
+### 1차 답변 (45초) — 정직 카드 framing
+
+"먼저 framing을 정확히 말씀드리면, 제가 한 건 외부 침투 테스터 입장의 black-box pentest가 아니라 **white-box code review와 Supabase Security Advisor의 자동 진단을 결합한 audit**이었습니다.
+
+순서는 이랬습니다.
+
+**첫째,** Supabase Security Advisor 대시보드가 RLS missing 3개 테이블을 flag한 걸 출발점으로 잡았습니다 (`questions`, `star_stories`, `talking_points`).
+
+**둘째,** 그걸 단서로 codebase 전체에서 비슷한 패턴이 더 있나 직접 review했습니다. 마이그레이션 파일, FastAPI route, 프론트엔드 Supabase 클라이언트 호출, WebSocket 인증 로직. 결과적으로 9가지 finding을 `research.md`에 정리했습니다.
+
+**셋째,** 수정. Migration 038로 RLS 적용, Migration 039로 사용 안 하는 `password_hash` 컬럼 제거, WebSocket JWT verification 추가로 user_id spoofing 차단, CSP 헤더 추가, `security.txt` RFC 9116 endpoint 게시.
+
+**넷째,** 재발 방지. `.claude/skills/supabase-security/SKILL.md`에 RLS 진단/수정 패턴을 12가지 정리해서 다음 테이블 추가할 때 같은 갭이 안 생기게 했습니다."
+
+### 2차 답변 (면접관이 더 깊이 물으면)
+
+"이 audit의 한계와 학습을 솔직히 말씀드리면.
+
+**한계 1: 실제 black-box pentest는 아니었습니다.** Postman collection으로 인증 없는 요청을 보내서 응답을 분석한다거나, 자동화된 endpoint enumeration을 돌렸다거나 하는 단계는 없었습니다. RLS 적용 후에 anon key로 직접 hit해서 403이 떨어지는지 검증하는 regression test도 안 만들었습니다. **추후 우선 todo입니다.**
+
+**한계 2: tooling에 의존.** Security Advisor가 자동 진단해주는 항목만큼은 catch했지만, 그 도구가 못 잡는 영역 — 예를 들어 application-layer authorization logic, race condition 기반 권한 우회, business logic 결함 — 은 아직 systematic하게 검토 안 했습니다.
+
+**학습 1: 'public key' ≠ 'safe without RLS'.** 답변 5와 같은 인사이트인데, anon key가 design상 공개돼있다는 게 'RLS 없어도 안전'을 의미하지 않음. 이후 모든 새 테이블은 `CREATE TABLE`과 같은 migration 안에서 RLS + policy를 같이 정의하는 워크플로로 굳혔습니다.
+
+**학습 2: blind spot은 자동화 도구가 더 잘 찾는다.** 단일 reviewer가 자기 코드 보면 'what you stopped thinking about'을 못 봅니다. Supabase Security Advisor, GitHub Dependabot, 자체 lint rule 같은 layer를 routine에 넣는 게 인간 review보다 reliable합니다.
+
+**디자인 변경:** 데이터 접근 코드 작성 전에 RLS 정책 먼저 디자인. 그리고 새 마이그레이션은 항상 Security Advisor 페이지 routine check 후 머지."
+
+### 🚨 절대 말하지 말 것 (원본 답변 대비 정정)
+
+- ❌ "공격자가 코드베이스를 모른다고 가정" — 실제로는 본인 코드를 직접 읽은 **white-box**. 면접관이 "어떤 tool로 enumeration?" 물으면 답 없음.
+- ❌ "Postman으로 anon key 직접 테스트" — Postman collection 없음. 그런 테스트 로그도 없음. **명백한 fabrication**.
+- ❌ "모든 public 엔드포인트를 hit하고 응답을 문서화" — endpoint inventory 문서 자체가 없음.
+- ❌ "fix 후 re-audit, 같은 요청 다시 보내서 wall 확인" — 재테스트 스크립트/로그 없음.
+- ❌ "Qdrant 컬렉션 이름 guessable한지 체크" — 그런 enumeration 흔적 없음. Qdrant collection 보호는 user_id `must` filter지 이름 obscurity가 아님.
+- ❌ "여기서 두 가지 발견" — 답변 5에서 이미 정정됨. 실제는 Advisor가 3개 테이블 flag.
+
+### 💡 이 답변의 강점 (정직 framing으로 살리기)
+
+원본 답변의 문제는 한 일이 작은 게 아니라 **잘못된 label**이었어요. 정직 framing으로 바꾸면:
+
+1. ✅ **9가지 finding 실제 정리** (`research.md`) — substantial output
+2. ✅ **4개 migration + 다층 보안 강화** — 실제 코드 변경
+3. ✅ **재사용 가능한 진단 스킬 문서화** — process improvement
+4. ✅ **자기 audit의 한계를 스스로 짚음** — 시니어 정직성
+5. ✅ **다음 단계 (black-box pentest, regression test) 명시** — 개선 방향 인지
+
+면접관이 "black-box pentest는 안 하셨네요?"라고 물으면 "네, 솔직히 안 했습니다. 다음 단계로 인지하고 있고, 지금까지는 Security Advisor + code review의 coverage 안에서 작업했습니다"라고 답하면 **자기 인식 + 솔직 + 개선 방향**까지 한 번에 나옵니다.
+
+---
+
 ## 키워드 흐름
 
 **답변 1:**
@@ -327,6 +404,14 @@ InterviewMate에서 실제 영향받은 테이블은 `star_stories`(사용자 ST
 - 핵심 인사이트: 'public key' ≠ 'safe without RLS' / 백엔드는 service_role 사용 → application-layer user_id 필터 필수
 - 다층 방어: DB RLS / app filter / Qdrant must filter / cache prefix — **각 레이어가 같은 원칙을 자기 메커니즘으로 enforce** (RLS 만능 아님)
 - 정직 카드: Security Advisor가 자동 발견한 거지 본인이 코드 보다 찾은 게 아님
+
+**답변 6:**
+- ⚠️ **"블랙박스 audit" framing은 fabrication** — 실제는 white-box code review + Security Advisor
+- ❌ Postman collection, endpoint inventory, re-audit script — 모두 없음
+- ✅ 실제 한 일: 9 findings 정리 (`research.md`), migration 038/039, JWT verification, CSP 헤더, security.txt, supabase-security skill
+- 정직 framing으로 다시 풀면: Advisor → code review → fix → 재사용 가능한 skill 문서화 (4단계지만 "블랙박스"가 아님)
+- 한계 인지: 실제 pentest 안 함, regression test 없음 — **추후 todo로 명시**
+- 학습: 자동화 도구가 'what you stopped thinking about' blind spot을 인간 reviewer보다 잘 찾음
 
 ## 자기 룰 (이 답변의 핵심 가치)
 
