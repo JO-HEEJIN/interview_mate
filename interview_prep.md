@@ -451,6 +451,164 @@ InterviewMate에서 실제 영향받은 테이블은 `star_stories`(사용자 ST
 
 ---
 
+## 답변 7 Deep Dive — 논문 내용으로 들어오는 질문들
+
+### Q7-A. "STAR은 어떻게 작동하는 거예요? Mechanism은?" (가장 중요)
+
+"메커니즘은 Task step에 있습니다. 일반적인 chain-of-thought는 '단계적으로 생각해라'고 시키지만, STAR은 그 전에 **목표를 명시적으로 적게** 만듭니다.
+
+STAR 없이 모델은 '100미터' → distance heuristic → '걸어가라'로 직진합니다. 차를 세차하는 목적은 input에 있지만, 모델은 그걸 결론 내기 전에 처리할 의무가 없어요. 목표를 건너뛰고 잘못된 변수를 최적화합니다.
+
+STAR은 generation 순서를 강제합니다:
+
+```
+Situation: I want to wash my car. The car wash is 100 meters away.
+Task: ___  ← 여기서 fork가 일어남
+```
+
+모델이 'Task: Get your car to the car wash'라고 쓰면 **차가 goal의 주어**가 됩니다. 그러면 drive가 자연스럽게 따라와요. 반대로 'Task: Get yourself and your car cleaned'라고 쓰면 사람이 주어로 돌아오고, walk가 다시 plausible해집니다.
+
+실제 per-trial 데이터가 이 가설과 일치합니다. C_role_star의 17개 통과 trial 전부에서 Task statement의 주어가 '차'였고, 3개 실패 trial 전부에서 주어가 '사람'이었습니다.
+
+논문 Section 5.1에서 이걸 'STAR은 모델에게 새로운 정보를 주지 않는다. 이미 가진 정보를 다음 단계로 넘어가기 전에 적어두게 만들 뿐'이라고 정리했습니다. Explicit text가 autoregressive generation에서 직접적인 weight를 가지니까요."
+
+### Q7-B. "그게 chain-of-thought랑 뭐가 달라요?"
+
+"좋은 질문입니다. 둘 다 'reasoning을 explicit하게 만든다'는 점은 같습니다. 차이는 **goal articulation의 강제 여부**입니다.
+
+Chain-of-thought는 'think step by step'을 시킵니다. Sequence of reasoning steps을 요구하지만, **무엇을 향한 reasoning인지는 명시 안 합니다**. 모델은 결론을 먼저 잡고 단계를 쌓아갈 수 있습니다 — Lanham et al. (2023), Turpin et al. (2023)이 보여준 post-hoc rationalization 패턴이죠.
+
+STAR의 Task step은 'now, before you reason about *how*, write down *what* you are trying to accomplish'를 강제합니다. 이게 결정적입니다. Task를 쓰는 순간 그 텍스트가 autoregressive context에 들어가고, 이후 generation이 거기에 conditioned됩니다. 즉 STAR은 **CoT의 일반적인 sequential reasoning에 explicit goal naming을 추가한 형태**예요.
+
+논문 Section 2 'Where STAR Fits' 부분에서 이 distinction을 다뤘는데, 한 줄로 요약하면: **general step-by-step reasoning vs. explicit goal articulation before reasoning**입니다."
+
+### Q7-C. "n=20인데 그게 통계적으로 의미 있나요?"
+
+"솔직하게 말씀드리면 **pilot study 규모**입니다. 그 점을 두 논문 모두 Limitations에서 명시했습니다.
+
+다만 두 가지 방어 포인트는 있습니다.
+
+첫째, C vs D의 차이(85% vs 30%) 는 effect size가 큽니다. Fisher's exact test로 p=0.001, odds ratio 13.22 나옵니다. 작은 sample이라도 effect가 크면 statistical significance는 확보됩니다. 문제는 confidence interval이 넓다는 점인데, 그건 'STAR이 정확히 몇 pp 효과인가'에는 영향 줘도 'STAR > Profile'이라는 ordinal 결론에는 영향 안 줍니다.
+
+둘째, **후속 논문에서 n=100 verification**을 돌렸습니다. C_star_only가 Sonnet 4.6에서 100/100을 기록했어요. Pilot study가 거짓일 가능성을 직접 검증한 거예요.
+
+만약 더 큰 sample이 필요하다고 면접관이 push하면 솔직하게:
+> '맞습니다. 두 번째 논문 limitations에서 직접 인정하고 있는데, A_star_anthropic과 B_star_default는 n=20에서 멈췄습니다. 추가 verification은 cost와 시간 tradeoff였고, 더 정확하게는 industrial budget이 있는 환경이라면 그룹당 n=100~500이 적절합니다.'"
+
+### Q7-D. "Conclusion-first ordering이 핵심이라고 하셨는데, 어떻게 발견하셨어요?"
+
+"우연한 캡쳐였습니다. Production InterviewMate에서 'Experiment' 프로파일에 첫 논문의 STAR prompt를 verbatim 넣어서 테스트했는데, 이런 응답이 나왔습니다:
+
+```
+**Short answer: Walk.**
+
+**STAR breakdown:**
+- Situation: Car wash is 50 meters away
+- Task: Get your car washed efficiently
+- Action: Walk there first to confirm, then **drive your car** to the wash
+- Result: No fuel wasted
+
+**The real nuance:** You *have* to drive the car there — it's getting washed.
+**Bottom line:** Drive your car to the wash.
+```
+
+이게 결정적 증거예요. 보세요:
+
+1. 'Short answer: Walk.'를 먼저 출력 — InterviewMate prompt의 'Lead with specifics' 지시문에 반응한 거.
+2. STAR breakdown이 그 후에 실행됨 — 그리고 implicit constraint를 **정확히 식별**합니다 ('you have to drive the car there').
+3. 마지막에 자기 정정까지 함 ('Bottom line: Drive').
+4. **하지만 streaming context에서는 사용자가 'Walk'를 먼저 봅니다.**
+
+즉 STAR이 작동하지 않은 게 아닙니다. STAR은 정상 작동했고, constraint도 식별했어요. 문제는 **결론이 reasoning보다 먼저 generation됐다**는 점입니다. Autoregressive generation에서 'Walk' token이 emit되는 순간 그게 context에 들어가고, 이후 모든 token이 그 conditioning을 받습니다. STAR breakdown은 genuine inference가 아니라 이미 commit된 결론에 대한 post-hoc rationalization이 됩니다.
+
+이게 Chen et al. (2024)의 premise order matters 결과와 직결됩니다. 같은 mechanism이 production prompt에서 활성화된 거예요."
+
+### Q7-E. "그럼 InterviewMate prompt를 어떻게 고치셨어요?"
+
+"솔직히 **아직 고치지 못했습니다**. 두 번째 논문의 결과로 알게 된 건 'prompt를 어떻게 고쳐야 하는지 방향'이지 'fix가 완료됐다'는 게 아니에요.
+
+방향은 명확합니다. 'Lead with specifics' / 'Point first' 같은 conclusion-first 지시문을 빼거나, STAR 다음으로 옮겨야 합니다. 또는 STAR을 prompt의 끝쪽으로 옮겨서 recency bias를 활용하는 방법도 있어요 (Liu et al. 2024의 lost-in-the-middle 결과).
+
+후속 논문 Section 11에 future work으로 적었습니다:
+- Prompt evolution replay: git history에서 prompt 시점별로 reconstruct해서 dilution이 시작된 tipping point 찾기
+- Instruction ordering ablation: STAR을 prompt의 first / middle / last 위치에 두고 실험
+
+이게 다음 논문 주제이거나 production fix의 근거가 될 거예요."
+
+### Q7-F. "Claude만 테스트하셨는데, GPT-4나 Gemini에서도 같은 결과 나올까요?"
+
+"두 논문에서는 Claude만 테스트했고, 이게 가장 큰 limitation입니다. 두 논문 limitations에 명시했어요.
+
+다만 **세 번째 미발표 논문**(`cross_model_paper.md`, 2026-03-20)에서 GPT-4o와 Gemini 2.5 Pro로 확장했습니다. 이력서의 두 편에는 포함 안 돼있지만, preliminary 결과는 다음과 같습니다:
+
+- 동일한 STAR-only prompt를 세 모델에 적용
+- 모델별로 effectiveness가 다르게 나옴 — 'Structured Reasoning Frameworks Are Model-Dependent'가 가설
+
+이건 아직 진행 중이라 face value로 들리지 마세요. 면접관이 'multi-model generalization 어디까지 확인했어?'로 들어오면:
+
+> '두 publishedp 논문은 Claude에 한정했고, 그건 가장 큰 limitation입니다. Cross-model 연구는 진행 중인데 결과가 model-dependent로 나와서 STAR이 universal하다고 주장 못 할 가능성이 큽니다. 이건 publication 시점에 정확하게 reframe할 부분입니다.'"
+
+### Q7-G. "Profile injection이 왜 30%밖에 안 됐어요? 정보를 더 줬는데 왜 더 못해요?"
+
+"이게 첫 논문에서 우리가 가장 놀랐던 결과입니다. D_role_profile은 Sarah가 2022 Honda Civic을 운전한다, 집에 주차돼있다, 본인은 집에 있다는 사실을 다 줬어요. 답을 내기에 충분한 정보입니다. 그런데 30%.
+
+문제는 정보가 없는 게 아니라 **정보를 reasoning에 끌어다 쓸 trigger가 없다**는 점입니다. Context window에 facts가 있다고 모델이 적절한 순간에 그걸 활용하는 건 별개예요. 구조가 없으면 모델은 여전히 input→output 최단 경로를 탑니다. '100미터' → distance heuristic → '걸어' — 차의 위치라는 fact가 reasoning chain에 들어올 기회 자체가 없어요.
+
+이게 논문의 가장 actionable한 insight입니다. AI 시스템 실패에 흔한 해결책이 '더 많은 context를 주자'인데, 우리 결과는 **그게 잘못된 first move**라고 시사합니다. **How 모델이 정보를 처리하느냐**가 **how much 정보를 받느냐**보다 더 중요합니다. Profile (모든 사실 있음) 30%, STAR (사실 없음) 85%. p=0.001.
+
+비형식적으로 말하면: 지능은 머리에 얼마나 많이 담느냐가 아닙니다. 집을 나가기 전에 키를 챙길 줄 아는 거예요."
+
+### Q7-H. "Recovery paradox라는 것도 발견하셨다고요? 그건 뭐예요?"
+
+"역설적인 패턴이었는데, **C_role_star가 first-pass accuracy는 가장 높았지만(85%) recovery rate는 가장 낮았어요(67%).** A_bare와 B_role_only는 0% pass인데 challenge 후 95-100% recover. F_role_star_profile은 더 극단적이어서 1개 실패가 recovery 0% — 한 번 틀리면 못 고침.
+
+처음엔 이걸 어떻게 해석할지 몰랐어요. 직관에 반하잖아요 — 똑똑한 system이 자기 실수를 더 못 고친다니.
+
+설명은 token-level mechanism입니다. A/B 실패는 unstructured 응답이라 challenge prompt가 redirect하기 쉬워요. 잘못된 답을 anchor하는 게 별로 없으니까. 반면 C/F 실패는 **full STAR-structured argument**로 실패합니다. 모델이 Situation → Task → Action → Result를 완성한 후 walk를 추천했다면, 그 모든 prior tokens가 context에 들어가있어요. 'Are you sure?'로는 못 뒤집습니다 — 자기가 방금 쓴 structured argument를 contradict해야 하니까.
+
+인간 비유로 'thought it through한 사람이 더 convince하기 어렵다'고 할 수 있는데, mechanism은 psychological이 아니라 token-level입니다. Prior generated text가 subsequent generation을 constrain하는 거예요.
+
+Practical 함의: structured reasoning을 쓴 시스템에서 follow-up correction은 'are you sure?'로 안 됩니다. 어느 구체 step이 틀렸는지 — 이 경우 Task formulation이 사람 중심이었던 점 — 을 지목해야 합니다."
+
+### Q7-I. "Future work으로 뭘 하고 싶으세요?"
+
+"세 가지 방향이 있습니다.
+
+**첫째, Mechanistic interpretability.** 우리 결과는 behavioral level입니다 — STAR이 효과를 낸다는 건 보지만, 모델 안에서 무엇이 다르게 작동하는지는 모릅니다. Task step이 있을 때 어떤 attention head가 다르게 활성화되는지, 이게 prompt-specific인지 generalizable한 mechanism인지. 이건 Anthropic, EleutherAI 같은 interpretability팀과 collaboration하면 좋을 영역입니다.
+
+**둘째, Prompt complexity의 degradation curve.** 두 번째 논문이 10줄 vs 60줄 binary였는데, 그 사이를 mapping해야 합니다. 20, 30, 40, 50줄에서 어디서 dilution이 시작되는지. Continuous인지 phase transition인지.
+
+**셋째, Cross-task generalization.** Car wash는 implicit physical constraint 한 가지입니다. STAR이 temporal constraint, social context inference, causal chain reasoning에서도 같은 효과를 내는지 확인해야 합니다. 안 그러면 이 연구는 단일 task에서의 prompt engineering trick으로 남습니다.
+
+가장 즉시 가능한 건 두 번째 (degradation curve)고, 가장 영향력 있는 건 첫 번째 (interpretability)예요."
+
+### Q7-J. "왜 두 번째 논문을 first paper 정정(correction)이 아닌 separate paper로 냈어요?"
+
+"의도적이었습니다. 세 가지 이유입니다.
+
+첫째, **새로운 finding이 stand-alone으로 충분합니다.** 'STAR이 isolated 환경에서 잘 작동한다'와 'STAR이 production prompt에서 무너진다'는 다른 phenomenon이에요. 두 번째 finding은 첫 번째 결과를 정정하는 부수 효과를 가지지만, finding 자체는 independent contribution입니다.
+
+둘째, **arXiv에서 correction은 일반적으로 minor errata에 쓰입니다.** 새로운 실험(n=20×3 + n=100 verification)을 동반한 결과를 errata 형태로 내면 visibility도 낮고 적절한 venue도 아닙니다.
+
+셋째, **post-hoc정정으로 묶으면 두 번째 finding의 mechanism analysis가 묻힙니다.** 'Conclusion-first ordering'은 그 자체로 prompt engineering의 design principle인데, 첫 논문의 footnote로 만들면 그 design principle이 잘 안 보입니다.
+
+대신 두 번째 논문의 Section 8을 별도로 두고 거기서 명시적으로 정정했습니다 — 'corrections to the original study' 섹션이 따로 있습니다. 둘 다 readable하고 cross-referenced 되어있고, 그게 academic integrity와 contribution clarity의 균형점이라고 봤습니다."
+
+---
+
+## 답변 7 Deep Dive — 자주 묻힐 critique 질문 빠른 응답
+
+| 면접관 질문 | 1-2문장 응답 |
+|---|---|
+| "n=20는 너무 작은 거 아닌가요?" | "맞습니다, pilot study 규모로 명시했어요. 두 번째 논문에서 C_star_only를 n=100으로 verification 했고, effect size가 커서 Fisher's p=0.001로 ordinal 결론은 안전합니다." |
+| "Temperature 0.7인데, 다른 값에서도 같은 효과 나와요?" | "Temperature sweep은 안 했습니다. 0.7은 ryan-allen/car-wash-evals와 일치시키려고 골랐고, 0으로 두면 결과가 binary로 collapse돼서 per-layer contribution을 isolation 못 합니다. Sweep은 future work입니다." |
+| "왜 거리를 50m에서 100m로 바꿨어요?" | "ryan-allen 벤치마크와 align하려고요. 그리고 100m가 'just walk' heuristic을 더 유혹적으로 만들어서 implicit reasoning이 더 강하게 필요한 조건이 됩니다 — 즉 STAR effect를 더 명확히 분리할 수 있습니다." |
+| "Scoring을 word matching에서 intent matching으로 바꿨다고 했는데, scoring이 cherry-picking 아닌가요?" | "투명하게 둘 다 보고했습니다. Run 1은 'walk'/'drive' word matching이었는데 'walk to car then drive' 같은 case가 ambiguous로 분류돼서 모든 condition이 0%로 나왔어요 — scorer가 intent를 측정 못 한 거였습니다. Run 2에서 pass/fail pattern 23개로 바꿨고, 그 14+9 패턴은 논문에 그대로 공개돼있어 reproducible합니다." |
+| "Ryan Allen 작업이 있는데 차별점은?" | "Ryan Allen은 cross-model benchmark입니다 — '어느 모델이 실패하나'. 우리는 within-model variable isolation입니다 — '같은 모델에서 어느 prompt layer가 실패를 fix하나'. 출발 baseline은 같지만 question이 다릅니다." |
+| "DeepSeek prediction을 왜 넣었어요? 그게 무슨 의미가 있어요?" | "Supplementary observation일 뿐입니다 — core finding 아님. DeepSeek이 ordering(C>D)은 맞췄지만 magnitude를 35pp underestimate한 게 흥미로워서 넣었습니다. 'LLM이 LLM의 prompt 효과를 잘 못 예측한다'를 보여주는 작은 data point요." |
+
+---
+
 ## 키워드 흐름
 
 **답변 1:**
