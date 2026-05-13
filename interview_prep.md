@@ -168,6 +168,63 @@ SDK 호출되고 이벤트 들어오는 것까지는 됐는데, 메트릭 정의
 
 ---
 
+## 사실 베이스라인 — Contamination Prevention
+
+| 주장 | 검증 결과 | 위치 |
+|---|---|---|
+| Qdrant payload에 user_id 저장 | ✅ | `qdrant_service.py:126-130` |
+| Qdrant search `must` filter (user_id) | ✅ | `qdrant_service.py:257-263` |
+| LRU cache key `f"{user_id}:{normalized_q}"` | ✅ | `claude.py:414, 453` |
+| user_id 없으면 cache skip (안전장치) | ✅ | `claude.py:407-409` |
+| Cross-user prefix filtering | ✅ | `claude.py:426-427` |
+| `find_relevant_qa_pairs(user_id=...)` | ✅ | `claude.py:289-294` |
+| Per-user `_qa_indices` dict | ✅ | `claude.py:511-527` |
+| Supabase RLS on qa_pairs | ✅ | `migrations/002:25, 28-38` |
+| RLS on interview_sessions, session_messages | ✅ | `migrations/032:77-90` |
+| Session 변수 connection-local | ✅ | `websocket.py:348-367` |
+| Audio = streaming pipes only, no disk write | ✅ | `deepgram_service.py` 전체 |
+| Example dedup 스코프 | ⚠️ **per-session** (per-user 아님) | `websocket.py:366`, `migrations/032:116-128` |
+| `clear_cache()` 글로벌 wipe | ⚠️ **알려진 갭** — 모든 동시접속자 영향 | `claude.py:468-473` |
+
+---
+
+## 답변 4 — User_id Split Contamination 방지
+
+### 1차 답변 (45초)
+
+"user_id scoping은 access control에 해당하고, contamination(데이터 교차 오염)은 별개 문제로 분리해서 다뤘습니다.
+
+InterviewMate에서 세 가지 contamination 벡터를 분리해서 처리했습니다.
+
+**첫째, Qdrant 벡터 스토어.** 모든 임베딩 payload에 user_id를 저장하고, semantic search 쿼리는 `must` filter clause로 user_id 매칭을 강제합니다. 사용자 A의 이력서 컨텍스트가 사용자 B의 RAG 결과에 섞이지 않게 했습니다.
+
+**둘째, in-memory LRU cache.** Cache key를 `user_id:question_hash` 형태로 namespace 분리했고, user_id가 없으면 아예 cache를 skip하는 안전장치까지 넣었습니다. 같은 질문을 두 사용자가 해도 각자의 배경 기반 답변을 받게 됩니다.
+
+**셋째, session history.** WebSocket connection-local 변수로 관리하고, example deduplication은 per-session scope로 동작합니다. 공유 example pool 없음."
+
+### 2차 답변 (면접관이 더 깊이 물으면)
+
+"가장 paranoid하게 신경 쓴 영역은 semantic cache였습니다. Cache hit은 정의상 공유 응답이기 때문입니다. Cache key를 user-scoped로 만들고, 추가로 iteration할 때 prefix check를 한 번 더 해서 같은 사용자가 같은 질문 패턴을 보낼 때만 cache hit이 발생하게 했습니다.
+
+Zero audio storage도 가장 명백한 contamination surface를 제거하는 결정이었습니다. 오디오는 FFmpeg asyncio subprocess의 stdin/stdout 파이프로만 흐르고 Deepgram에 직접 stream됩니다. 디스크, S3, Supabase storage 어디에도 persist되지 않습니다. 저장 안 하면 leak할 수 없으니까요.
+
+디자인 원칙은 RLS를 데이터베이스에서 끝내지 않고 **모든 레이어** — Qdrant 벡터 스토어, in-memory cache, WebSocket session memory — 에 일관되게 적용하는 것이었습니다. Supabase RLS는 `qa_pairs`, `interview_sessions`, `session_messages` 테이블에 모두 `auth.uid() = user_id` 정책으로 적용돼있고, 애플리케이션 레이어가 그걸 우회할 수 없게 모든 query에서 user_id를 명시적으로 전달합니다."
+
+### 💡 면접관이 깊이 물을 때 — 알려진 갭
+
+"한 가지 알고 있는 갭은 `clear_cache()`가 글로벌 singleton wipe라는 점입니다 (`claude.py:468-473`). 사용자 A가 cache clear 요청을 보내면 사용자 B의 in-memory cache까지 함께 비워집니다.
+
+**데이터 누출은 아닙니다** — 키가 `user_id:` prefix로 namespace 분리돼있어서 다른 유저 데이터를 읽을 수 없습니다. 하지만 **DoS 벡터**입니다. 사용자 A가 사용자 B의 working cache를 의도적으로 무효화할 수 있어요.
+
+수정 방법은 `clear_cache(user_id)` 시그니처로 바꿔서 해당 prefix entry만 삭제하면 됩니다. contamination은 아니지만 multi-tenancy 관점에서 고쳐야 할 사항으로 인지하고 있습니다."
+
+### 🚨 미세 정확성 보정 (원본 답변 대비)
+
+- ⚠️ "Example deduplication도 per-user scope" → 정확히는 **per-session(connection-local)**. 한 사용자가 두 세션을 돌리면 첫 세션 example이 두 번째 세션에 dedup되지 않음. 사용자 관점 결과는 비슷하지만 면접관이 정확히 물으면 *per-session*이 맞음.
+- ✅ 나머지 주장은 모두 코드로 검증됨 (위 베이스라인 테이블 참조).
+
+---
+
 ## 키워드 흐름
 
 **답변 1:**
@@ -191,6 +248,14 @@ SDK 호출되고 이벤트 들어오는 것까지는 됐는데, 메트릭 정의
 - 학습 2: MVP 솔로 단계 = 관찰이 실험보다 실용적, 인프라는 선제적으로
 - 학습 3: prompt 복잡도가 reasoning structure를 희석 (car wash 연구 연결)
 - 학습 4: outcome metric의 construct validity — 👍/👎는 prompt 스타일 평가가 아니라 답변 전반 평가. confounder 다수. within-user comparison이나 retention 기반 측정이 더 valid했을 것
+
+**답변 4:**
+- Access control vs Contamination 개념 분리
+- 3 벡터: Qdrant must filter / LRU cache user_id namespacing / WS session 변수 connection-local
+- Zero audio storage = pipes only, no persistence (가장 명백한 surface 제거)
+- 다층 RLS: DB(Supabase auth.uid()) + 애플리케이션(user_id explicit pass) + cache(prefix namespace)
+- 알려진 갭: `clear_cache()` 글로벌 wipe = DoS 벡터 (contamination 아님)
+- 미세 보정: example dedup은 per-user 아닌 **per-session** scope
 
 ## 자기 룰 (이 답변의 핵심 가치)
 
