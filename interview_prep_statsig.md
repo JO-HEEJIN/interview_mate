@@ -52,6 +52,33 @@
 - ❌ "Context-aware toggle을 만들었다 / 시스템이 세션 타입을 감지해서 모드를 기본값으로 설정한다" — 존재하지 않는 기능.
 - ❌ "사용자가 override 가능" — UI에 그런 버튼 없음 (👍👎는 feedback 수집용이지 variant 선택 아님).
 
+### 💡 A/B Test 메커니즘 이해 (면접관이 깊이 물을 때)
+
+**자주 헷갈리는 점 (본인도 처음에 헷갈렸음):**
+
+> "👍는 Socratic 선호, 👎는 Directive 선호 아니야?"
+
+**아니에요.** 메커니즘은 이렇게 작동합니다:
+
+```
+로그인 시점:
+  user_id → hash → 50% 확률로 A 또는 B 배정 → 영구 고정
+
+세션 진행:
+  A 그룹 사용자 → 항상 Directive 답변만 받음 → 👍/👎 누름
+  B 그룹 사용자 → 항상 Socratic 답변만 받음 → 👍/👎 누름
+
+각 user_id의 모든 👍/👎는 자기 그룹 버킷으로 들어감.
+"어느 버튼을 눌렀냐"가 아니라 "어느 그룹에서 누가 눌렀냐"가 attribution.
+```
+
+따라서:
+- Socratic 그룹 사용자가 👍 1번 + 👎 1번 누르면 → Socratic mean rating = 0
+- Directive 그룹에는 그 사용자 데이터 안 들어감
+- 그 사용자가 어느 그룹인지는 `hash(user_id)`로 결정됨, 사용자는 모름
+
+**핵심:** randomization으로 두 그룹의 confounder(노이즈)를 평균적으로 동일하게 만든 뒤, 그룹 간 outcome 차이를 prompt 스타일 효과로 귀속시키는 게 A/B test의 논리. sample size가 커야 그 귀속이 통계적으로 valid함.
+
 ---
 
 ## 답변 3 — Statsig A/B Test 결과 (정직 카드)
@@ -73,7 +100,9 @@ SDK 호출되고 이벤트 들어오는 것까지는 됐는데, 메트릭 정의
 
 **둘째, MVP 솔로 제품에서 sample size가 안 나오는 단계에서는 통제된 실험보다 사용 로그 기반 행동 관찰이 더 실용적인 경우가 많습니다.** 어느 단계에 어느 도구를 쓰는지 판단하는 게 중요합니다. 다만 인프라는 미리 깔아두면 트래픽 늘었을 때 즉시 활용 가능합니다. 그래서 지금 단계에서도 인프라 자체는 유지하는 게 합리적이라고 봤습니다.
 
-**셋째, prompt 설계 자체가 결과에 압도적인 영향을 줄 수 있습니다.** 별도 연구에서 확인한 게 있는데, 10줄짜리 STAR reasoning prompt는 단독 환경에서 100% 정답률을 보이지만 60줄짜리 production prompt에 같은 STAR 구조를 끼워넣으면 효과가 거의 사라집니다. prompt 복잡도가 structured reasoning을 희석시킨다는 결과인데, 이건 이번 A/B test가 측정하려는 directive vs socratic 효과보다 잠재적으로 훨씬 큰 변수입니다. 그래서 prompt를 함부로 늘리지 않고 두 variant를 비슷한 분량으로 유지하려고 했습니다."
+**셋째, prompt 설계 자체가 결과에 압도적인 영향을 줄 수 있습니다.** 별도 연구에서 확인한 게 있는데, 10줄짜리 STAR reasoning prompt는 단독 환경에서 100% 정답률을 보이지만 60줄짜리 production prompt에 같은 STAR 구조를 끼워넣으면 효과가 거의 사라집니다. prompt 복잡도가 structured reasoning을 희석시킨다는 결과인데, 이건 이번 A/B test가 측정하려는 directive vs socratic 효과보다 잠재적으로 훨씬 큰 변수입니다. 그래서 prompt를 함부로 늘리지 않고 두 variant를 비슷한 분량으로 유지하려고 했습니다.
+
+**넷째, outcome metric의 construct validity도 처음부터 신경 썼어야 했습니다.** 지금 Primary metric으로 쓰는 👍/👎 feedback은 사실 'prompt 스타일에 대한 평가'가 아니라 '방금 받은 답변 전반에 대한 평가'입니다. latency, 모델 품질, RAG 컨텍스트, 질문 난이도 같은 confounder가 다 섞여 들어옵니다. randomization으로 이 노이즈를 상쇄하려면 sample size가 더 커야 하는데, 그게 안 되는 단계에서는 더 직접적인 outcome — 예를 들어 같은 질문에 두 답변을 보여주고 사용자가 선택하게 하는 within-user comparison, 또는 며칠 후 같은 질문을 다시 했을 때의 retention 기반 학습 효과 — 같은 측정을 설계했어야 한다는 회고가 있습니다."
 
 ### 🚨 절대 말하지 말 것
 
@@ -99,6 +128,7 @@ SDK 호출되고 이벤트 들어오는 것까지는 됐는데, 메트릭 정의
 - 학습 1: 인프라 ≠ 활용 (메트릭 정의가 핵심)
 - 학습 2: MVP 솔로 단계 = 관찰이 실험보다 실용적, 인프라는 선제적으로
 - 학습 3: prompt 복잡도가 reasoning structure를 희석 (car wash 연구 연결)
+- 학습 4: outcome metric의 construct validity — 👍/👎는 prompt 스타일 평가가 아니라 답변 전반 평가. confounder 다수. within-user comparison이나 retention 기반 측정이 더 valid했을 것
 
 ## 자기 룰 (이 답변의 핵심 가치)
 
