@@ -19,6 +19,20 @@ def get_supabase() -> Client:
     return create_client(settings.SUPABASE_URL, settings.SUPABASE_SERVICE_ROLE_KEY)
 
 
+# Default custom_instructions for brand-new profiles. Mirrors the template
+# shown on the /guide page so users see the same text in both places.
+# NOTE: duplicate_profile() bypasses this Pydantic default and copies the
+# source profile's custom_instructions verbatim — intentional.
+DEFAULT_STAR_PROMPT = """You are an expert advisor helping people make practical decisions. Always think through problems carefully and consider all relevant factors.
+When answering any question, use the STAR method:
+- Situation: What is the actual situation being described?
+- Task: What needs to be accomplished?
+- Action: What action achieves the task given the situation?
+- Result: What outcome does this action produce?
+
+Provide clear, actionable recommendations."""
+
+
 # Pydantic Models
 class InterviewProfileCreate(BaseModel):
     profile_name: str = Field(..., min_length=1, max_length=100)
@@ -29,7 +43,7 @@ class InterviewProfileCreate(BaseModel):
     technical_stack: Optional[List[str]] = []
     answer_style: Optional[str] = Field(default="balanced", pattern="^(concise|balanced|detailed)$")
     key_strengths: Optional[List[str]] = []
-    custom_instructions: Optional[str] = None
+    custom_instructions: Optional[str] = DEFAULT_STAR_PROMPT
     is_default: Optional[bool] = False
 
 
