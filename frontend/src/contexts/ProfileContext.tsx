@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react';
 import { supabase } from '@/lib/supabase';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -27,6 +27,7 @@ interface ProfileContextType {
     profiles: Profile[];
     activeProfile: Profile | null;
     isLoading: boolean;
+    isCreating: boolean;
     error: string | null;
     switchProfile: (profileId: string) => void;
     createProfile: (name: string, data?: Partial<Profile>) => Promise<Profile | null>;
@@ -47,8 +48,15 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
     const [profiles, setProfiles] = useState<Profile[]>([]);
     const [activeProfile, setActiveProfile] = useState<Profile | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [isCreating, setIsCreating] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [userId, setUserId] = useState<string | null>(null);
+
+    // Ref-based lock for createProfile — prevents double-submit (button mash,
+    // React strict-mode re-render, etc.) from sending a second POST that the
+    // backend would reject with a 400 ("profile already exists") because the
+    // first request just succeeded.
+    const createInFlightRef = useRef(false);
 
     // Load profiles when user is authenticated
     const loadProfiles = useCallback(async (uid: string) => {
@@ -134,6 +142,13 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
     // Create a new profile
     const createProfile = useCallback(async (name: string, data?: Partial<Profile>): Promise<Profile | null> => {
         if (!userId) return null;
+        if (createInFlightRef.current) {
+            console.warn('[ProfileContext] createProfile already in flight — ignoring duplicate call');
+            return null;
+        }
+
+        createInFlightRef.current = true;
+        setIsCreating(true);
 
         try {
             const response = await fetch(`${API_URL}/api/interview-profiles/${userId}`, {
@@ -164,6 +179,9 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
             console.error('Failed to create profile:', err);
             setError(err.message);
             return null;
+        } finally {
+            createInFlightRef.current = false;
+            setIsCreating(false);
         }
     }, [userId, loadProfiles]);
 
@@ -303,6 +321,7 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
         profiles,
         activeProfile,
         isLoading,
+        isCreating,
         error,
         switchProfile,
         createProfile,

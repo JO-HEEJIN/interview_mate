@@ -14,7 +14,14 @@ interface ProfileSelectorProps {
 }
 
 export function ProfileSelector({ compact = false }: ProfileSelectorProps) {
-    const { profiles, activeProfile, isLoading, switchProfile, createProfile } = useProfile();
+    const {
+        profiles,
+        activeProfile,
+        isLoading,
+        isCreating: isSubmitting,
+        switchProfile,
+        createProfile,
+    } = useProfile();
     const [isOpen, setIsOpen] = useState(false);
     const [isCreating, setIsCreating] = useState(false);
     const [newProfileName, setNewProfileName] = useState('');
@@ -40,6 +47,7 @@ export function ProfileSelector({ compact = false }: ProfileSelectorProps) {
             setCreateError('Profile name is required');
             return;
         }
+        if (isSubmitting) return; // double-submit guard (UI side)
 
         const result = await createProfile(newProfileName.trim());
         if (result) {
@@ -196,9 +204,10 @@ export function ProfileSelector({ compact = false }: ProfileSelectorProps) {
                             <div className="mt-2 flex gap-2">
                                 <button
                                     onClick={handleCreate}
-                                    className="flex-1 rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
+                                    disabled={isSubmitting}
+                                    className="flex-1 rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                    Create
+                                    {isSubmitting ? 'Creating…' : 'Create'}
                                 </button>
                                 <button
                                     onClick={() => {
@@ -206,7 +215,8 @@ export function ProfileSelector({ compact = false }: ProfileSelectorProps) {
                                         setNewProfileName('');
                                         setCreateError(null);
                                     }}
-                                    className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-600 hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-400 dark:hover:bg-zinc-800"
+                                    disabled={isSubmitting}
+                                    className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-600 hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-400 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     Cancel
                                 </button>
