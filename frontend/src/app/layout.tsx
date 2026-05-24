@@ -25,13 +25,13 @@ const jsonLd = {
   "name": "InterviewMate",
   "applicationCategory": "BusinessApplication",
   "operatingSystem": "Web Browser",
-  "description": "Real-time cheating for any interview. Job interviews, PhD defenses, visa interviews, school admissions - get AI-powered answers in under 2 seconds. Works on Zoom, Teams, Google Meet. Starting at $0.20/session.",
+  "description": "Real-time cheating for any interview. Job interviews, PhD defenses, visa interviews, school admissions - get AI-powered answers in under 2 seconds. Works on Zoom, Teams, Google Meet. 30 free sessions to start, then $0.17/session.",
   "url": "https://interviewmate.tech",
   "offers": {
     "@type": "Offer",
-    "price": "4.00",
+    "price": "10.00",
     "priceCurrency": "USD",
-    "description": "Starting at $4 for 10 sessions.",
+    "description": "30 free sessions to start. Popular pack: 60 sessions for $10. AI Q&A Generator and Q&A Management free on first profile.",
     "availability": "https://schema.org/InStock"
   },
   "aggregateRating": {

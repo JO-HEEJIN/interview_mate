@@ -7,11 +7,11 @@
   "operatingSystem": "Web Browser",
   "offers": {
     "@type": "Offer",
-    "price": "4.00",
+    "price": "10.00",
     "priceCurrency": "USD",
     "priceValidUntil": "2026-12-31",
     "availability": "https://schema.org/InStock",
-    "description": "10 sessions for $4."
+    "description": "30 free sessions on signup. Popular pack: 60 sessions for $10 ($0.17/session). AI Q&A Generator and Q&A Management free on first profile."
   },
   "description": "Real-time cheating for any interview. Job interviews, PhD defenses, visa interviews, school admissions - get AI-powered answers in under 2 seconds. Works on Zoom, Teams, Google Meet.",
   "features": [
