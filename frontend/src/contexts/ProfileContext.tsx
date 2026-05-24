@@ -133,6 +133,27 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
 
             lastLoadedUserIdRef.current = sessionUserId;
             await loadProfiles(sessionUserId);
+
+            // Try to claim any Lemon Squeezy purchases made before signup
+            // (guest-checkout case). Backend is idempotent so worst case is
+            // a no-op POST. localStorage flag keeps this to one shot per
+            // user per browser — set only on success so failures retry on
+            // the next session.
+            const reconcileKey = `ls_reconciled_${sessionUserId}`;
+            if (typeof window !== 'undefined' && !localStorage.getItem(reconcileKey)) {
+                fetch(`${API_URL}/api/lemon-squeezy/reconcile/${sessionUserId}`, { method: 'POST' })
+                    .then(res => (res.ok ? res.json() : null))
+                    .then(data => {
+                        if (data?.granted?.length) {
+                            console.info(`[ProfileContext] Reclaimed ${data.granted.length} prior LS purchase(s)`);
+                        }
+                        localStorage.setItem(reconcileKey, '1');
+                    })
+                    .catch(err => {
+                        // Don't set the flag — retry next session
+                        console.warn('[ProfileContext] LS reconcile failed:', err);
+                    });
+            }
         };
 
         const checkAuth = async () => {
