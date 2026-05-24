@@ -94,12 +94,19 @@ export default function QAPairsPage() {
         return () => subscription.unsubscribe();
     }, [router]);
 
-    // Fetch Q&A pairs when userId or activeProfile changes
+    // Fetch Q&A pairs when userId or activeProfile changes.
+    // If profile context has finished loading but the user has no profile
+    // yet (e.g. a brand-new signup), stop the loading spinner and let the
+    // render below show the "create a profile first" CTA — otherwise the
+    // page hangs on "Loading..." forever.
     useEffect(() => {
         if (userId && activeProfile) {
             fetchQAPairs();
+        } else if (userId && !activeProfile && !profileLoading) {
+            setIsLoading(false);
+            setQaPairs([]);
         }
-    }, [userId, activeProfile]);
+    }, [userId, activeProfile, profileLoading]);
 
     const fetchQAPairs = async () => {
         if (!userId || !activeProfile) return;
