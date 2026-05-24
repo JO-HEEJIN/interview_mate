@@ -375,3 +375,165 @@ async def handle_order_refunded(event_data: dict):
 
     except Exception as e:
         logger.error(f"Error handling refund: {e}", exc_info=True)
+
+
+# ============================================================================
+# Guest-checkout reconciliation
+# ============================================================================
+#
+# Background: Lemon Squeezy allows checkout without being logged in to our
+# app. Our normal flow injects user_id via custom_data so the webhook can
+# attribute the purchase. But if a user pays via a direct LS link and only
+# signs up *afterward*, the webhook fires with no user_id and the order is
+# stranded — they paid but our DB has no record.
+#
+# This endpoint lets the frontend "claim" any unclaimed orders for a user
+# by matching their account email against LS customer orders. Idempotent
+# via lemon_squeezy_order_id uniqueness check.
+
+
+def get_plan_code_for_variant(variant_id) -> Optional[str]:
+    """
+    Reverse mapping: LS variant_id → our plan_code.
+    Used during guest-checkout reconciliation to figure out what was bought.
+    """
+    # Normalize to string — LS API returns int, env vars are stored as str
+    vid = str(variant_id)
+    variant_mapping = {
+        str(settings.LEMON_SQUEEZY_VARIANT_CREDITS_STARTER): 'credits_starter',
+        str(settings.LEMON_SQUEEZY_VARIANT_CREDITS_POPULAR): 'credits_popular',
+        str(settings.LEMON_SQUEEZY_VARIANT_CREDITS_PRO):     'credits_pro',
+        str(settings.LEMON_SQUEEZY_VARIANT_AI_GENERATOR):    'ai_generator',
+        str(settings.LEMON_SQUEEZY_VARIANT_QA_MANAGEMENT):   'qa_management',
+    }
+    # Drop empty-string keys (unconfigured variants) before lookup
+    variant_mapping = {k: v for k, v in variant_mapping.items() if k}
+    return variant_mapping.get(vid)
+
+
+@router.post("/reconcile/{user_id}")
+async def reconcile_user_purchases(user_id: str):
+    """
+    Reclaim Lemon Squeezy purchases made before the user signed up.
+
+    Looks up the user's email, queries LS for paid orders to that email,
+    and creates user_subscriptions rows for any that don't already exist
+    (matched by lemon_squeezy_order_id).
+
+    Safe to call repeatedly — idempotent. Frontend calls this once per
+    user (gated by localStorage flag) right after first session load.
+    """
+    try:
+        if not settings.LEMON_SQUEEZY_API_KEY:
+            raise HTTPException(status_code=500, detail="LS API not configured")
+
+        supabase = get_supabase_client()
+
+        # Resolve email from user_id (Supabase admin API)
+        try:
+            user_response = supabase.auth.admin.get_user_by_id(user_id)
+            email = user_response.user.email if user_response and user_response.user else None
+        except Exception as e:
+            logger.error(f"Could not look up user {user_id}: {e}")
+            raise HTTPException(status_code=404, detail="User not found")
+
+        if not email:
+            raise HTTPException(status_code=404, detail="User has no email")
+
+        # Query LS orders for that email
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            ls_response = await client.get(
+                "https://api.lemonsqueezy.com/v1/orders",
+                headers={
+                    "Accept": "application/vnd.api+json",
+                    "Authorization": f"Bearer {settings.LEMON_SQUEEZY_API_KEY}",
+                },
+                params={
+                    "filter[user_email]": email,
+                    "filter[status]": "paid",
+                },
+            )
+
+        if ls_response.status_code != 200:
+            logger.error(f"LS API {ls_response.status_code} for reconcile of {email}: {ls_response.text[:300]}")
+            raise HTTPException(status_code=502, detail="Lemon Squeezy API error")
+
+        granted = []
+        skipped = []
+
+        for order in ls_response.json().get('data', []):
+            order_id = order['id']
+            attrs = order.get('attributes', {})
+            order_number = attrs.get('order_number')
+            first_item = attrs.get('first_order_item') or {}
+            variant_id = first_item.get('variant_id')
+
+            if not variant_id:
+                continue
+
+            plan_code = get_plan_code_for_variant(variant_id)
+            if not plan_code:
+                # Not one of our tracked plans — refund-only items, free
+                # tier, deleted variants, etc.
+                continue
+
+            # Idempotency: existing subscription for this exact order?
+            existing = supabase.table("user_subscriptions") \
+                .select("id") \
+                .eq("lemon_squeezy_order_id", order_number) \
+                .execute()
+            if existing.data:
+                skipped.append({"order_number": order_number, "plan_code": plan_code, "reason": "already reconciled"})
+                continue
+
+            # Fetch plan details (price, credits_amount, plan_type)
+            plan_result = supabase.table("pricing_plans") \
+                .select("*") \
+                .eq("plan_code", plan_code) \
+                .execute()
+            if not plan_result.data:
+                continue
+            plan = plan_result.data[0]
+
+            subscription_data = {
+                "user_id": user_id,
+                "plan_code": plan_code,
+                "plan_type": plan['plan_type'],
+                "status": "active",
+                "lemon_squeezy_order_id": order_number,
+                "lemon_squeezy_customer_id": attrs.get('customer_id'),
+                "metadata": {
+                    "order_id": order_id,
+                    "amount_paid": (attrs.get('total') or 0) / 100,
+                    "reconciled_from_email": email,
+                    "reconciled_at": datetime.now().isoformat(),
+                },
+            }
+
+            if plan['plan_type'] == 'credits':
+                credits_amount = plan.get('credits_amount', 0)
+                subscription_data.update({
+                    "credits_total": credits_amount,
+                    "credits_used": 0,
+                    "credits_remaining": credits_amount,
+                })
+            elif plan['plan_type'] == 'one_time' and plan_code == 'ai_generator':
+                subscription_data["usage_limit"] = 1
+
+            supabase.table("user_subscriptions").insert(subscription_data).execute()
+            granted.append({"order_number": order_number, "plan_code": plan_code})
+            logger.info(f"✅ Reconciled {plan_code} for {email} (order {order_number})")
+
+        return {
+            "user_id": user_id,
+            "email": email,
+            "granted": granted,
+            "skipped": skipped,
+            "summary": f"Granted {len(granted)}, skipped {len(skipped)} (already had)",
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Reconcile error for {user_id}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Reconciliation failed")
