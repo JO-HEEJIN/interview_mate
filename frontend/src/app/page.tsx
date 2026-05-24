@@ -218,55 +218,86 @@ export default function Home() {
             </span>
           </div>
           <h2 className="text-4xl font-bold text-zinc-900 dark:text-zinc-100 mb-6 sm:text-5xl">
-            Start at Just $0.20 per Session
+            Start with 30 Free Sessions
           </h2>
           <p className="text-xl text-zinc-600 dark:text-zinc-400 mb-8 max-w-2xl mx-auto">
-            10 sessions for just $4.
-            Works for any interview type. No subscription. Pay as you go.
+            Plus free AI Q&amp;A Generator and Q&amp;A Management on your first profile.
+            Personalize with custom instructions. No credit card required.
           </p>
 
           <div className="rounded-2xl border-2 border-zinc-200 bg-zinc-50 p-10 dark:border-zinc-700 dark:bg-zinc-900 mb-10">
+            <div className="inline-flex items-center gap-2 mb-3">
+              <span className="text-xs font-semibold uppercase tracking-wider text-blue-700 bg-blue-100 dark:bg-blue-900 dark:text-blue-200 px-3 py-1 rounded-full">
+                Most Popular
+              </span>
+            </div>
             <div className="text-6xl font-bold text-zinc-900 dark:text-zinc-100 mb-2">
-              $4
-              <span className="text-2xl font-normal text-zinc-500 dark:text-zinc-400"> / 10 sessions</span>
+              $10
+              <span className="text-2xl font-normal text-zinc-500 dark:text-zinc-400"> / 60 sessions</span>
             </div>
             <p className="text-zinc-500 dark:text-zinc-400 mb-6">
-              Just $0.40 per session
+              Just $0.17 per session
             </p>
-            <ul className="text-left max-w-md mx-auto space-y-3 mb-8">
-              <li className="flex items-center gap-3 text-zinc-700 dark:text-zinc-300">
-                <svg className="h-5 w-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                Real-time speech transcription
-              </li>
-              <li className="flex items-center gap-3 text-zinc-700 dark:text-zinc-300">
-                <svg className="h-5 w-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                AI-powered answer suggestions
-              </li>
-              <li className="flex items-center gap-3 text-zinc-700 dark:text-zinc-300">
-                <svg className="h-5 w-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                Works on all video platforms
-              </li>
-              <li className="flex items-center gap-3 text-zinc-700 dark:text-zinc-300">
-                <svg className="h-5 w-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                Under 2-second response time
-              </li>
-            </ul>
+
+            <div className="text-left max-w-md mx-auto mb-6">
+              <p className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
+                Free on your first profile:
+              </p>
+              <ul className="space-y-2">
+                <li className="flex items-start gap-3 text-zinc-700 dark:text-zinc-300">
+                  <svg className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  30 interview sessions
+                </li>
+                <li className="flex items-start gap-3 text-zinc-700 dark:text-zinc-300">
+                  <svg className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  AI Q&amp;A Generator (resume → Q&amp;A pairs)
+                </li>
+                <li className="flex items-start gap-3 text-zinc-700 dark:text-zinc-300">
+                  <svg className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Q&amp;A Management (edit, bulk upload)
+                </li>
+                <li className="flex items-start gap-3 text-zinc-700 dark:text-zinc-300">
+                  <svg className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Custom instructions (try our STAR template)
+                </li>
+              </ul>
+            </div>
+
+            <div className="text-left max-w-md mx-auto">
+              <p className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
+                Always included:
+              </p>
+              <ul className="space-y-2">
+                <li className="flex items-start gap-3 text-zinc-700 dark:text-zinc-300">
+                  <svg className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Real-time transcription, &lt; 2s answers
+                </li>
+                <li className="flex items-start gap-3 text-zinc-700 dark:text-zinc-300">
+                  <svg className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Works on Zoom, Teams, Google Meet
+                </li>
+              </ul>
+            </div>
           </div>
 
           <div className="flex flex-col gap-4 justify-center sm:flex-row">
             <Link
-              href="/interview"
+              href="/auth/register"
               className="flex h-14 items-center justify-center rounded-full bg-zinc-900 px-10 text-lg font-medium text-white transition-colors hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
             >
-              Start Interview Now
+              Get Started Free
             </Link>
             <Link
               href="/pricing"
