@@ -17,10 +17,15 @@ interface PricingPlan {
   display_order: number;
 }
 
+type FeatureSource = 'purchased' | 'first_profile_free' | 'locked';
+
 interface UserFeatures {
   interview_credits: number;
   ai_generator_available: boolean;
   qa_management_available: boolean;
+  ai_generator_source: FeatureSource;
+  qa_management_source: FeatureSource;
+  profile_count: number;
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -54,6 +59,9 @@ export default function PricingPage() {
             interview_credits: featuresData.interview_credits || 0,
             ai_generator_available: featuresData.ai_generator_available || false,
             qa_management_available: featuresData.qa_management_available || false,
+            ai_generator_source: featuresData.ai_generator_source || 'locked',
+            qa_management_source: featuresData.qa_management_source || 'locked',
+            profile_count: featuresData.profile_count ?? 0,
           });
         }
       }).catch(error => {
