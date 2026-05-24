@@ -35,7 +35,7 @@ export default function FAQPortuguesePage() {
             questions: [
                 {
                     q: "Qual é o preço?",
-                    a: "$10 por 10 créditos (1 crédito = 1 sessão de entrevista). Os créditos nunca expiram. Sem assinatura, pague apenas pelo que você usa."
+                    a: "Comece grátis com 30 sessões de teste. Pacotes pagos: 25 sessões por $5, 60 sessões por $10, 150 sessões por $20. Os créditos nunca expiram. Sem assinatura, pague apenas pelo que usar. Garantia de devolução de 7 dias em todas as compras."
                 },
                 {
                     q: "Como funciona?",
@@ -72,6 +72,13 @@ export default function FAQPortuguesePage() {
 
                 <div className="mt-12 text-center bg-blue-50 rounded-lg p-8">
                     <h3 className="text-2xl font-bold mb-4">Experimente o InterviewMate gratuitamente</h3>
+                    <p className="text-gray-600 mb-6">
+                        Dúvidas ou problemas? Escreva para{' '}
+                        <a href="mailto:info@birth2death.com" className="text-blue-600 hover:text-blue-700 underline">
+                            info@birth2death.com
+                        </a>
+                        . Garantia de devolução de 7 dias.
+                    </p>
                     <Link href="/auth/register" className="inline-block bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700">
                         Começar agora
                     </Link>

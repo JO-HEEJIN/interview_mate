@@ -35,7 +35,7 @@ export default function FAQKoreanPage() {
             questions: [
                 {
                     q: "가격은 얼마인가요?",
-                    a: "$10에 10 크레딧 (1 크레딧 = 1 면접 세션). 크레딧은 절대 만료되지 않습니다. 구독 없음, 사용한 만큼만 지불하면 됩니다."
+                    a: "무료로 30 세션부터 시작하세요. 유료 팩: 25 세션 $5, 60 세션 $10, 150 세션 $20. 크레딧은 절대 만료되지 않습니다. 구독 없이 사용한 만큼만 지불하세요. 모든 구매에 7일 환불 보장."
                 },
                 {
                     q: "어떻게 작동하나요?",
@@ -72,6 +72,13 @@ export default function FAQKoreanPage() {
 
                 <div className="mt-12 text-center bg-blue-50 rounded-lg p-8">
                     <h3 className="text-2xl font-bold mb-4">InterviewMate 무료로 체험하기</h3>
+                    <p className="text-gray-600 mb-6">
+                        문의 또는 문제가 있으신가요?{' '}
+                        <a href="mailto:info@birth2death.com" className="text-blue-600 hover:text-blue-700 underline">
+                            info@birth2death.com
+                        </a>
+                        으로 연락주세요. 7일 환불 보장.
+                    </p>
                     <Link href="/auth/register" className="inline-block bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700">
                         시작하기
                     </Link>

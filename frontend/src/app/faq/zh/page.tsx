@@ -35,7 +35,7 @@ export default function FAQChinesePage() {
             questions: [
                 {
                     q: "价格是多少？",
-                    a: "$10 可获得 10 个积分（1 积分 = 1 次面试）。积分永不过期。无订阅费用，仅为使用付费。"
+                    a: "免费开始 30 个试用积分。付费套餐：25 积分 $5，60 积分 $10，150 积分 $20。积分永不过期。无订阅费用，仅为使用付费。所有购买享 7 天退款保证。"
                 },
                 {
                     q: "如何工作？",
@@ -72,6 +72,13 @@ export default function FAQChinesePage() {
 
                 <div className="mt-12 text-center bg-blue-50 rounded-lg p-8">
                     <h3 className="text-2xl font-bold mb-4">免费试用 InterviewMate</h3>
+                    <p className="text-gray-600 mb-6">
+                        有问题或需要帮助吗？请发邮件至{' '}
+                        <a href="mailto:info@birth2death.com" className="text-blue-600 hover:text-blue-700 underline">
+                            info@birth2death.com
+                        </a>
+                        。7 天退款保证。
+                    </p>
                     <Link href="/auth/register" className="inline-block bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700">
                         立即开始
                     </Link>

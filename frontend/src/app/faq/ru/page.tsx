@@ -35,7 +35,7 @@ export default function FAQRussianPage() {
             questions: [
                 {
                     q: "Какая цена?",
-                    a: "$10 за 10 кредитов (1 кредит = 1 сессия собеседования). Кредиты никогда не истекают. Без подписки, платите только за то, что используете."
+                    a: "Начните бесплатно с 30 пробных сессий. Платные пакеты: 25 сессий за $5, 60 сессий за $10, 150 сессий за $20. Кредиты никогда не истекают. Без подписки, платите только за то, что используете. 7-дневная гарантия возврата средств на все покупки."
                 },
                 {
                     q: "Как это работает?",
@@ -72,6 +72,13 @@ export default function FAQRussianPage() {
 
                 <div className="mt-12 text-center bg-blue-50 rounded-lg p-8">
                     <h3 className="text-2xl font-bold mb-4">Попробуйте InterviewMate бесплатно</h3>
+                    <p className="text-gray-600 mb-6">
+                        Вопросы или проблемы? Пишите на{' '}
+                        <a href="mailto:info@birth2death.com" className="text-blue-600 hover:text-blue-700 underline">
+                            info@birth2death.com
+                        </a>
+                        . 7-дневная гарантия возврата.
+                    </p>
                     <Link href="/auth/register" className="inline-block bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700">
                         Начать сейчас
                     </Link>

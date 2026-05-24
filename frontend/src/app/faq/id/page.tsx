@@ -35,7 +35,7 @@ export default function FAQIndonesianPage() {
             questions: [
                 {
                     q: "Berapa harganya?",
-                    a: "$10 untuk 10 kredit (1 kredit = 1 sesi wawancara). Kredit tidak pernah kedaluwarsa. Tanpa langganan, bayar hanya untuk yang Anda gunakan."
+                    a: "Mulai gratis dengan 30 sesi percobaan. Paket berbayar: 25 sesi $5, 60 sesi $10, 150 sesi $20. Kredit tidak pernah kedaluwarsa. Tanpa langganan, bayar hanya untuk yang Anda gunakan. Garansi uang kembali 7 hari untuk semua pembelian."
                 },
                 {
                     q: "Bagaimana cara kerjanya?",
@@ -72,6 +72,13 @@ export default function FAQIndonesianPage() {
 
                 <div className="mt-12 text-center bg-blue-50 rounded-lg p-8">
                     <h3 className="text-2xl font-bold mb-4">Coba InterviewMate Gratis</h3>
+                    <p className="text-gray-600 mb-6">
+                        Ada pertanyaan atau masalah? Kirim email ke kami di{' '}
+                        <a href="mailto:info@birth2death.com" className="text-blue-600 hover:text-blue-700 underline">
+                            info@birth2death.com
+                        </a>
+                        . Garansi uang kembali 7 hari.
+                    </p>
                     <Link href="/auth/register" className="inline-block bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700">
                         Mulai Sekarang
                     </Link>
