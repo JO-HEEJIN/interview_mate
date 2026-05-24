@@ -133,14 +133,30 @@ export default function PricingPage() {
                 </p>
               </div>
               <div className="text-right">
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-gray-600 space-y-1">
                   {userFeatures.ai_generator_available && (
-                    <div className="text-green-600 font-medium">✓ AI Generator</div>
+                    <div className="text-green-600 font-medium">
+                      ✓ AI Generator
+                      {userFeatures.ai_generator_source === 'first_profile_free' && (
+                        <span className="ml-1.5 text-xs font-normal text-blue-600">(Free trial)</span>
+                      )}
+                    </div>
                   )}
                   {userFeatures.qa_management_available && (
-                    <div className="text-green-600 font-medium">✓ Q&A Management</div>
+                    <div className="text-green-600 font-medium">
+                      ✓ Q&A Management
+                      {userFeatures.qa_management_source === 'first_profile_free' && (
+                        <span className="ml-1.5 text-xs font-normal text-blue-600">(Free trial)</span>
+                      )}
+                    </div>
                   )}
                 </div>
+                {(userFeatures.ai_generator_source === 'first_profile_free' ||
+                  userFeatures.qa_management_source === 'first_profile_free') && (
+                  <p className="mt-2 text-xs text-gray-500">
+                    Free while you&apos;re on your first profile.
+                  </p>
+                )}
               </div>
             </div>
           </div>

@@ -101,30 +101,49 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
         }
     }, []);
 
+    // Tracks which user_id we've already loaded profiles for. Used to skip
+    // redundant loadProfiles() calls on auth events like TOKEN_REFRESHED /
+    // USER_UPDATED that fire every time the user switches tabs — supabase
+    // refreshes the session token on visibility change, and without this
+    // gate every tab return triggered N fresh /interview-profiles fetches
+    // (cascade refetch — observed ~6s latency on /pricing and every page).
+    const lastLoadedUserIdRef = useRef<string | null>(null);
+
     // Check auth and load profiles
     useEffect(() => {
-        const checkAuth = async () => {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session?.user?.id) {
-                setUserId(session.user.id);
-                await loadProfiles(session.user.id);
-            } else {
-                setIsLoading(false);
-            }
-        };
-
-        checkAuth();
-
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-            if (session?.user?.id) {
-                setUserId(session.user.id);
-                await loadProfiles(session.user.id);
-            } else {
+        const syncSession = async (sessionUserId: string | null) => {
+            if (!sessionUserId) {
+                lastLoadedUserIdRef.current = null;
                 setUserId(null);
                 setProfiles([]);
                 setActiveProfile(null);
                 setIsLoading(false);
+                return;
             }
+
+            // Keep userId state in sync even for refresh-only events
+            setUserId(sessionUserId);
+
+            // Skip refetch if we already loaded profiles for this user.
+            // Real user changes (sign-in, sign-out, account switch) still
+            // pass through because lastLoadedUserIdRef differs.
+            if (lastLoadedUserIdRef.current === sessionUserId) {
+                return;
+            }
+
+            lastLoadedUserIdRef.current = sessionUserId;
+            await loadProfiles(sessionUserId);
+        };
+
+        const checkAuth = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            await syncSession(session?.user?.id ?? null);
+        };
+
+        checkAuth();
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+            await syncSession(session?.user?.id ?? null);
         });
 
         return () => subscription.unsubscribe();
