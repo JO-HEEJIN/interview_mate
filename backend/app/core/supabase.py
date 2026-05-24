@@ -10,12 +10,32 @@ from app.core.config import settings
 logger = logging.getLogger(__name__)
 
 
+# Module-level singleton. Previously this function returned a NEW client on
+# every call — each FastAPI endpoint, every WebSocket auth, every credit
+# consume rebuilt the underlying httpx session + redid the SSL handshake +
+# re-authenticated. With ~3.7ms SQL function execution but ~1.4s baseline
+# end-to-end /summary latency, the overhead was the client construction
+# itself, not the database.
+#
+# Reusing a single client lets httpx keep its connection pool warm across
+# requests (HTTP keep-alive to Supabase's PostgREST). supabase-py / httpx
+# are thread-safe so a single shared instance is fine across FastAPI's
+# worker threads.
+_supabase_client: Optional[Client] = None
+
+
 def get_supabase_client() -> Client:
     """
-    Create and return a Supabase client instance using service role key.
+    Return the process-wide Supabase client (service role).
     Use only for admin operations (credit consumption, batch processing).
     """
-    return create_client(settings.SUPABASE_URL, settings.SUPABASE_SERVICE_ROLE_KEY)
+    global _supabase_client
+    if _supabase_client is None:
+        _supabase_client = create_client(
+            settings.SUPABASE_URL,
+            settings.SUPABASE_SERVICE_ROLE_KEY,
+        )
+    return _supabase_client
 
 
 async def verify_access_token(access_token: str) -> Optional[str]:
