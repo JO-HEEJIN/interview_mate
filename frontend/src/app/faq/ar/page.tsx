@@ -35,11 +35,15 @@ export default function FAQArabicPage() {
             questions: [
                 {
                     q: "ما هو السعر؟",
-                    a: "$10 مقابل 10 نقاط (1 نقطة = جلسة مقابلة واحدة). النقاط لا تنتهي صلاحيتها أبدًا. بدون اشتراكات، ادفع فقط مقابل ما تستخدمه."
+                    a: "ابدأ مجانًا مع 30 نقطة تجريبية (1 نقطة = جلسة مقابلة واحدة). الحزم المدفوعة: 25 نقطة بـ $5، 60 نقطة بـ $10، 150 نقطة بـ $20. النقاط لا تنتهي صلاحيتها أبدًا. بدون اشتراكات، ادفع فقط مقابل ما تستخدمه."
                 },
                 {
                     q: "كيف يعمل؟",
                     a: "1) أضف سيرتك الذاتية ومشاريعك السابقة. 2) أثناء المقابلة، افتح InterviewMate في علامة تبويب منفصلة. 3) يستمع إلى أسئلة المُقابل ويقترح تلقائيًا إجابات STAR مخصصة بناءً على خلفيتك."
+                },
+                {
+                    q: "هل يمكنني الحصول على استرداد؟",
+                    a: "نعم. نقدم ضمان استرداد لمدة 7 أيام على جميع المشتريات — النقاط والميزات لمرة واحدة. راسلنا على info@birth2death.com خلال 7 أيام من الشراء مع رقم المعاملة، وسنقوم بمعالجة الاسترداد خلال 5-10 أيام عمل."
                 }
             ]
         }
@@ -72,6 +76,16 @@ export default function FAQArabicPage() {
 
                 <div className="mt-12 text-center bg-blue-50 rounded-lg p-8">
                     <h3 className="text-2xl font-bold mb-4">جرب InterviewMate مجانًا</h3>
+                    <p className="text-gray-600 mb-6">
+                        لديك أسئلة أو مشاكل؟ راسلنا على{' '}
+                        <a
+                            href="mailto:info@birth2death.com"
+                            dir="ltr"
+                            className="text-blue-600 hover:text-blue-700 underline"
+                        >
+                            info@birth2death.com
+                        </a>
+                    </p>
                     <Link href="/auth/register" className="inline-block bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700">
                         ابدأ الآن
                     </Link>

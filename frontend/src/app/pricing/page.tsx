@@ -308,7 +308,11 @@ export default function PricingPage() {
             <div>
               <h3 className="font-semibold text-gray-900 mb-2">Can I get a refund?</h3>
               <p className="text-gray-600">
-                We offer a 7-day money-back guarantee. Contact support if you're not satisfied.
+                Yes — we offer a 7-day money-back guarantee on all purchases. Email{' '}
+                <a href="mailto:info@birth2death.com" className="text-blue-600 hover:text-blue-700 underline">
+                  info@birth2death.com
+                </a>{' '}
+                or see our <Link href="/refund" className="text-blue-600 hover:text-blue-700 underline">Refund Policy</Link>.
               </p>
             </div>
           </div>
