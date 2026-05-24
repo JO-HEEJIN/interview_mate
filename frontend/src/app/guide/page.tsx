@@ -1,5 +1,52 @@
 import Link from 'next/link';
 import Image from 'next/image';
+import { CopyButton } from '@/components/CopyButton';
+
+// Kept in sync with backend/app/api/interview_profile.py:DEFAULT_STAR_PROMPT.
+// If you edit one, edit the other.
+const STAR_CUSTOM_INSTRUCTIONS = `You are an expert advisor helping people make practical decisions. Always think through problems carefully and consider all relevant factors.
+When answering any question, use the STAR method:
+- Situation: What is the actual situation being described?
+- Task: What needs to be accomplished?
+- Action: What action achieves the task given the situation?
+- Result: What outcome does this action produce?
+
+Provide clear, actionable recommendations.`;
+
+const BACKGROUND_PROMPT_TEMPLATE = `I'm using InterviewMate — a real-time interview assistant. It has a "Background Summary" field where I describe my key achievements, projects, and experiences. The AI references this during live interviews to generate personalized answers.
+
+Write a Background Summary for my profile. Here's my info:
+
+- Name: [Your name]
+- Position I'm applying for: [e.g., Software Engineer, PhD Candidate, MBA Applicant]
+- Target company/school: [e.g., Google, MIT, US Embassy]
+- Years of experience: [e.g., 3 years, fresh graduate]
+
+Also attached:
+- My resume/CV
+- The job posting / program description (if available)
+
+Based on all of this, generate a Background Summary I can paste directly into InterviewMate's Settings. It should:
+1. Use STAR format (Situation → Task → Action → Result) for each achievement
+2. List key achievements with specific metrics (e.g., "Built system serving 100K+ daily users")
+3. Highlight 3-5 most relevant projects or experiences for the target role
+4. Include technical details the AI can reference when answering domain-specific questions
+5. Keep each bullet point concise (1-2 sentences max)
+6. Focus on what makes me stand out for this specific role
+
+Also suggest:
+- Skills & Expertise (comma-separated list for the "Skills & Expertise" field)
+- Key Strengths (comma-separated list for the "Key Strengths" field)
+
+Output format:
+BACKGROUND SUMMARY:
+[the summary text]
+
+SKILLS & EXPERTISE:
+[comma-separated list]
+
+KEY STRENGTHS:
+[comma-separated list]`;
 
 export default function GuidePage() {
   const steps = [
@@ -137,51 +184,21 @@ export default function GuidePage() {
           </p>
 
           <div className="mt-8 rounded-xl border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950">
-            <div className="flex items-center justify-between border-b border-zinc-200 px-6 py-4 dark:border-zinc-800">
-              <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                Prompt Template
-              </h3>
-              <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                Copy &rarr; fill in blanks &rarr; send to any AI with your resume
-              </span>
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-200 px-6 py-4 dark:border-zinc-800">
+              <div className="flex flex-col">
+                <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                  Prompt Template
+                </h3>
+                <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                  Copy &rarr; fill in blanks &rarr; send to any AI with your resume
+                </span>
+              </div>
+              <CopyButton text={BACKGROUND_PROMPT_TEMPLATE} label="Copy prompt" />
             </div>
 
             <div className="p-6">
               <pre className="whitespace-pre-wrap text-sm leading-relaxed text-zinc-700 dark:text-zinc-300 font-mono">
-{`I'm using InterviewMate — a real-time interview assistant. It has a "Background Summary" field where I describe my key achievements, projects, and experiences. The AI references this during live interviews to generate personalized answers.
-
-Write a Background Summary for my profile. Here's my info:
-
-- Name: [Your name]
-- Position I'm applying for: [e.g., Software Engineer, PhD Candidate, MBA Applicant]
-- Target company/school: [e.g., Google, MIT, US Embassy]
-- Years of experience: [e.g., 3 years, fresh graduate]
-
-Also attached:
-- My resume/CV
-- The job posting / program description (if available)
-
-Based on all of this, generate a Background Summary I can paste directly into InterviewMate's Settings. It should:
-1. Use STAR format (Situation → Task → Action → Result) for each achievement
-2. List key achievements with specific metrics (e.g., "Built system serving 100K+ daily users")
-3. Highlight 3-5 most relevant projects or experiences for the target role
-4. Include technical details the AI can reference when answering domain-specific questions
-5. Keep each bullet point concise (1-2 sentences max)
-6. Focus on what makes me stand out for this specific role
-
-Also suggest:
-- Skills & Expertise (comma-separated list for the "Skills & Expertise" field)
-- Key Strengths (comma-separated list for the "Key Strengths" field)
-
-Output format:
-BACKGROUND SUMMARY:
-[the summary text]
-
-SKILLS & EXPERTISE:
-[comma-separated list]
-
-KEY STRENGTHS:
-[comma-separated list]`}
+{BACKGROUND_PROMPT_TEMPLATE}
               </pre>
             </div>
           </div>
@@ -222,96 +239,73 @@ KEY STRENGTHS:
         </div>
       </section>
 
-      {/* Custom Instruction Helper */}
+      {/* Custom Instruction STAR Template */}
       <section className="px-6 pb-20">
         <div className="mx-auto max-w-4xl">
           <h2 className="text-3xl font-bold text-zinc-900 dark:text-zinc-100 text-center">
-            Need Help Writing Your Custom Instructions?
+            Your Default Custom Instructions: STAR Template
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-center text-zinc-600 dark:text-zinc-400">
-            The <strong>Custom Instructions</strong> field in{' '}
+            Every new profile ships with this STAR-based prompt already in the{' '}
             <Link href="/profile/interview-settings" className="text-blue-600 underline dark:text-blue-400">
-              Settings
+              Custom Instructions
             </Link>{' '}
-            controls how the AI generates answers during your interview. Copy the prompt
-            below, fill in the blanks, and paste it into your favorite AI (ChatGPT, Claude,
-            Gemini, etc.) along with your resume and the job/program description. Then paste
-            the result straight into InterviewMate.
+            field. It forces the AI to structure every answer through Situation → Task → Action → Result —
+            the single biggest lever for interview-grade responses. Try it as-is, then tune.
           </p>
 
           <div className="mt-8 rounded-xl border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950">
-            {/* Prompt header */}
-            <div className="flex items-center justify-between border-b border-zinc-200 px-6 py-4 dark:border-zinc-800">
-              <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                Prompt Template
-              </h3>
-              <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                Copy &rarr; fill in blanks &rarr; send to any AI with your resume
-              </span>
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-200 px-6 py-4 dark:border-zinc-800">
+              <div className="flex flex-col">
+                <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                  STAR Custom Instructions (default)
+                </h3>
+                <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                  Paste into Custom Instructions if your profile is older than this update
+                </span>
+              </div>
+              <CopyButton text={STAR_CUSTOM_INSTRUCTIONS} label="Copy template" />
             </div>
 
-            {/* Prompt body */}
             <div className="p-6">
               <pre className="whitespace-pre-wrap text-sm leading-relaxed text-zinc-700 dark:text-zinc-300 font-mono">
-{`I'm using InterviewMate — a real-time interview assistant that listens to interviewer questions and generates answers live. It has a "Custom Instructions" field that gets appended to the AI system prompt under "# YOUR SPECIFIC INTERVIEW CONTEXT & STYLE".
-
-Write Custom Instructions for my profile. Here's my info:
-
-- Name: [Your name]
-- Position I'm applying for: [e.g., Software Engineer, PhD Candidate, MBA Applicant]
-- Target company/school: [e.g., Google, MIT, US Embassy]
-- Interview type: [Job interview / PhD defense / Visa interview / School admission]
-- Interview language: [e.g., English, Korean, etc.]
-- Key things I want to emphasize: [e.g., leadership experience, specific project, research outcomes]
-- Preferred answer tone: [e.g., confident, humble, fact-driven, conversational]
-
-Also attached:
-- My resume/CV
-- The job posting / program description / any relevant context
-
-Based on all of this, generate a Custom Instructions block I can paste directly into InterviewMate's Settings. It should include:
-1. Use STAR format (Situation → Task → Action → Result) for structuring answers — this is critical for InterviewMate's AI
-2. Answer style rules (tone, length, structure)
-3. Domain-specific context (industry jargon, frameworks, methodologies to reference)
-4. Personal branding notes (strengths, achievements, stories to weave in)
-5. Cultural or format considerations (e.g., brief answers for visa interviews, technical depth for PhD defense)
-6. Any "always do / never do" rules
-
-Output ONLY the Custom Instructions text — no explanations, no markdown headers. Just the raw text I can paste in.`}
+{STAR_CUSTOM_INSTRUCTIONS}
               </pre>
             </div>
           </div>
 
-          {/* Step-by-step instructions */}
           <div className="mt-8 grid gap-4 sm:grid-cols-3">
             <div className="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
               <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-sm font-bold text-blue-700 dark:bg-blue-900 dark:text-blue-300">
                 1
               </div>
-              <h4 className="font-medium text-zinc-900 dark:text-zinc-100">Copy the prompt</h4>
+              <h4 className="font-medium text-zinc-900 dark:text-zinc-100">Already in new profiles</h4>
               <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-                Fill in the bracketed fields with your real information.
+                Brand-new profiles created from now on ship with this prompt pre-filled. Profiles created
+                before this update — paste it in via the Copy button above.
               </p>
             </div>
             <div className="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
               <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-sm font-bold text-blue-700 dark:bg-blue-900 dark:text-blue-300">
                 2
               </div>
-              <h4 className="font-medium text-zinc-900 dark:text-zinc-100">Send to any AI</h4>
+              <h4 className="font-medium text-zinc-900 dark:text-zinc-100">Tweak or replace</h4>
               <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-                Paste it into ChatGPT, Claude, Gemini, etc. — attach your resume and the job description too.
+                Add company framing, tone, or domain hints once you see what the AI produces. Keep the
+                STAR scaffold as the spine — that&apos;s what does the heavy lifting.
               </p>
             </div>
             <div className="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
               <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-sm font-bold text-blue-700 dark:bg-blue-900 dark:text-blue-300">
                 3
               </div>
-              <h4 className="font-medium text-zinc-900 dark:text-zinc-100">Paste the result</h4>
+              <h4 className="font-medium text-zinc-900 dark:text-zinc-100">Test on a few questions</h4>
               <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-                Copy the AI&apos;s output and paste it into the Custom Instructions field in{' '}
-                <Link href="/profile/interview-settings" className="text-blue-600 underline dark:text-blue-400">
-                  Settings
-                </Link>.
+                Run practice questions on the{' '}
+                <Link href="/interview" className="text-blue-600 underline dark:text-blue-400">
+                  Interview page
+                </Link>{' '}
+                to confirm STAR structure is showing up in the answers — then go live.
               </p>
             </div>
           </div>
