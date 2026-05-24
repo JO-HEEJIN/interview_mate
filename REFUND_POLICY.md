@@ -1,72 +1,49 @@
 # Refund Policy
 
-**Last Updated: December 23, 2025**
+**Last Updated: May 24, 2026**
 
-## Overview
+## 7-Day Money-Back Guarantee
 
-InterviewMate operates on a **prepaid credit system** with **no subscription fees**. All purchases are **final and non-refundable** except under the limited circumstances described below.
+We stand behind InterviewMate. If you're not satisfied with your purchase for any reason, you can request a full refund within **7 days** of the purchase date.
 
-## Digital Products - No Refund Policy
+This applies to all purchases:
+- Interview credits (Starter, Popular, Pro packs)
+- One-time features (AI Generator, Q&A Management)
 
-### Interview Credits
-- **No refunds** once credits are purchased
-- Credits never expire and can be used at any time
-- Once a credit is consumed (when you press "Start Recording"), it cannot be refunded
-- Unused credits remain in your account permanently
+## How to Request a Refund
 
-### One-Time Feature Purchases (AI Generator, Q&A Management)
-- **No refunds** after purchase
-- These are digital products that are instantly delivered and activated
-- Once you gain access to the feature, the purchase is final
-- Features remain active for lifetime use
+Email **info@birth2death.com** within 7 days of purchase with:
+- Your account email
+- The transaction ID or order number from your purchase confirmation
+- (Optional) A note about why — your feedback helps us improve
 
-## Why No Refunds?
+We'll process approved refunds within 5–10 business days back to your original payment method.
 
-1. **Instant Digital Delivery**: All products are delivered instantly and electronically
-2. **No Recurring Charges**: Unlike subscriptions, you only pay once - there's nothing to cancel
-3. **Try Before You Buy**: Free trial credits are provided to test the service
-4. **Permanent Access**: Credits and features never expire - you can use them whenever you want
+## What's Covered
 
-## Limited Exception - Technical Issues Only
+- ✅ Change of mind
+- ✅ Service didn't meet your expectations
+- ✅ Technical issues that prevented you from using the product
+- ✅ Duplicate or unauthorized charges
 
-Refunds may be considered **only** in the following cases:
+## What's Not Covered
 
-1. **Service Failure**: If our system fails to deliver purchased credits or features due to a technical error on our end
-2. **Duplicate Charges**: If you were accidentally charged twice for the same purchase
-3. **Unauthorized Transactions**: If your payment method was used without your authorization (subject to verification)
+- ❌ Requests made more than 7 days after purchase
+- ❌ Free trial credits (these are already free)
+- ❌ Accounts terminated for fraud, abuse, or violation of our Terms
 
-### How to Request an Exception
-- Contact support at support@interviewmate.ai within **7 days** of purchase
-- Provide transaction ID and detailed description of the technical issue
-- Refund decisions are at our sole discretion
-- Processing time: 5-10 business days if approved
+## Free Trial
 
-## What This Means For You
+Every new account receives **30 free interview credits** to try InterviewMate. Use them to evaluate the product before any paid purchase — that's why we offer the free trial.
 
-✅ **You Get**:
-- Lifetime access to purchased features
-- Credits that never expire
-- No hidden fees or recurring charges
-- 7-day support window for technical issues
+## Chargebacks
 
-❌ **No Refunds For**:
-- Change of mind
-- Not using the credits/features
-- "I didn't read the terms"
-- Found a cheaper alternative
-- Service works but you don't like it
-- Used credits and want money back
-
-## Your Rights
-
-By purchasing, you acknowledge:
-1. You have read and understood this refund policy
-2. All sales are final unless a technical issue qualifies for exception
-3. You waive any right to chargeback except for unauthorized transactions
-4. Attempting fraudulent chargebacks may result in account termination and legal action
+Please contact us first at **info@birth2death.com** before initiating a chargeback with your bank. We'll work to resolve any issue. Filing a chargeback without first contacting us may result in account termination.
 
 ## Questions?
 
-Read our full Terms of Service or contact support@interviewmate.ai
+Email **info@birth2death.com** — we read every message and reply within 1–2 business days.
 
-**By creating an account, you agree to this Refund Policy.**
+---
+
+*By creating an account or making a purchase, you agree to this Refund Policy.*

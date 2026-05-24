@@ -55,7 +55,7 @@ export default function FAQPage() {
                 },
                 {
                     q: "Can I get a refund if I don't like the service?",
-                    a: "All purchases are final. We offer a strict no-refund policy for digital products. However, refunds may be considered for technical issues (system failures, duplicate charges, unauthorized transactions) if reported within 7 days."
+                    a: "Yes. We offer a 7-day money-back guarantee on all purchases — credits and one-time features. Email info@birth2death.com within 7 days of purchase with your transaction ID and we'll process the refund within 5–10 business days. See the full Refund Policy for details."
                 },
                 {
                     q: "What's the difference between credits and one-time features?",
@@ -166,7 +166,11 @@ export default function FAQPage() {
                         Still have questions?
                     </h3>
                     <p className="text-gray-600 mb-6">
-                        Contact us at support@interviewmate.tech or try InterviewMate for free
+                        Contact us at{' '}
+                        <a href="mailto:info@birth2death.com" className="text-blue-600 hover:text-blue-700 underline">
+                            info@birth2death.com
+                        </a>{' '}
+                        or try InterviewMate for free
                     </p>
                     <Link
                         href="/auth/register"

@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 export function Footer() {
@@ -22,6 +23,14 @@ export function Footer() {
                         >
                             info@birth2death.com
                         </a>
+                    </p>
+                    <p>
+                        <Link
+                            href="/refund"
+                            className="text-zinc-900 underline hover:text-zinc-700 dark:text-zinc-200 dark:hover:text-zinc-300"
+                        >
+                            Refund Policy
+                        </Link>
                     </p>
                     <p>&copy; 2026 Birth2Death LLC</p>
                 </div>

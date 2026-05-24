@@ -193,7 +193,7 @@ export default function RegisterPage() {
                             <label htmlFor="terms" className="font-medium text-gray-700 cursor-pointer">
                                 I agree to the{' '}
                                 <a
-                                    href="https://github.com/JO-HEEJIN/interview_mate/blob/main/REFUND_POLICY.md"
+                                    href="/refund"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="text-blue-600 hover:text-blue-500 underline"
@@ -202,7 +202,7 @@ export default function RegisterPage() {
                                 </a>
                             </label>
                             <p className="text-xs text-gray-500 mt-1">
-                                All purchases are final. No refunds except for technical issues within 7 days.
+                                7-day money-back guarantee on all purchases. Email info@birth2death.com to request a refund.
                             </p>
                         </div>
                     </div>
