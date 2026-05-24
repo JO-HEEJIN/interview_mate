@@ -7,10 +7,15 @@ import { useState, useEffect, useCallback } from 'react';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
+export type FeatureSource = 'purchased' | 'first_profile_free' | 'locked';
+
 export interface UserFeatures {
   interview_credits: number;
   ai_generator_available: boolean;
   qa_management_available: boolean;
+  ai_generator_source: FeatureSource;
+  qa_management_source: FeatureSource;
+  profile_count: number;
   isLoading: boolean;
   error: string | null;
 }
@@ -20,6 +25,9 @@ export function useUserFeatures(userId: string | null) {
     interview_credits: 0,
     ai_generator_available: false,
     qa_management_available: false,
+    ai_generator_source: 'locked',
+    qa_management_source: 'locked',
+    profile_count: 0,
     isLoading: true,
     error: null,
   });
@@ -45,6 +53,9 @@ export function useUserFeatures(userId: string | null) {
         interview_credits: data.interview_credits || 0,
         ai_generator_available: data.ai_generator_available || false,
         qa_management_available: data.qa_management_available || false,
+        ai_generator_source: data.ai_generator_source || 'locked',
+        qa_management_source: data.qa_management_source || 'locked',
+        profile_count: data.profile_count ?? 0,
         isLoading: false,
         error: null,
       });

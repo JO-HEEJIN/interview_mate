@@ -17,10 +17,15 @@ interface PricingPlan {
   display_order: number;
 }
 
+type FeatureSource = 'purchased' | 'first_profile_free' | 'locked';
+
 interface UserFeatures {
   interview_credits: number;
   ai_generator_available: boolean;
   qa_management_available: boolean;
+  ai_generator_source: FeatureSource;
+  qa_management_source: FeatureSource;
+  profile_count: number;
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -54,6 +59,9 @@ export default function PricingPage() {
             interview_credits: featuresData.interview_credits || 0,
             ai_generator_available: featuresData.ai_generator_available || false,
             qa_management_available: featuresData.qa_management_available || false,
+            ai_generator_source: featuresData.ai_generator_source || 'locked',
+            qa_management_source: featuresData.qa_management_source || 'locked',
+            profile_count: featuresData.profile_count ?? 0,
           });
         }
       }).catch(error => {
@@ -211,9 +219,15 @@ export default function PricingPage() {
 
           <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
             {oneTimePurchases.map((plan) => {
-              const isOwned =
-                (plan.plan_code === 'ai_generator' && userFeatures?.ai_generator_available) ||
-                (plan.plan_code === 'qa_management' && userFeatures?.qa_management_available);
+              const source =
+                plan.plan_code === 'ai_generator'
+                  ? userFeatures?.ai_generator_source
+                  : plan.plan_code === 'qa_management'
+                  ? userFeatures?.qa_management_source
+                  : 'locked';
+              const isOwned = source === 'purchased';
+              const isFirstProfileFree = source === 'first_profile_free';
+              const isAvailable = isOwned || isFirstProfileFree;
 
               return (
                 <div
@@ -226,6 +240,11 @@ export default function PricingPage() {
                       {isOwned && (
                         <span className="bg-green-100 text-green-800 text-xs font-semibold px-3 py-1 rounded-full">
                           Owned
+                        </span>
+                      )}
+                      {isFirstProfileFree && (
+                        <span className="bg-blue-100 text-blue-800 text-xs font-semibold px-3 py-1 rounded-full">
+                          Free on first profile
                         </span>
                       )}
                     </div>
@@ -263,15 +282,22 @@ export default function PricingPage() {
 
                   <button
                     onClick={() => handlePurchase(plan.plan_code)}
-                    disabled={isOwned || processingPlan === plan.plan_code}
+                    disabled={isAvailable || processingPlan === plan.plan_code}
                     className="w-full py-3 px-6 rounded-lg font-semibold bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     {isOwned
                       ? 'Already Owned'
+                      : isFirstProfileFree
+                      ? 'Free on first profile'
                       : processingPlan === plan.plan_code
                       ? 'Processing...'
                       : 'Buy Now'}
                   </button>
+                  {isFirstProfileFree && (
+                    <p className="mt-2 text-xs text-gray-500 text-center">
+                      Activates when you create a second profile.
+                    </p>
+                  )}
                 </div>
               );
             })}

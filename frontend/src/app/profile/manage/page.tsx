@@ -7,6 +7,7 @@
 
 import { useState } from 'react';
 import { useProfile, Profile } from '@/contexts/ProfileContext';
+import { Toast } from '@/components/Toast';
 import Link from 'next/link';
 
 export default function ProfileManagePage() {
@@ -14,6 +15,7 @@ export default function ProfileManagePage() {
         profiles,
         activeProfile,
         isLoading,
+        isCreating: isSubmitting,
         error,
         switchProfile,
         createProfile,
@@ -29,6 +31,7 @@ export default function ProfileManagePage() {
     const [newProfileName, setNewProfileName] = useState('');
     const [actionError, setActionError] = useState<string | null>(null);
     const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+    const [showPaywallToast, setShowPaywallToast] = useState(false);
 
     // Handle profile name edit
     const handleEdit = (profile: Profile) => {
@@ -65,12 +68,20 @@ export default function ProfileManagePage() {
             setActionError('Profile name is required');
             return;
         }
+        if (isSubmitting) return; // double-submit guard (UI side)
+
+        const wasFirstProfile = profiles.length === 1;
 
         const result = await createProfile(newProfileName.trim());
         if (result) {
             setNewProfileName('');
             setIsCreating(false);
             setActionError(null);
+            // Going from 1 → 2 profiles means ai_generator / qa_management
+            // just flipped from "first_profile_free" to "locked" — explain it.
+            if (wasFirstProfile) {
+                setShowPaywallToast(true);
+            }
         } else {
             setActionError('Failed to create profile');
         }
@@ -114,6 +125,14 @@ export default function ProfileManagePage() {
 
     return (
         <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900 py-12">
+            {showPaywallToast && (
+                <Toast
+                    message="새 프로필이 만들어졌어요. 이 프로필에서 AI Q&A Generator와 Q&A Management를 사용하려면 가격 페이지에서 구매하셔야 해요. (첫 프로필에서만 무료였어요.)"
+                    onDismiss={() => setShowPaywallToast(false)}
+                    variant="warning"
+                    durationMs={9000}
+                />
+            )}
             <div className="mx-auto max-w-4xl px-4">
                 {/* Header */}
                 <div className="mb-8">
@@ -154,9 +173,10 @@ export default function ProfileManagePage() {
                         <div className="mt-4 flex gap-2">
                             <button
                                 onClick={handleCreate}
-                                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                                disabled={isSubmitting}
+                                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                Create Profile
+                                {isSubmitting ? 'Creating…' : 'Create Profile'}
                             </button>
                             <button
                                 onClick={() => {
@@ -164,7 +184,8 @@ export default function ProfileManagePage() {
                                     setNewProfileName('');
                                     setActionError(null);
                                 }}
-                                className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-400 dark:hover:bg-zinc-700"
+                                disabled={isSubmitting}
+                                className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-400 dark:hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 Cancel
                             </button>
