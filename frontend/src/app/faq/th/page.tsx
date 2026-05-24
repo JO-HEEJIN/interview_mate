@@ -35,7 +35,7 @@ export default function FAQThaiPage() {
             questions: [
                 {
                     q: "ราคาเท่าไหร่?",
-                    a: "$10 สำหรับ 10 เครดิต (1 เครดิต = 1 เซสชันสัมภาษณ์) เครดิตไม่มีวันหมดอายุ ไม่มีการสมัครสมาชิก จ่ายเฉพาะสิ่งที่คุณใช้"
+                    a: "เริ่มต้นฟรีด้วย 30 เซสชันทดลอง แพ็คเกจชำระเงิน: 25 เซสชัน $5, 60 เซสชัน $10, 150 เซสชัน $20 เครดิตไม่มีวันหมดอายุ ไม่มีการสมัครสมาชิก จ่ายเฉพาะสิ่งที่คุณใช้ รับประกันคืนเงิน 7 วันสำหรับการซื้อทั้งหมด"
                 },
                 {
                     q: "ทำงานอย่างไร?",
@@ -72,6 +72,13 @@ export default function FAQThaiPage() {
 
                 <div className="mt-12 text-center bg-blue-50 rounded-lg p-8">
                     <h3 className="text-2xl font-bold mb-4">ทดลองใช้ InterviewMate ฟรี</h3>
+                    <p className="text-gray-600 mb-6">
+                        มีคำถามหรือปัญหา? ส่งอีเมลถึงเราที่{' '}
+                        <a href="mailto:info@birth2death.com" className="text-blue-600 hover:text-blue-700 underline">
+                            info@birth2death.com
+                        </a>
+                        . รับประกันคืนเงิน 7 วัน.
+                    </p>
                     <Link href="/auth/register" className="inline-block bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700">
                         เริ่มต้นเลย
                     </Link>

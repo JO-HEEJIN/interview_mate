@@ -35,7 +35,7 @@ export default function FAQJapanesePage() {
             questions: [
                 {
                     q: "料金は？",
-                    a: "$10で10クレジット（1クレジット = 1面接セッション）。クレジットは無期限。サブスクリプションなし、使用した分だけ支払い。"
+                    a: "30セッションの無料トライアルから始められます。有料パック：25セッション$5、60セッション$10、150セッション$20。クレジットは無期限。サブスクリプションなし、使用した分だけお支払い。すべての購入に7日間返金保証。"
                 },
                 {
                     q: "どのように機能しますか？",
@@ -72,6 +72,13 @@ export default function FAQJapanesePage() {
 
                 <div className="mt-12 text-center bg-blue-50 rounded-lg p-8">
                     <h3 className="text-2xl font-bold mb-4">InterviewMateを無料で試す</h3>
+                    <p className="text-gray-600 mb-6">
+                        ご質問やご不明点がございましたら{' '}
+                        <a href="mailto:info@birth2death.com" className="text-blue-600 hover:text-blue-700 underline">
+                            info@birth2death.com
+                        </a>
+                        までご連絡ください。7日間返金保証。
+                    </p>
                     <Link href="/auth/register" className="inline-block bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700">
                         今すぐ始める
                     </Link>
