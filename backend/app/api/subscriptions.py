@@ -49,6 +49,14 @@ class FeaturesSummary(BaseModel):
     interview_credits: int
     ai_generator_available: bool
     qa_management_available: bool
+    # Source: 'purchased' | 'first_profile_free' | 'locked'.
+    # Added in migration 044 so the frontend can distinguish a real purchase
+    # from the first-profile free trial. Pydantic was previously silently
+    # dropping these fields because they weren't in the response_model
+    # whitelist — frontend had no way to render the "(Free trial)" badge.
+    ai_generator_source: str = 'locked'
+    qa_management_source: str = 'locked'
+    profile_count: int = 0
     active_subscriptions: List[Dict[str, Any]]
 
 
