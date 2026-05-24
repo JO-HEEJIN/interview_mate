@@ -207,6 +207,34 @@ TypeScript strict 빌드 깨짐 미리 잡기. 큰 변경은 push 전에 `npm ru
 
 → 우리 PR #14가 push 후 build fail로 fix-up commit 필요했음. 미리 빌드했으면 한 commit으로 끝났을 거.
 
+### 3.8. 외부 서비스 client는 모듈 레벨 singleton으로 캐싱
+
+Supabase / S3 / Stripe / OpenAI 등 SDK client는 **매 호출마다 새로 만들면 안 됨.** HTTP keep-alive · SSL handshake · connection pool 재사용을 다 깨버린다.
+
+코드 리뷰 시 함수 안에 `return create_client(...)` 같은 패턴 보이면 → 그 함수가 per-request 호출되는지 확인. yes면 latency 폭탄.
+
+**패턴 (Python lazy singleton):**
+
+```python
+_client: Optional[Client] = None
+
+def get_client() -> Client:
+    global _client
+    if _client is None:
+        _client = create_client(...)
+    return _client
+```
+
+대부분의 SDK client (supabase-py, httpx, boto3 등)는 thread-safe라 single shared instance가 안전.
+
+**우리 케이스 (PR #18):**
+- `get_supabase_client()`가 `return create_client(...)` — 매 호출 새 instance
+- 모든 FastAPI endpoint, WebSocket auth가 함수 호출 → 매 request에 fresh HTTP session
+- `/summary` 측정: SQL 3.766 ms vs wire 1400 ms → 1396 ms gap이 전부 client construction overhead
+- singleton fix 후: 1400 ms → 779 ms (거의 절반). 첫 fetch만 cold start, 그 후엔 connection pool warm
+
+**관련 anti-pattern (Frontend):** React에서도 같은 본질 — heavy resource를 useEffect cleanup 없이 매 render 다시 만들지 말기. 단 frontend는 cold-cache 영향 적음.
+
 ---
 
 ## 4. Debugging
