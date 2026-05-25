@@ -39,6 +39,13 @@ export default function InterviewSettingsPage() {
         custom_instructions: '',  // User-specific answer generation rules
     });
 
+    // Your Background card 3-state UI:
+    //   'closed'  — empty, big "click here" surface inviting first action
+    //   'picker'  — click here clicked, showing Write / Upload choice
+    //   'write'   — textarea active (also the resting state once content exists)
+    // Upload routes through a separate modal (next commit).
+    const [bgMode, setBgMode] = useState<'closed' | 'picker' | 'write'>('closed');
+
     // Check authentication
     useEffect(() => {
         const checkAuth = async () => {
@@ -76,6 +83,9 @@ export default function InterviewSettingsPage() {
                 key_strengths: (activeProfile.key_strengths || []).join(', '),
                 custom_instructions: activeProfile.custom_instructions || '',
             });
+            // If the profile already has background content, jump straight to
+            // the write/edit view; otherwise reset to the "click here" surface.
+            setBgMode(activeProfile.projects_summary ? 'write' : 'closed');
             // Reset initial load flag after a short delay
             setTimeout(() => {
                 isInitialLoadRef.current = false;
@@ -341,25 +351,71 @@ export default function InterviewSettingsPage() {
                         </h2>
 
                         <div className="space-y-4">
-                            <div>
-                                <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                                    Background Summary
-                                </label>
-                                <p className="mb-2 text-xs text-zinc-500 dark:text-zinc-400">
-                                    Describe your key achievements, projects, research, or experiences. The AI will reference these when answering questions.
-                                </p>
-                                <textarea
-                                    value={formData.projects_summary}
-                                    onChange={(e) => setFormData({ ...formData, projects_summary: e.target.value })}
-                                    placeholder="Enter your key achievements and experiences..."
-                                    rows={18}
-                                    className="w-full rounded-lg border border-zinc-300 px-3 py-2 font-mono text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
-                                />
-                                <details className="mt-2 rounded-lg border border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800/50">
-                                    <summary className="cursor-pointer px-3 py-2 text-xs font-medium text-zinc-500 dark:text-zinc-400 select-none">
-                                        View examples
-                                    </summary>
-                                    <div className="px-3 pb-2 text-xs text-zinc-500 dark:text-zinc-400 font-mono whitespace-pre-line">
+                            {/* bgMode === 'closed' — empty invitation */}
+                            {bgMode === 'closed' && (
+                                <button
+                                    type="button"
+                                    onClick={() => setBgMode('picker')}
+                                    className="flex h-48 w-full cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-zinc-300 bg-zinc-50 text-lg font-medium text-zinc-500 transition-colors hover:border-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:border-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+                                >
+                                    click here
+                                </button>
+                            )}
+
+                            {/* bgMode === 'picker' — Write or Upload */}
+                            {bgMode === 'picker' && (
+                                <div className="grid grid-cols-2 gap-4">
+                                    <button
+                                        type="button"
+                                        onClick={() => setBgMode('write')}
+                                        className="flex h-48 flex-col items-center justify-center gap-3 rounded-lg border-2 border-zinc-300 bg-white p-6 transition-colors hover:border-zinc-900 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-950 dark:hover:border-zinc-100 dark:hover:bg-zinc-900"
+                                    >
+                                        <svg className="h-10 w-10 text-zinc-600 dark:text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
+                                        <span className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Write</span>
+                                        <span className="text-xs text-zinc-500 dark:text-zinc-400">Type your background by hand</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            // Next commit wires this to the AI Background
+                                            // Generation modal that reuses the AI Generator
+                                            // upload + parsing flow.
+                                            alert('AI Background Generation modal — coming in the next commit');
+                                        }}
+                                        className="flex h-48 flex-col items-center justify-center gap-3 rounded-lg border-2 border-zinc-300 bg-white p-6 transition-colors hover:border-zinc-900 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-950 dark:hover:border-zinc-100 dark:hover:bg-zinc-900"
+                                    >
+                                        <svg className="h-10 w-10 text-zinc-600 dark:text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                        </svg>
+                                        <span className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Upload</span>
+                                        <span className="text-xs text-zinc-500 dark:text-zinc-400">PDF / md / docx — AI extracts it for you</span>
+                                    </button>
+                                </div>
+                            )}
+
+                            {/* bgMode === 'write' — the actual editor */}
+                            {bgMode === 'write' && (
+                                <div>
+                                    <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                                        Background Summary
+                                    </label>
+                                    <p className="mb-2 text-xs text-zinc-500 dark:text-zinc-400">
+                                        Describe your key achievements, projects, research, or experiences. The AI will reference these when answering questions.
+                                    </p>
+                                    <textarea
+                                        value={formData.projects_summary}
+                                        onChange={(e) => setFormData({ ...formData, projects_summary: e.target.value })}
+                                        placeholder="Enter your key achievements and experiences..."
+                                        rows={18}
+                                        className="w-full rounded-lg border border-zinc-300 px-3 py-2 font-mono text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                                    />
+                                    <details className="mt-2 rounded-lg border border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800/50">
+                                        <summary className="cursor-pointer px-3 py-2 text-xs font-medium text-zinc-500 dark:text-zinc-400 select-none">
+                                            View examples
+                                        </summary>
+                                        <div className="px-3 pb-2 text-xs text-zinc-500 dark:text-zinc-400 font-mono whitespace-pre-line">
 {`Job Interviews:
 - Built real-time inventory system serving 100K+ daily users
 - Led team of 3 engineers
@@ -375,9 +431,10 @@ Visa Interview:
 School Admissions:
 - Founded startup with $50K revenue
 - Led community service initiative`}
-                                    </div>
-                                </details>
-                            </div>
+                                        </div>
+                                    </details>
+                                </div>
+                            )}
 
                         </div>
                     </div>
