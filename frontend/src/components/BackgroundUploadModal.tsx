@@ -27,12 +27,23 @@ import { useEffect, useState, useRef } from 'react';
 interface BackgroundUploadModalProps {
     open: boolean;
     onClose: () => void;
-    onResult: (backgroundText: string) => void;
+    /**
+     * Called when the user clicks Result with all required fields filled.
+     * The parent owns the streaming network call (it needs to write into
+     * the Your Background textarea token-by-token, which is parent state).
+     * Modal closes itself first, then invokes this so the textarea is
+     * visible during streaming.
+     */
+    onSubmit: (data: {
+        file: File;
+        organization_text: string;
+        interview_text: string;
+    }) => void;
 }
 
 const ACCEPTED_EXTENSIONS = '.pdf,.md,.docx';
 
-export function BackgroundUploadModal({ open, onClose }: BackgroundUploadModalProps) {
+export function BackgroundUploadModal({ open, onClose, onSubmit }: BackgroundUploadModalProps) {
     // Form state — local to the modal; cleared on close
     const [resumeFile, setResumeFile] = useState<File | null>(null);
     const [orgText, setOrgText] = useState('');
@@ -77,11 +88,13 @@ export function BackgroundUploadModal({ open, onClose }: BackgroundUploadModalPr
             return;
         }
         setValidationError(null);
-        // Placeholder until commit 10 wires the streaming endpoint
-        alert(
-            'Backend background-extraction endpoint lands in the next commit.\n' +
-            'When wired, this button will stream the extracted background text into the Your Background textarea.',
-        );
+        // Hand off to parent — parent closes the modal first (so the
+        // user can watch the textarea fill in) then opens the SSE stream.
+        onSubmit({
+            file: resumeFile!,
+            organization_text: orgText,
+            interview_text: interviewText,
+        });
     };
 
     if (!open) return null;
