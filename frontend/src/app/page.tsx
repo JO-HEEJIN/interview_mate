@@ -150,84 +150,45 @@ export default function Home() {
       </section>
 
       {/*
-        Zoom / Google Meet setup guide — three screenshots showing the
-        flow from clicking Start Recording → choosing Entire Screen →
-        toggling "Also share system audio" on. Sits above Use Cases so
-        a visitor sees concrete proof of how the product hooks into
-        their call before reading what kinds of interviews it supports.
+        Zoom / Google Meet setup demo — short screen-recording of the
+        actual flow (Start Recording → Entire Screen → "Also share system
+        audio" → Share). Replaces the previous 3-screenshot card grid
+        because a 33-second demo conveys the click sequence more
+        truthfully than static stills.
 
-        Image files live at /public/zoom-guide/ — see PR body for the
-        three screenshots that need to be placed there.
+        <video> attribute notes:
+          - autoPlay + muted + playsInline = required combo for Chrome /
+            Safari autoplay policy (muted because browser blocks audible
+            autoplay unconditionally).
+          - loop = repeats forever, GIF-style.
+          - controls = visible so users can unmute / scrub / fullscreen
+            (audio is intentionally preserved in the file per request).
+          - preload="metadata" = first byte loads on page paint but full
+            video streams when it actually scrolls into view (smaller
+            initial cost).
       */}
       <section className="flex flex-col items-center justify-center px-6 py-20">
-        <div className="mx-auto w-full max-w-5xl">
+        <div className="mx-auto w-full max-w-6xl">
           <h2 className="mb-3 text-center text-3xl font-bold text-zinc-900 dark:text-zinc-100 sm:text-4xl">
             How to use InterviewMate.tech with Zoom or Google Meet?
           </h2>
           <p className="mx-auto mb-10 max-w-2xl text-center text-base text-zinc-600 dark:text-zinc-400">
-            Three steps to capture the call&apos;s audio so the AI can hear your interviewer.
+            Steps to capture the call&apos;s audio so the AI can hear your interviewer.
           </p>
 
-          <div className="grid gap-6 md:grid-cols-3">
-            {/* Step 1 — Start Recording */}
-            <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-full bg-zinc-900 text-base font-bold text-white dark:bg-zinc-100 dark:text-zinc-900">
-                1
-              </div>
-              <div className="mb-4 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800">
-                <img
-                  src="/zoom-guide/step1-start-recording.png"
-                  alt="Red 'Start Recording' button on the Interview page"
-                  className="h-auto w-full"
-                />
-              </div>
-              <h3 className="mb-2 text-lg font-semibold text-zinc-900 dark:text-zinc-100">
-                Click &ldquo;Start Recording&rdquo;
-              </h3>
-              <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                On the Interview page, hit the red <strong>Start Recording</strong> button. Your browser will prompt you to share a screen.
-              </p>
-            </div>
-
-            {/* Step 2 — Choose Entire Screen */}
-            <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-full bg-zinc-900 text-base font-bold text-white dark:bg-zinc-100 dark:text-zinc-900">
-                2
-              </div>
-              <div className="mb-4 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800">
-                <img
-                  src="/zoom-guide/step2-choose-screen.png"
-                  alt="Chrome dialog asking what to share, with Entire Screen tab selected"
-                  className="h-auto w-full"
-                />
-              </div>
-              <h3 className="mb-2 text-lg font-semibold text-zinc-900 dark:text-zinc-100">
-                Pick &ldquo;Entire Screen&rdquo;
-              </h3>
-              <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                In Chrome&apos;s share dialog, choose the <strong>Entire Screen</strong> tab and pick the screen where your video call will be running.
-              </p>
-            </div>
-
-            {/* Step 3 — Toggle system audio */}
-            <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-full bg-zinc-900 text-base font-bold text-white dark:bg-zinc-100 dark:text-zinc-900">
-                3
-              </div>
-              <div className="mb-4 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800">
-                <img
-                  src="/zoom-guide/step3-share-audio.png"
-                  alt="Toggle labeled 'Also share system audio' switched on"
-                  className="h-auto w-full"
-                />
-              </div>
-              <h3 className="mb-2 text-lg font-semibold text-zinc-900 dark:text-zinc-100">
-                Toggle &ldquo;Also share system audio&rdquo; ON
-              </h3>
-              <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                Flip the <strong>Also share system audio</strong> switch at the bottom — without this the AI can&apos;t hear your interviewer. Then click Share.
-              </p>
-            </div>
+          <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-black shadow-2xl dark:border-zinc-800">
+            <video
+              autoPlay
+              muted
+              loop
+              playsInline
+              controls
+              preload="metadata"
+              className="block h-auto w-full"
+            >
+              <source src="/zoom-guide/zoom-setup.mp4" type="video/mp4" />
+              Your browser does not support inline video. <a href="/zoom-guide/zoom-setup.mp4" className="underline">Download the demo</a>.
+            </video>
           </div>
         </div>
       </section>
