@@ -483,7 +483,7 @@ export default function PracticePage() {
                             </div>
                         )}
                         <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
-                            Interview Practice
+                            Live Interview
                         </h1>
                     </div>
                     <div className="flex items-center gap-4">
