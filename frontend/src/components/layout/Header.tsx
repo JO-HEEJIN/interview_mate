@@ -53,7 +53,7 @@ export function Header() {
         { name: 'AI Generate', href: '/profile/context-upload' },
         { name: 'Q&A Pairs', href: '/profile/qa-pairs' },
         { name: 'Pricing', href: '/pricing' },
-        { name: 'Settings', href: '/profile/interview-settings' },
+        { name: 'Profiles', href: '/profile/interview-settings' },
         { name: 'Guide', href: '/guide' },
     ];
 
