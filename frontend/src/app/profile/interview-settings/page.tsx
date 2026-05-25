@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useProfile } from '@/contexts/ProfileContext';
+import { BackgroundUploadModal } from '@/components/BackgroundUploadModal';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -44,8 +45,12 @@ export default function InterviewSettingsPage() {
     //   'closed'  — empty, big "click here" surface inviting first action
     //   'picker'  — click here clicked, showing Write / Upload choice
     //   'write'   — textarea active (also the resting state once content exists)
-    // Upload routes through a separate modal (next commit).
     const [bgMode, setBgMode] = useState<'closed' | 'picker' | 'write'>('closed');
+
+    // AI Background Generation modal (Upload button on the picker opens it).
+    // The modal is a scaffold for now — Result button is wired to the
+    // streaming background-extraction endpoint in follow-up commits.
+    const [showBgUploadModal, setShowBgUploadModal] = useState(false);
 
     // Check authentication
     useEffect(() => {
@@ -223,6 +228,19 @@ export default function InterviewSettingsPage() {
 
     return (
         <div className="min-h-screen bg-zinc-50 dark:bg-black">
+            {/* AI Background Generation modal (mounted at root, only renders when open) */}
+            <BackgroundUploadModal
+                open={showBgUploadModal}
+                onClose={() => setShowBgUploadModal(false)}
+                onResult={(text) => {
+                    // Wire-up for streaming result lands in commit 8.
+                    // For now this is just the API contract.
+                    setFormData((prev) => ({ ...prev, projects_summary: text }));
+                    setBgMode('write');
+                    setShowBgUploadModal(false);
+                }}
+            />
+
             {/* Header */}
             <header className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
                 <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-4">
@@ -379,12 +397,7 @@ export default function InterviewSettingsPage() {
                                     </button>
                                     <button
                                         type="button"
-                                        onClick={() => {
-                                            // Next commit wires this to the AI Background
-                                            // Generation modal that reuses the AI Generator
-                                            // upload + parsing flow.
-                                            alert('AI Background Generation modal — coming in the next commit');
-                                        }}
+                                        onClick={() => setShowBgUploadModal(true)}
                                         className="flex h-48 flex-col items-center justify-center gap-3 rounded-lg border-2 border-zinc-300 bg-white p-6 transition-colors hover:border-zinc-900 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-950 dark:hover:border-zinc-100 dark:hover:bg-zinc-900"
                                     >
                                         <svg className="h-10 w-10 text-zinc-600 dark:text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
