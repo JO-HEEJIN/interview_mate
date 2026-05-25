@@ -6,10 +6,12 @@ Handle file uploads, text input, and context management for Q&A generation
 import logging
 from typing import List, Optional
 from fastapi import APIRouter, HTTPException, Depends, Request, UploadFile, File, Form
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from app.core.supabase import get_supabase_client
 from app.services.upload_service import upload_service
+from app.services.background_extraction_service import stream_background_extraction
 from app.core.rate_limit import limiter
 
 logger = logging.getLogger(__name__)
@@ -554,3 +556,52 @@ async def get_generation_status(
     except Exception as e:
         logger.error(f"Failed to get generation status: {e}", exc_info=True)
         raise HTTPException(500, f"Failed to get generation status: {str(e)}")
+
+
+# ============================================================================
+# AI Background Generation (Profiles page — /profile/interview-settings)
+# ============================================================================
+#
+# Distinct from the /generate-qa endpoint above: takes a single resume +
+# required organization context + required interview details and streams
+# back a plain-text background summary (not 30+ Q&A pairs). Output goes
+# directly into user_interview_profiles.projects_summary via the frontend
+# (which receives the stream and writes via the existing PUT profile
+# endpoint — auto-save catches it).
+#
+# Used by the BackgroundUploadModal on /profile/interview-settings.
+
+@router.post("/{user_id}/extract-background")
+@limiter.limit("5/minute")
+async def extract_background(
+    request: Request,
+    user_id: str,
+    file: UploadFile = File(..., description="Resume — PDF, md, or docx"),
+    organization_text: str = Form(..., description="Required: company / school / org context"),
+    interview_text: str = Form(..., description="Required: role / interview details"),
+):
+    """
+    Stream a plain-text background summary via Server-Sent Events.
+
+    Response is text/event-stream with events of shape:
+      data: {"type": "text", "delta": "<chunk>"}
+      data: {"type": "done"}
+      data: {"type": "error", "message": "<msg>"}
+
+    Frontend reads via fetch + ReadableStream (EventSource doesn't support
+    POST/multipart). See BackgroundUploadModal.tsx.
+    """
+    if not organization_text.strip():
+        raise HTTPException(400, "Organization information is required")
+    if not interview_text.strip():
+        raise HTTPException(400, "Interview details are required")
+
+    return StreamingResponse(
+        stream_background_extraction(file, organization_text, interview_text),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",  # prevent nginx/proxy buffering of SSE
+        },
+    )

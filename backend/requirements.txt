@@ -15,6 +15,7 @@ zhipuai>=2.0.0
 stripe>=8.0.0
 websockets>=12.0
 PyPDF2>=3.0.0
+docx2txt>=0.8           # .docx text extraction for the AI Background Generation modal
 pillow>=10.0.0
 aiofiles>=23.0.0
 pgvector>=0.2.0
