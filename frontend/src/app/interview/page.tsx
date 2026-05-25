@@ -485,6 +485,13 @@ export default function PracticePage() {
                         <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
                             Live Interview
                         </h1>
+                        <a
+                            href="/profile/sessions"
+                            className="mt-1 inline-block text-xs text-zinc-500 hover:text-zinc-900 hover:underline dark:text-zinc-400 dark:hover:text-zinc-100"
+                            title="Every interview is saved — extract them any time"
+                        >
+                            📋 Past sessions →
+                        </a>
                     </div>
                     <div className="flex items-center gap-4">
                         <div className="text-2xl font-mono text-zinc-700 dark:text-zinc-300">
