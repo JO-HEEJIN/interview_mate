@@ -258,7 +258,7 @@ export default function InterviewSettingsPage() {
                 </div>
             </header>
 
-            <main className="mx-auto max-w-4xl px-4 py-6">
+            <main className="mx-auto max-w-5xl px-4 py-6">
                 {/* Messages */}
                 {error && (
                     <div className="mb-4 rounded-lg bg-red-50 p-4 text-red-700 dark:bg-red-950 dark:text-red-300">
@@ -352,7 +352,7 @@ export default function InterviewSettingsPage() {
                                     value={formData.projects_summary}
                                     onChange={(e) => setFormData({ ...formData, projects_summary: e.target.value })}
                                     placeholder="Enter your key achievements and experiences..."
-                                    rows={10}
+                                    rows={18}
                                     className="w-full rounded-lg border border-zinc-300 px-3 py-2 font-mono text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
                                 />
                                 <details className="mt-2 rounded-lg border border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800/50">
@@ -382,11 +382,21 @@ School Admissions:
                         </div>
                     </div>
 
-                    {/* Custom Instructions */}
-                    <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950">
-                        <h2 className="mb-4 text-lg font-medium text-zinc-900 dark:text-zinc-100">
-                            Custom Interview Instructions (Advanced)
-                        </h2>
+                    {/*
+                      Custom Instructions — collapsed by default behind a
+                      <details> so the page renders just Basic Information +
+                      Your Background by default. Advanced users click to
+                      reveal. Per diary_v2 § 2.4.
+                    */}
+                    <details className="group rounded-lg border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
+                        <summary className="cursor-pointer select-none px-6 py-4 text-lg font-medium text-zinc-900 dark:text-zinc-100 flex items-center justify-between">
+                            <span>Custom Interview Instructions (Advanced)</span>
+                            <svg className="h-5 w-5 text-zinc-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </summary>
+
+                        <div className="px-6 pb-6">
 
                         <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-950">
                             <h3 className="mb-2 font-medium text-blue-900 dark:text-blue-100">
@@ -397,10 +407,10 @@ School Admissions:
                                 This makes the system work for any role, not just generic advice.
                             </p>
                             <ul className="mt-2 space-y-1 text-sm text-blue-800 dark:text-blue-200">
-                                <li>- Answer style (e.g., "Be concise and confident, avoid filler words")</li>
-                                <li>- Domain context (e.g., "For PhD defense, emphasize methodology rigor")</li>
-                                <li>- Cultural notes (e.g., "For visa interview, keep answers brief and factual")</li>
-                                <li>- Personal preferences (e.g., "Always mention my leadership experience")</li>
+                                <li>- Answer style (e.g., &quot;Be concise and confident, avoid filler words&quot;)</li>
+                                <li>- Domain context (e.g., &quot;For PhD defense, emphasize methodology rigor&quot;)</li>
+                                <li>- Cultural notes (e.g., &quot;For visa interview, keep answers brief and factual&quot;)</li>
+                                <li>- Personal preferences (e.g., &quot;Always mention my leadership experience&quot;)</li>
                             </ul>
                         </div>
 
@@ -441,7 +451,9 @@ School Admissions:
                                 </div>
                             </details>
                         </div>
-                    </div>
+
+                        </div>
+                    </details>
 
                     {/* Save Button */}
                     <div className="flex gap-3">
