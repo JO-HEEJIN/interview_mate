@@ -43,20 +43,29 @@ export default function Home() {
             </svg>
           </Link>
 
-          <p className="max-w-2xl text-xl leading-8 text-zinc-600 dark:text-zinc-400">
-            Real-time cheating for any interview. Job interviews, PhD defenses, visa interviews,
-            school admissions - get AI-powered answers in under 2 seconds while you&apos;re being interviewed.
-          </p>
+          {/*
+            Tagline cut from one long run-on sentence to two short lines:
+            users don't read paragraphs (diary_v2 hypothesis). First line
+            = positioning. Second line = what you get.
+          */}
+          <div className="max-w-2xl text-center">
+            <p className="text-xl font-medium leading-8 text-zinc-700 dark:text-zinc-300">
+              Real-time cheating for any interview
+            </p>
+            <p className="mt-1 text-lg leading-7 text-zinc-500 dark:text-zinc-400">
+              AI-powered answers while you&apos;re being interviewed
+            </p>
+          </div>
 
-          {/* Main Value Proposition */}
+          {/* Main Value Proposition — stripped to one big claim + one supporting sentence */}
           <div className="w-full max-w-2xl rounded-xl border-2 border-blue-500 bg-blue-50 p-8 dark:bg-blue-950 dark:border-blue-400">
-            <h2 className="text-2xl font-bold text-blue-900 dark:text-blue-100 mb-4">
-              Works During REAL Interviews - Not a Practice Platform
+            <h2 className="mb-4 flex items-center justify-center gap-3 text-3xl font-extrabold text-blue-900 dark:text-blue-100 sm:text-4xl">
+              <span aria-hidden="true">⚠️</span>
+              <span>Not a Practice Platform!!</span>
             </h2>
             <p className="text-base text-blue-800 dark:text-blue-200">
-              Unlike interview practice platforms, InterviewMate assists you DURING actual live interviews.
-              Whether it&apos;s a job interview, PhD defense, visa interview, or school admission -
-              get AI-powered answer suggestions in under 2 seconds.
+              Unlike interview practice platforms, InterviewMate.tech assists you DURING actual live interviews.
+              Whether it&apos;s a job interview, PhD defense, visa interview, or school admission.
             </p>
           </div>
 
