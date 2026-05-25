@@ -3,9 +3,13 @@ Q&A Pairs API endpoints
 Manage user-uploaded expected interview questions and answers
 """
 
+import csv
+import io
 import logging
+from datetime import datetime
 from typing import List, Optional
 from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from supabase import Client
 
@@ -363,6 +367,68 @@ async def delete_all_qa_pairs(
         }
     except Exception as e:
         logger.error(f"Error deleting all Q&A pairs: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{user_id}/export")
+async def export_qa_pairs_csv(
+    user_id: str,
+    profile_id: Optional[str] = None,
+    profile_name: Optional[str] = None,
+    supabase: Client = Depends(get_supabase_client),
+):
+    """
+    Export a user's Q&A pairs as an Anki-compatible CSV.
+
+    Columns: Front, Back, Tags. Tags is space-separated, prefixed with
+    `interview-mate` plus the question_type — Anki splits on whitespace so
+    each becomes its own tag.
+
+    Optional filters mirror the list endpoint (profile_id). profile_name
+    is a display hint used only to shape the download filename.
+    """
+    try:
+        query = supabase.table("qa_pairs").select(
+            "question, answer, question_type, source"
+        ).eq("user_id", user_id)
+
+        if profile_id:
+            query = query.eq("profile_id", profile_id)
+
+        result = query.order("created_at", desc=True).execute()
+        rows = result.data or []
+
+        # Build CSV in memory — Q&A sets are bounded by user_subscriptions
+        # caps (50/250/etc.) so this stays small; no need to stream.
+        buf = io.StringIO()
+        writer = csv.writer(buf, quoting=csv.QUOTE_ALL)
+        writer.writerow(["Front", "Back", "Tags"])
+        for row in rows:
+            q_type = (row.get("question_type") or "general").strip().replace(" ", "-")
+            tags = f"interview-mate {q_type}"
+            writer.writerow([
+                row.get("question", "") or "",
+                row.get("answer", "") or "",
+                tags,
+            ])
+
+        csv_bytes = buf.getvalue().encode("utf-8-sig")  # BOM so Excel reads UTF-8 cleanly
+
+        # Filename: anki-qa-<profile>-<YYYYMMDD>.csv
+        slug = "".join(c if c.isalnum() or c in "-_" else "-" for c in (profile_name or "all"))[:40] or "all"
+        date_str = datetime.utcnow().strftime("%Y%m%d")
+        filename = f"anki-qa-{slug}-{date_str}.csv"
+
+        return StreamingResponse(
+            io.BytesIO(csv_bytes),
+            media_type="text/csv; charset=utf-8",
+            headers={
+                "Content-Disposition": f'attachment; filename="{filename}"',
+                "X-QA-Pair-Count": str(len(rows)),
+            },
+        )
+    except Exception as e:
+        logger.error(f"Error exporting Q&A pairs: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
