@@ -7,16 +7,12 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useProfile } from '@/contexts/ProfileContext';
+import { BackgroundUploadModal } from '@/components/BackgroundUploadModal';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-
-const ANSWER_STYLES = [
-    { value: 'concise', label: 'Concise', description: 'Brief, direct answers (20-30 words)' },
-    { value: 'balanced', label: 'Balanced', description: 'Moderate detail (30-60 words)' },
-    { value: 'detailed', label: 'Detailed', description: 'Comprehensive answers (60-100 words)' },
-];
 
 export default function InterviewSettingsPage() {
     const router = useRouter();
@@ -44,6 +40,20 @@ export default function InterviewSettingsPage() {
         key_strengths: '',     // Comma-separated
         custom_instructions: '',  // User-specific answer generation rules
     });
+
+    // Your Background card 3-state UI:
+    //   'closed'  — empty, big "click here" surface inviting first action
+    //   'picker'  — click here clicked, showing Write / Upload choice
+    //   'write'   — textarea active (also the resting state once content exists)
+    const [bgMode, setBgMode] = useState<'closed' | 'picker' | 'write'>('closed');
+
+    // AI Background Generation modal (Upload button on the picker opens it).
+    const [showBgUploadModal, setShowBgUploadModal] = useState(false);
+    // True while the SSE stream is filling the Your Background textarea —
+    // auto-save is suppressed during this so we don't fire a PUT after
+    // every token.
+    const [isStreamingBg, setIsStreamingBg] = useState(false);
+    const [bgStreamError, setBgStreamError] = useState<string | null>(null);
 
     // Check authentication
     useEffect(() => {
@@ -82,6 +92,9 @@ export default function InterviewSettingsPage() {
                 key_strengths: (activeProfile.key_strengths || []).join(', '),
                 custom_instructions: activeProfile.custom_instructions || '',
             });
+            // If the profile already has background content, jump straight to
+            // the write/edit view; otherwise reset to the "click here" surface.
+            setBgMode(activeProfile.projects_summary ? 'write' : 'closed');
             // Reset initial load flag after a short delay
             setTimeout(() => {
                 isInitialLoadRef.current = false;
@@ -125,6 +138,10 @@ export default function InterviewSettingsPage() {
         // Skip auto-save on initial load
         if (isInitialLoadRef.current) return;
         if (!activeProfile) return;
+        // Skip while the background-extraction stream is writing tokens —
+        // otherwise we'd PUT after every chunk. Auto-save fires once
+        // naturally when isStreamingBg flips back to false.
+        if (isStreamingBg) return;
 
         // Clear existing timer
         if (autoSaveTimerRef.current) {
@@ -141,7 +158,95 @@ export default function InterviewSettingsPage() {
                 clearTimeout(autoSaveTimerRef.current);
             }
         };
-    }, [formData, activeProfile, performAutoSave]);
+    }, [formData, activeProfile, performAutoSave, isStreamingBg]);
+
+    /**
+     * Open the SSE background-extraction stream and drain it token-by-token
+     * into formData.projects_summary. Called by the BackgroundUploadModal
+     * after the user clicks Result.
+     *
+     * Flow:
+     *   1. Close the modal (so user sees the textarea fill in)
+     *   2. Flip bgMode to 'write' so the textarea is on screen
+     *   3. Clear projects_summary
+     *   4. Suspend auto-save (isStreamingBg = true)
+     *   5. POST multipart → consume SSE → append every {type:'text', delta} to textarea
+     *   6. On 'done', un-suspend auto-save (which will fire once with the final text)
+     *   7. On 'error', surface message and stop
+     */
+    const handleBgExtractionSubmit = useCallback(
+        async (data: { file: File; organization_text: string; interview_text: string }) => {
+            if (!userId) return;
+
+            setShowBgUploadModal(false);
+            setBgMode('write');
+            setBgStreamError(null);
+            setFormData((prev) => ({ ...prev, projects_summary: '' }));
+            setIsStreamingBg(true);
+
+            try {
+                const fd = new FormData();
+                fd.append('file', data.file);
+                fd.append('organization_text', data.organization_text);
+                fd.append('interview_text', data.interview_text);
+
+                const res = await fetch(
+                    `${API_URL}/api/context/${userId}/extract-background`,
+                    { method: 'POST', body: fd },
+                );
+
+                if (!res.ok || !res.body) {
+                    const errText = res.ok ? 'No response stream' : `HTTP ${res.status}`;
+                    throw new Error(errText);
+                }
+
+                const reader = res.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+                let accumulated = '';
+
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+                    buffer += decoder.decode(value, { stream: true });
+
+                    // SSE frames are separated by a blank line ("\n\n")
+                    const frames = buffer.split('\n\n');
+                    buffer = frames.pop() || '';
+
+                    for (const frame of frames) {
+                        const line = frame.trim();
+                        if (!line.startsWith('data:')) continue;
+                        const json = line.slice(5).trim();
+                        if (!json) continue;
+                        try {
+                            const parsed = JSON.parse(json);
+                            if (parsed.type === 'text' && typeof parsed.delta === 'string') {
+                                accumulated += parsed.delta;
+                                setFormData((prev) => ({
+                                    ...prev,
+                                    projects_summary: accumulated,
+                                }));
+                            } else if (parsed.type === 'error') {
+                                throw new Error(parsed.message || 'Stream error');
+                            }
+                            // type === 'done' falls through; the while loop will exit when
+                            // the reader reports done.
+                        } catch (parseErr) {
+                            // Malformed frame — skip it rather than killing the whole stream.
+                            console.warn('[bg-extract] failed to parse SSE frame:', parseErr);
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error('Background extraction failed:', err);
+                setBgStreamError(err instanceof Error ? err.message : 'Failed to extract background');
+            } finally {
+                setIsStreamingBg(false);
+            }
+        },
+        [userId],
+    );
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -218,6 +323,13 @@ export default function InterviewSettingsPage() {
 
     return (
         <div className="min-h-screen bg-zinc-50 dark:bg-black">
+            {/* AI Background Generation modal (mounted at root, only renders when open) */}
+            <BackgroundUploadModal
+                open={showBgUploadModal}
+                onClose={() => setShowBgUploadModal(false)}
+                onSubmit={handleBgExtractionSubmit}
+            />
+
             {/* Header */}
             <header className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
                 <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-4">
@@ -264,7 +376,7 @@ export default function InterviewSettingsPage() {
                 </div>
             </header>
 
-            <main className="mx-auto max-w-4xl px-4 py-6">
+            <main className="mx-auto max-w-5xl px-4 py-6">
                 {/* Messages */}
                 {error && (
                     <div className="mb-4 rounded-lg bg-red-50 p-4 text-red-700 dark:bg-red-950 dark:text-red-300">
@@ -347,25 +459,83 @@ export default function InterviewSettingsPage() {
                         </h2>
 
                         <div className="space-y-4">
-                            <div>
-                                <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                                    Background Summary
-                                </label>
-                                <p className="mb-2 text-xs text-zinc-500 dark:text-zinc-400">
-                                    Describe your key achievements, projects, research, or experiences. The AI will reference these when answering questions.
-                                </p>
-                                <textarea
-                                    value={formData.projects_summary}
-                                    onChange={(e) => setFormData({ ...formData, projects_summary: e.target.value })}
-                                    placeholder="Enter your key achievements and experiences..."
-                                    rows={10}
-                                    className="w-full rounded-lg border border-zinc-300 px-3 py-2 font-mono text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
-                                />
-                                <details className="mt-2 rounded-lg border border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800/50">
-                                    <summary className="cursor-pointer px-3 py-2 text-xs font-medium text-zinc-500 dark:text-zinc-400 select-none">
-                                        View examples
-                                    </summary>
-                                    <div className="px-3 pb-2 text-xs text-zinc-500 dark:text-zinc-400 font-mono whitespace-pre-line">
+                            {/* bgMode === 'closed' — empty invitation */}
+                            {bgMode === 'closed' && (
+                                <button
+                                    type="button"
+                                    onClick={() => setBgMode('picker')}
+                                    className="flex h-48 w-full cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-zinc-300 bg-zinc-50 text-lg font-medium text-zinc-500 transition-colors hover:border-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:border-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+                                >
+                                    click here
+                                </button>
+                            )}
+
+                            {/* bgMode === 'picker' — Write or Upload */}
+                            {bgMode === 'picker' && (
+                                <div className="grid grid-cols-2 gap-4">
+                                    <button
+                                        type="button"
+                                        onClick={() => setBgMode('write')}
+                                        className="flex h-48 flex-col items-center justify-center gap-3 rounded-lg border-2 border-zinc-300 bg-white p-6 transition-colors hover:border-zinc-900 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-950 dark:hover:border-zinc-100 dark:hover:bg-zinc-900"
+                                    >
+                                        <svg className="h-10 w-10 text-zinc-600 dark:text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
+                                        <span className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Write</span>
+                                        <span className="text-xs text-zinc-500 dark:text-zinc-400">Type your background by hand</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowBgUploadModal(true)}
+                                        className="flex h-48 flex-col items-center justify-center gap-3 rounded-lg border-2 border-zinc-300 bg-white p-6 transition-colors hover:border-zinc-900 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-950 dark:hover:border-zinc-100 dark:hover:bg-zinc-900"
+                                    >
+                                        <svg className="h-10 w-10 text-zinc-600 dark:text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                        </svg>
+                                        <span className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Upload</span>
+                                        <span className="text-xs text-zinc-500 dark:text-zinc-400">PDF / md / docx — AI extracts it for you</span>
+                                    </button>
+                                </div>
+                            )}
+
+                            {/* bgMode === 'write' — the actual editor */}
+                            {bgMode === 'write' && (
+                                <div>
+                                    <div className="mb-1 flex items-center justify-between">
+                                        <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                                            Background Summary
+                                        </label>
+                                        {isStreamingBg && (
+                                            <span className="flex items-center gap-1.5 text-xs font-medium text-blue-600 dark:text-blue-400">
+                                                <svg className="h-3 w-3 animate-spin" fill="none" viewBox="0 0 24 24">
+                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                                </svg>
+                                                Generating background…
+                                            </span>
+                                        )}
+                                    </div>
+                                    <p className="mb-2 text-xs text-zinc-500 dark:text-zinc-400">
+                                        Describe your key achievements, projects, research, or experiences. The AI will reference these when answering questions.
+                                    </p>
+                                    {bgStreamError && (
+                                        <div className="mb-2 rounded-lg border border-red-200 bg-red-50 p-2 text-xs text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-300">
+                                            {bgStreamError}
+                                        </div>
+                                    )}
+                                    <textarea
+                                        value={formData.projects_summary}
+                                        onChange={(e) => setFormData({ ...formData, projects_summary: e.target.value })}
+                                        placeholder={isStreamingBg ? 'AI is writing your background…' : 'Enter your key achievements and experiences...'}
+                                        rows={18}
+                                        readOnly={isStreamingBg}
+                                        className="w-full rounded-lg border border-zinc-300 px-3 py-2 font-mono text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                                    />
+                                    <details className="mt-2 rounded-lg border border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800/50">
+                                        <summary className="cursor-pointer px-3 py-2 text-xs font-medium text-zinc-500 dark:text-zinc-400 select-none">
+                                            View examples
+                                        </summary>
+                                        <div className="px-3 pb-2 text-xs text-zinc-500 dark:text-zinc-400 font-mono whitespace-pre-line">
 {`Job Interviews:
 - Built real-time inventory system serving 100K+ daily users
 - Led team of 3 engineers
@@ -381,80 +551,29 @@ Visa Interview:
 School Admissions:
 - Founded startup with $50K revenue
 - Led community service initiative`}
-                                    </div>
-                                </details>
-                            </div>
+                                        </div>
+                                    </details>
+                                </div>
+                            )}
 
-                            <div>
-                                <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                                    Skills & Expertise (comma-separated)
-                                </label>
-                                <input
-                                    type="text"
-                                    value={formData.technical_stack}
-                                    onChange={(e) => setFormData({ ...formData, technical_stack: e.target.value })}
-                                    placeholder="e.g., React, Machine Learning, Research Methods, Data Analysis"
-                                    className="w-full rounded-lg border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                                    Key Strengths (comma-separated)
-                                </label>
-                                <input
-                                    type="text"
-                                    value={formData.key_strengths}
-                                    onChange={(e) => setFormData({ ...formData, key_strengths: e.target.value })}
-                                    placeholder="e.g., Problem solving, Leadership, Research, Communication"
-                                    className="w-full rounded-lg border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
-                                />
-                            </div>
                         </div>
                     </div>
 
-                    {/* Communication Style */}
-                    <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950">
-                        <h2 className="mb-4 text-lg font-medium text-zinc-900 dark:text-zinc-100">
-                            Communication Style
-                        </h2>
+                    {/*
+                      Custom Instructions — collapsed by default behind a
+                      <details> so the page renders just Basic Information +
+                      Your Background by default. Advanced users click to
+                      reveal. Per diary_v2 § 2.4.
+                    */}
+                    <details className="group rounded-lg border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
+                        <summary className="cursor-pointer select-none px-6 py-4 text-lg font-medium text-zinc-900 dark:text-zinc-100 flex items-center justify-between">
+                            <span>Custom Interview Instructions (Advanced)</span>
+                            <svg className="h-5 w-5 text-zinc-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </summary>
 
-                        <div className="space-y-3">
-                            {ANSWER_STYLES.map((style) => (
-                                <label
-                                    key={style.value}
-                                    className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors ${
-                                        formData.answer_style === style.value
-                                            ? 'border-zinc-900 bg-zinc-50 dark:border-zinc-100 dark:bg-zinc-800'
-                                            : 'border-zinc-200 hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-900'
-                                    }`}
-                                >
-                                    <input
-                                        type="radio"
-                                        name="answer_style"
-                                        value={style.value}
-                                        checked={formData.answer_style === style.value}
-                                        onChange={(e) => setFormData({ ...formData, answer_style: e.target.value as typeof formData.answer_style })}
-                                        className="mt-1"
-                                    />
-                                    <div>
-                                        <div className="font-medium text-zinc-900 dark:text-zinc-100">
-                                            {style.label}
-                                        </div>
-                                        <div className="text-sm text-zinc-500 dark:text-zinc-400">
-                                            {style.description}
-                                        </div>
-                                    </div>
-                                </label>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Custom Instructions */}
-                    <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950">
-                        <h2 className="mb-4 text-lg font-medium text-zinc-900 dark:text-zinc-100">
-                            Custom Interview Instructions (Advanced)
-                        </h2>
+                        <div className="px-6 pb-6">
 
                         <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-950">
                             <h3 className="mb-2 font-medium text-blue-900 dark:text-blue-100">
@@ -465,10 +584,10 @@ School Admissions:
                                 This makes the system work for any role, not just generic advice.
                             </p>
                             <ul className="mt-2 space-y-1 text-sm text-blue-800 dark:text-blue-200">
-                                <li>- Answer style (e.g., "Be concise and confident, avoid filler words")</li>
-                                <li>- Domain context (e.g., "For PhD defense, emphasize methodology rigor")</li>
-                                <li>- Cultural notes (e.g., "For visa interview, keep answers brief and factual")</li>
-                                <li>- Personal preferences (e.g., "Always mention my leadership experience")</li>
+                                <li>- Answer style (e.g., &quot;Be concise and confident, avoid filler words&quot;)</li>
+                                <li>- Domain context (e.g., &quot;For PhD defense, emphasize methodology rigor&quot;)</li>
+                                <li>- Cultural notes (e.g., &quot;For visa interview, keep answers brief and factual&quot;)</li>
+                                <li>- Personal preferences (e.g., &quot;Always mention my leadership experience&quot;)</li>
                             </ul>
                         </div>
 
@@ -509,7 +628,9 @@ School Admissions:
                                 </div>
                             </details>
                         </div>
-                    </div>
+
+                        </div>
+                    </details>
 
                     {/* Save Button */}
                     <div className="flex gap-3">
@@ -528,6 +649,30 @@ School Admissions:
                         </a>
                     </div>
                 </form>
+
+                {/*
+                  Primary "next step" CTA — mirror of the landing page
+                  Let's begin button. Profile setup is done, the natural
+                  follow-on is starting an interview. Per diary_v2 § 2.5.
+                  Auto-save handles persistence so the user can leave
+                  without explicitly clicking Save.
+                */}
+                <div className="mt-16 flex justify-center pb-12">
+                    <Link
+                        href="/interview"
+                        className="group inline-flex h-16 items-center justify-center gap-3 rounded-full bg-zinc-900 px-12 text-xl font-bold text-white shadow-2xl shadow-zinc-900/30 transition-all duration-300 hover:scale-105 hover:bg-white hover:text-zinc-900 hover:shadow-zinc-900/50 dark:bg-white dark:text-zinc-900 dark:shadow-white/30 dark:hover:bg-zinc-900 dark:hover:text-white dark:hover:shadow-white/50"
+                    >
+                        Go to Interview
+                        <svg
+                            className="h-5 w-5 animate-pulse transition-transform duration-300 group-hover:translate-x-1 group-hover:animate-none"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                        </svg>
+                    </Link>
+                </div>
             </main>
         </div>
     );
