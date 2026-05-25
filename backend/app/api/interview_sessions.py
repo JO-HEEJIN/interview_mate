@@ -2,10 +2,13 @@
 Interview Session API - Track interview sessions with memory and export
 """
 
+import csv
+import io
 import logging
-from typing import List, Optional
+from typing import List, Optional, Union
 from datetime import datetime
 from fastapi import APIRouter, HTTPException, Depends
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from supabase import Client
 
@@ -308,31 +311,78 @@ async def delete_session(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+def _pair_qa(messages: list) -> list:
+    """
+    Walk the raw message log and pair each question with its immediately-
+    following answer. Q&A in interview_sessions is naturally interleaved
+    (interviewer → candidate → interviewer → ...), but transcription noise
+    and partials can split things; we accept the first 'answer' after a
+    'question' as that question's pair.
+    """
+    pairs = []
+    pending_q: Optional[str] = None
+    for msg in messages:
+        mtype = msg.get("message_type")
+        content = (msg.get("content") or "").strip()
+        if not content:
+            continue
+        if mtype == "question":
+            # Flush an orphan question before opening a new one
+            if pending_q:
+                pairs.append({"question": pending_q, "answer": ""})
+            pending_q = content
+        elif mtype == "answer":
+            pairs.append({"question": pending_q or "", "answer": content})
+            pending_q = None
+    if pending_q:
+        pairs.append({"question": pending_q, "answer": ""})
+    return pairs
+
+
+def _download_response(body: Union[str, bytes], filename: str, media_type: str) -> StreamingResponse:
+    """Wrap a string/bytes payload as a downloadable streaming response."""
+    if isinstance(body, str):
+        body = body.encode("utf-8-sig")  # BOM so Excel reads UTF-8 cleanly
+    return StreamingResponse(
+        io.BytesIO(body),
+        media_type=media_type,
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
 @router.get("/{session_id}/export")
 async def export_session(
     session_id: str,
-    format: str = "json",  # json, markdown, text
+    format: str = "json",  # json, markdown, text, anki-csv
     supabase: Client = Depends(get_supabase_client)
 ):
     """
     Export session for review/sharing.
-    Formats: json, markdown, text
+
+    Formats:
+      - json       → in-page JSON (no download)
+      - markdown   → .md file download
+      - text       → .txt file download
+      - anki-csv   → .csv file download, Front/Back/Tags (Anki-compatible)
     """
     try:
         # Get full session history
         history = await get_session_history(session_id, supabase)
 
+        # Build a short, human-readable filename stem
+        started_at = (history['session'].get('started_at') or "").replace(":", "").replace("-", "")[:8]
+        short_id = session_id[:8]
+        filename_stem = f"interview-{started_at or 'session'}-{short_id}"
+
         if format == "json":
             return history
 
         elif format == "markdown":
-            # Format as markdown
             md = f"# {history['session']['title']}\n\n"
             md += f"**Date**: {history['session']['started_at']}\n"
             md += f"**Duration**: {history['session'].get('duration_seconds', 0) // 60} minutes\n"
             md += f"**Questions**: {history['session']['question_count']}\n\n"
             md += "---\n\n"
-
             for msg in history['messages']:
                 if msg['message_type'] == 'question':
                     md += f"## Q: {msg['content']}\n\n"
@@ -340,24 +390,33 @@ async def export_session(
                     md += f"**A**: {msg['content']}\n\n"
                     if msg.get('examples_used'):
                         md += f"*Examples used: {', '.join(msg['examples_used'])}*\n\n"
-
-            return {"content": md, "filename": f"interview_session_{session_id}.md"}
+            return _download_response(md, f"{filename_stem}.md", "text/markdown; charset=utf-8")
 
         elif format == "text":
-            # Plain text format
-            text = f"{history['session']['title']}\n"
-            text += f"{'='*50}\n\n"
-
+            text = f"{history['session']['title']}\n{'='*50}\n\n"
             for msg in history['messages']:
                 if msg['message_type'] == 'question':
                     text += f"Q: {msg['content']}\n\n"
                 elif msg['message_type'] == 'answer':
                     text += f"A: {msg['content']}\n\n"
+            return _download_response(text, f"{filename_stem}.txt", "text/plain; charset=utf-8")
 
-            return {"content": text, "filename": f"interview_session_{session_id}.txt"}
+        elif format == "anki-csv":
+            # Pair Q&A then emit Front/Back/Tags — same Anki convention as
+            # the qa_pairs export so users get one consistent tagging scheme.
+            pairs = _pair_qa(history['messages'])
+            buf = io.StringIO()
+            writer = csv.writer(buf, quoting=csv.QUOTE_ALL)
+            writer.writerow(["Front", "Back", "Tags"])
+            session_tag = f"session-{short_id}"
+            for p in pairs:
+                if not p["question"] and not p["answer"]:
+                    continue
+                writer.writerow([p["question"], p["answer"], f"interview-mate {session_tag}"])
+            return _download_response(buf.getvalue(), f"{filename_stem}.csv", "text/csv; charset=utf-8")
 
         else:
-            raise HTTPException(status_code=400, detail="Invalid format. Use: json, markdown, or text")
+            raise HTTPException(status_code=400, detail="Invalid format. Use: json, markdown, text, or anki-csv")
 
     except HTTPException:
         raise
