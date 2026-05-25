@@ -94,6 +94,61 @@ export default function Home() {
         </div>
       </section>
 
+      {/*
+        Two amber warnings moved from the guide page — these are time-sensitive
+        ('do this BEFORE your interview') so they belong on the landing flow,
+        not buried in /guide. Replaces what used to be 'How InterviewMate Works'
+        in this position.
+      */}
+      <section className="flex flex-col items-center justify-center bg-zinc-50 px-6 py-20 dark:bg-zinc-950">
+        <div className="mx-auto w-full max-w-4xl space-y-6">
+          <div className="rounded-xl border-2 border-amber-400 bg-amber-50 p-6 dark:border-amber-500 dark:bg-amber-950/40">
+            <div className="flex items-start gap-3">
+              <span className="mt-0.5 text-2xl leading-none" aria-hidden="true">⚠️</span>
+              <div>
+                <h3 className="text-lg font-semibold text-amber-900 dark:text-amber-200">
+                  Important: Enable Audio Capture Before Your Call
+                </h3>
+                <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-amber-800 dark:text-amber-300">
+                  <li>
+                    Before joining Zoom, Google Meet, or Teams, open the{' '}
+                    <Link href="/interview" className="font-medium underline">
+                      Interview page
+                    </Link>{' '}
+                    first and make sure <strong>&ldquo;Capture system audio&rdquo;</strong> is
+                    toggled ON.
+                  </li>
+                  <li>
+                    You must enable all audio capture toggles <strong>before</strong> entering the
+                    video call — if you do it after, the browser may not pick up system audio.
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-xl border-2 border-amber-400 bg-amber-50 p-6 dark:border-amber-500 dark:bg-amber-950/40">
+            <div className="flex items-start gap-3">
+              <span className="mt-0.5 text-2xl leading-none" aria-hidden="true">⚠️</span>
+              <div>
+                <h3 className="text-lg font-semibold text-amber-900 dark:text-amber-200">
+                  Always Test Before Your Real Interview
+                </h3>
+                <p className="mt-2 text-sm text-amber-800 dark:text-amber-300">
+                  If your system prompt gets too long, the AI&apos;s answer quality can actually
+                  get <strong>worse</strong> — not better. After filling in your Background Summary
+                  and Custom Instructions, run a few practice questions on the{' '}
+                  <Link href="/interview" className="font-medium underline">
+                    Interview page
+                  </Link>{' '}
+                  to make sure the answers are accurate and relevant before your real interview.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Use Cases Section */}
       <section className="flex min-h-screen flex-col items-center justify-center bg-zinc-50 px-6 py-20 dark:bg-zinc-950">
         <div className="w-full max-w-5xl">
