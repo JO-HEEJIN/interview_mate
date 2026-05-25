@@ -9,6 +9,31 @@ export default function Home() {
           <h1 className="text-5xl font-bold tracking-tight text-black dark:text-zinc-50 sm:text-6xl">
             InterviewMate
           </h1>
+
+          {/*
+            Primary CTA right under the H1 — first viewport, no scroll needed.
+            Driven by the users-don't-read hypothesis in diary_v2.md.
+
+            Visual:
+              - large, animated (subtle arrow pulse) so it reads as "go here"
+              - hover = full inverted colors (light→dark→light) for unmistakable affordance
+              - arrow translates on hover for the "forward motion" cue
+          */}
+          <Link
+            href="/profile/interview-settings"
+            className="group mt-2 inline-flex h-20 items-center justify-center gap-3 rounded-full bg-zinc-900 px-16 text-2xl font-bold text-white shadow-2xl shadow-zinc-900/30 transition-all duration-300 hover:scale-105 hover:bg-white hover:text-zinc-900 hover:shadow-zinc-900/50 dark:bg-white dark:text-zinc-900 dark:shadow-white/30 dark:hover:bg-zinc-900 dark:hover:text-white dark:hover:shadow-white/50"
+          >
+            Let&apos;s begin
+            <svg
+              className="h-6 w-6 animate-pulse transition-transform duration-300 group-hover:translate-x-1 group-hover:animate-none"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+            </svg>
+          </Link>
+
           <p className="max-w-2xl text-xl leading-8 text-zinc-600 dark:text-zinc-400">
             Real-time cheating for any interview. Job interviews, PhD defenses, visa interviews,
             school admissions - get AI-powered answers in under 2 seconds while you&apos;re being interviewed.
