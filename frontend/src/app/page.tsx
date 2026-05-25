@@ -9,6 +9,31 @@ export default function Home() {
           <h1 className="text-5xl font-bold tracking-tight text-black dark:text-zinc-50 sm:text-6xl">
             InterviewMate
           </h1>
+
+          {/*
+            Primary CTA right under the H1 — first viewport, no scroll needed.
+            Driven by the users-don't-read hypothesis in diary_v2.md.
+
+            Visual:
+              - large, animated (subtle arrow pulse) so it reads as "go here"
+              - hover = full inverted colors (light→dark→light) for unmistakable affordance
+              - arrow translates on hover for the "forward motion" cue
+          */}
+          <Link
+            href="/profile/interview-settings"
+            className="group mt-2 inline-flex h-20 items-center justify-center gap-3 rounded-full bg-zinc-900 px-16 text-2xl font-bold text-white shadow-2xl shadow-zinc-900/30 transition-all duration-300 hover:scale-105 hover:bg-white hover:text-zinc-900 hover:shadow-zinc-900/50 dark:bg-white dark:text-zinc-900 dark:shadow-white/30 dark:hover:bg-zinc-900 dark:hover:text-white dark:hover:shadow-white/50"
+          >
+            Let&apos;s begin
+            <svg
+              className="h-6 w-6 animate-pulse transition-transform duration-300 group-hover:translate-x-1 group-hover:animate-none"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+            </svg>
+          </Link>
+
           <p className="max-w-2xl text-xl leading-8 text-zinc-600 dark:text-zinc-400">
             Real-time cheating for any interview. Job interviews, PhD defenses, visa interviews,
             school admissions - get AI-powered answers in under 2 seconds while you&apos;re being interviewed.
@@ -42,8 +67,8 @@ export default function Home() {
             </Link>
           </div>
 
-          {/* Scroll Indicator */}
-          <div className="mt-12 animate-bounce">
+          {/* Scroll Indicator (static — the bouncing motion was distracting) */}
+          <div className="mt-12">
             <svg className="h-8 w-8 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
             </svg>
@@ -95,50 +120,6 @@ export default function Home() {
               <p className="text-base text-zinc-600 dark:text-zinc-400">
                 Deepgram transcribes questions in real-time. Claude AI
                 generates personalized answers in under 2 seconds.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Technology Stack Section */}
-      <section className="flex min-h-screen flex-col items-center justify-center px-6 py-20">
-        <div className="w-full max-w-5xl">
-          <h2 className="text-4xl font-bold text-zinc-900 dark:text-zinc-100 mb-4 text-center">
-            Powered by Leading AI Technology
-          </h2>
-          <p className="text-lg text-zinc-600 dark:text-zinc-400 mb-16 text-center max-w-2xl mx-auto">
-            Industry-leading speech recognition and AI for accurate, instant responses
-          </p>
-          <div className="grid gap-8 text-left md:grid-cols-2">
-            <div className="rounded-2xl border border-zinc-200 p-10 dark:border-zinc-800 shadow-sm">
-              <div className="mb-6 h-16 w-16 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                <svg className="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                </svg>
-              </div>
-              <h3 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-100 mb-4">
-                Deepgram Speech Recognition
-              </h3>
-              <p className="text-base text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                Ultra-fast, highly accurate speech-to-text transcription.
-                Captures interviewer questions in real-time with minimal latency.
-                Industry-leading accuracy for clear understanding.
-              </p>
-            </div>
-            <div className="rounded-2xl border border-zinc-200 p-10 dark:border-zinc-800 shadow-sm">
-              <div className="mb-6 h-16 w-16 rounded-xl bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center">
-                <svg className="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                </svg>
-              </div>
-              <h3 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-100 mb-4">
-                Claude AI Answer Generation
-              </h3>
-              <p className="text-base text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                Anthropic&apos;s Claude AI generates contextually accurate,
-                personalized answers based on your resume and experience.
-                Smart, relevant responses tailored to each question.
               </p>
             </div>
           </div>
