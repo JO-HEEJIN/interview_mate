@@ -42,8 +42,8 @@ export default function Home() {
             </Link>
           </div>
 
-          {/* Scroll Indicator */}
-          <div className="mt-12 animate-bounce">
+          {/* Scroll Indicator (static — the bouncing motion was distracting) */}
+          <div className="mt-12">
             <svg className="h-8 w-8 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
             </svg>
