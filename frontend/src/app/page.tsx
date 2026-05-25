@@ -19,13 +19,22 @@ export default function Home() {
               - hover = full inverted colors (light→dark→light) for unmistakable affordance
               - arrow translates on hover for the "forward motion" cue
           */}
+          {/*
+            Color: bg-[#0f1530] — black with a barely-perceptible navy
+            wash (per design feedback "아주 미세하게 Navy 색이 살짝 섞인
+            검은색"). dark: stays inverted to white.
+            Motion: animate-pulse-scale on the whole button (custom keyframe
+            in globals.css) — the entire pill breathes, not just the arrow.
+            Pauses on hover so the scale fight with hover:scale-105 doesn't
+            jitter.
+          */}
           <Link
             href="/profile/interview-settings"
-            className="group mt-2 inline-flex h-20 items-center justify-center gap-3 rounded-full bg-zinc-900 px-16 text-2xl font-bold text-white shadow-2xl shadow-zinc-900/30 transition-all duration-300 hover:scale-105 hover:bg-white hover:text-zinc-900 hover:shadow-zinc-900/50 dark:bg-white dark:text-zinc-900 dark:shadow-white/30 dark:hover:bg-zinc-900 dark:hover:text-white dark:hover:shadow-white/50"
+            className="group mt-2 inline-flex h-20 animate-pulse-scale items-center justify-center gap-3 rounded-full bg-[#0f1530] px-16 text-2xl font-bold text-white shadow-2xl shadow-[#0f1530]/30 transition-all duration-300 hover:animate-none hover:scale-110 hover:bg-white hover:text-[#0f1530] hover:shadow-[#0f1530]/50 dark:bg-white dark:text-[#0f1530] dark:shadow-white/30 dark:hover:bg-[#0f1530] dark:hover:text-white dark:hover:shadow-white/50"
           >
             Let&apos;s begin
             <svg
-              className="h-6 w-6 animate-pulse transition-transform duration-300 group-hover:translate-x-1 group-hover:animate-none"
+              className="h-6 w-6 transition-transform duration-300 group-hover:translate-x-1"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -34,20 +43,29 @@ export default function Home() {
             </svg>
           </Link>
 
-          <p className="max-w-2xl text-xl leading-8 text-zinc-600 dark:text-zinc-400">
-            Real-time cheating for any interview. Job interviews, PhD defenses, visa interviews,
-            school admissions - get AI-powered answers in under 2 seconds while you&apos;re being interviewed.
-          </p>
+          {/*
+            Tagline cut from one long run-on sentence to two short lines:
+            users don't read paragraphs (diary_v2 hypothesis). First line
+            = positioning. Second line = what you get.
+          */}
+          <div className="max-w-2xl text-center">
+            <p className="text-xl font-medium leading-8 text-zinc-700 dark:text-zinc-300">
+              Real-time cheating for any interview
+            </p>
+            <p className="mt-1 text-lg leading-7 text-zinc-500 dark:text-zinc-400">
+              AI-powered answers while you&apos;re being interviewed
+            </p>
+          </div>
 
-          {/* Main Value Proposition */}
+          {/* Main Value Proposition — stripped to one big claim + one supporting sentence */}
           <div className="w-full max-w-2xl rounded-xl border-2 border-blue-500 bg-blue-50 p-8 dark:bg-blue-950 dark:border-blue-400">
-            <h2 className="text-2xl font-bold text-blue-900 dark:text-blue-100 mb-4">
-              Works During REAL Interviews - Not a Practice Platform
+            <h2 className="mb-4 flex items-center justify-center gap-3 text-3xl font-extrabold text-blue-900 dark:text-blue-100 sm:text-4xl">
+              <span aria-hidden="true">⚠️</span>
+              <span>Not a Practice Platform!!</span>
             </h2>
             <p className="text-base text-blue-800 dark:text-blue-200">
-              Unlike interview practice platforms, InterviewMate assists you DURING actual live interviews.
-              Whether it&apos;s a job interview, PhD defense, visa interview, or school admission -
-              get AI-powered answer suggestions in under 2 seconds.
+              Unlike interview practice platforms, InterviewMate.tech assists you DURING actual live interviews.
+              Whether it&apos;s a job interview, PhD defense, visa interview, or school admission.
             </p>
           </div>
 
@@ -76,52 +94,101 @@ export default function Home() {
         </div>
       </section>
 
-      {/* How It Works Section */}
-      <section className="flex min-h-screen flex-col items-center justify-center bg-zinc-50 px-6 py-20 dark:bg-zinc-950">
-        <div className="w-full max-w-5xl">
-          <h2 className="text-4xl font-bold text-zinc-900 dark:text-zinc-100 mb-4 text-center">
-            How InterviewMate Works
+      {/*
+        Two amber warnings moved from the guide page — these are time-sensitive
+        ('do this BEFORE your interview') so they belong on the landing flow,
+        not buried in /guide. Replaces what used to be 'How InterviewMate Works'
+        in this position.
+      */}
+      <section className="flex flex-col items-center justify-center bg-zinc-50 px-6 py-20 dark:bg-zinc-950">
+        <div className="mx-auto w-full max-w-4xl space-y-6">
+          <div className="rounded-xl border-2 border-amber-400 bg-amber-50 p-6 dark:border-amber-500 dark:bg-amber-950/40">
+            <div className="flex items-start gap-3">
+              <span className="mt-0.5 text-2xl leading-none" aria-hidden="true">⚠️</span>
+              <div>
+                <h3 className="text-lg font-semibold text-amber-900 dark:text-amber-200">
+                  Important: Enable Audio Capture Before Your Call
+                </h3>
+                <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-amber-800 dark:text-amber-300">
+                  <li>
+                    Before joining Zoom, Google Meet, or Teams, open the{' '}
+                    <Link href="/interview" className="font-medium underline">
+                      Interview page
+                    </Link>{' '}
+                    first and make sure <strong>&ldquo;Capture system audio&rdquo;</strong> is
+                    toggled ON.
+                  </li>
+                  <li>
+                    You must enable all audio capture toggles <strong>before</strong> entering the
+                    video call — if you do it after, the browser may not pick up system audio.
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-xl border-2 border-amber-400 bg-amber-50 p-6 dark:border-amber-500 dark:bg-amber-950/40">
+            <div className="flex items-start gap-3">
+              <span className="mt-0.5 text-2xl leading-none" aria-hidden="true">⚠️</span>
+              <div>
+                <h3 className="text-lg font-semibold text-amber-900 dark:text-amber-200">
+                  Always Test Before Your Real Interview
+                </h3>
+                <p className="mt-2 text-sm text-amber-800 dark:text-amber-300">
+                  If your system prompt gets too long, the AI&apos;s answer quality can actually
+                  get <strong>worse</strong> — not better. After filling in your Background Summary
+                  and Custom Instructions, run a few practice questions on the{' '}
+                  <Link href="/interview" className="font-medium underline">
+                    Interview page
+                  </Link>{' '}
+                  to make sure the answers are accurate and relevant before your real interview.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/*
+        Zoom / Google Meet setup demo — short screen-recording of the
+        actual flow (Start Recording → Entire Screen → "Also share system
+        audio" → Share). Replaces the previous 3-screenshot card grid
+        because a 33-second demo conveys the click sequence more
+        truthfully than static stills.
+
+        <video> attribute notes:
+          - autoPlay + muted + playsInline = required combo for Chrome /
+            Safari autoplay policy (muted because browser blocks audible
+            autoplay unconditionally).
+          - loop = repeats forever, GIF-style.
+          - controls = visible so users can unmute / scrub / fullscreen
+            (audio is intentionally preserved in the file per request).
+          - preload="metadata" = first byte loads on page paint but full
+            video streams when it actually scrolls into view (smaller
+            initial cost).
+      */}
+      <section className="flex flex-col items-center justify-center px-6 py-20">
+        <div className="mx-auto w-full max-w-6xl">
+          <h2 className="mb-3 text-center text-3xl font-bold text-zinc-900 dark:text-zinc-100 sm:text-4xl">
+            How to use InterviewMate.tech with Zoom or Google Meet?
           </h2>
-          <p className="text-lg text-zinc-600 dark:text-zinc-400 mb-16 text-center max-w-2xl mx-auto">
-            Three simple steps to ace your next interview
+          <p className="mx-auto mb-10 max-w-2xl text-center text-base text-zinc-600 dark:text-zinc-400">
+            Steps to capture the call&apos;s audio so the AI can hear your interviewer.
           </p>
-          <div className="grid gap-8 text-left md:grid-cols-3">
-            <div className="rounded-2xl border border-zinc-200 bg-white p-8 dark:border-zinc-800 dark:bg-zinc-900 shadow-sm">
-              <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-full bg-zinc-900 text-2xl font-bold text-white dark:bg-zinc-100 dark:text-zinc-900">
-                1
-              </div>
-              <h3 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100 mb-3">
-                Upload Your Context
-              </h3>
-              <p className="text-base text-zinc-600 dark:text-zinc-400">
-                Upload your resume, target company info, and job description.
-                Our AI learns your background and experience.
-              </p>
-            </div>
-            <div className="rounded-2xl border border-zinc-200 bg-white p-8 dark:border-zinc-800 dark:bg-zinc-900 shadow-sm">
-              <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-full bg-zinc-900 text-2xl font-bold text-white dark:bg-zinc-100 dark:text-zinc-900">
-                2
-              </div>
-              <h3 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100 mb-3">
-                AI Generates Q&A Pairs
-              </h3>
-              <p className="text-base text-zinc-600 dark:text-zinc-400">
-                Claude AI creates 30+ personalized interview Q&A pairs
-                tailored to your experience and the target role.
-              </p>
-            </div>
-            <div className="rounded-2xl border border-zinc-200 bg-white p-8 dark:border-zinc-800 dark:bg-zinc-900 shadow-sm">
-              <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-full bg-zinc-900 text-2xl font-bold text-white dark:bg-zinc-100 dark:text-zinc-900">
-                3
-              </div>
-              <h3 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100 mb-3">
-                Use During Real Interviews
-              </h3>
-              <p className="text-base text-zinc-600 dark:text-zinc-400">
-                Deepgram transcribes questions in real-time. Claude AI
-                generates personalized answers in under 2 seconds.
-              </p>
-            </div>
+
+          <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-black shadow-2xl dark:border-zinc-800">
+            <video
+              autoPlay
+              muted
+              loop
+              playsInline
+              controls
+              preload="metadata"
+              className="block h-auto w-full"
+            >
+              <source src="/zoom-guide/zoom-setup.mp4" type="video/mp4" />
+              Your browser does not support inline video. <a href="/zoom-guide/zoom-setup.mp4" className="underline">Download the demo</a>.
+            </video>
           </div>
         </div>
       </section>

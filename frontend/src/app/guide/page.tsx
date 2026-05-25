@@ -91,6 +91,56 @@ export default function GuidePage() {
         </div>
       </section>
 
+      {/* How InterviewMate Works (moved from landing — too much on first view) */}
+      <section className="px-6 pb-16">
+        <div className="mx-auto w-full max-w-5xl">
+          <h2 className="text-3xl font-bold text-zinc-900 dark:text-zinc-100 mb-3 text-center">
+            How InterviewMate Works
+          </h2>
+          <p className="text-base text-zinc-600 dark:text-zinc-400 mb-10 text-center max-w-2xl mx-auto">
+            Three simple steps to ace your next interview
+          </p>
+          <div className="grid gap-6 text-left md:grid-cols-3">
+            <div className="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900 shadow-sm">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-zinc-900 text-xl font-bold text-white dark:bg-zinc-100 dark:text-zinc-900">
+                1
+              </div>
+              <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
+                Upload Your Context
+              </h3>
+              <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                Upload your resume, target company info, and job description.
+                Our AI learns your background and experience.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900 shadow-sm">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-zinc-900 text-xl font-bold text-white dark:bg-zinc-100 dark:text-zinc-900">
+                2
+              </div>
+              <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
+                AI Generates Q&amp;A Pairs
+              </h3>
+              <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                Claude AI creates 30+ personalized interview Q&amp;A pairs
+                tailored to your experience and the target role.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900 shadow-sm">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-zinc-900 text-xl font-bold text-white dark:bg-zinc-100 dark:text-zinc-900">
+                3
+              </div>
+              <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
+                Use During Real Interviews
+              </h3>
+              <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                Deepgram transcribes questions in real-time. Claude AI
+                generates personalized answers in under 2 seconds.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* 3-Step Setup */}
       <section className="px-6 pb-16">
         <div className="mx-auto grid max-w-4xl gap-6 sm:grid-cols-3">
@@ -119,58 +169,9 @@ export default function GuidePage() {
         </div>
       </section>
 
-      {/* Audio Capture Warning */}
-      <section className="px-6 pb-16">
-        <div className="mx-auto max-w-4xl rounded-xl border-2 border-amber-400 bg-amber-50 p-6 dark:border-amber-500 dark:bg-amber-950/40">
-          <div className="flex items-start gap-3">
-            <span className="mt-0.5 text-2xl leading-none">&#9888;&#65039;</span>
-            <div>
-              <h3 className="text-lg font-semibold text-amber-900 dark:text-amber-200">
-                Important: Enable Audio Capture Before Your Call
-              </h3>
-              <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-amber-800 dark:text-amber-300">
-                <li>
-                  Before joining Zoom, Google Meet, or Teams, open the{' '}
-                  <Link href="/interview" className="font-medium underline">
-                    Interview page
-                  </Link>{' '}
-                  first and make sure <strong>&ldquo;Capture system audio&rdquo;</strong> is
-                  toggled ON.
-                </li>
-                <li>
-                  You must enable all audio capture toggles <strong>before</strong> entering the
-                  video call — if you do it after, the browser may not pick up system audio.
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Settings Prompt Templates */}
       <section className="px-6 pb-20">
         <div className="mx-auto max-w-4xl">
-          {/* Testing Warning */}
-          <div className="mb-10 rounded-xl border-2 border-amber-400 bg-amber-50 p-6 dark:border-amber-500 dark:bg-amber-950/40">
-            <div className="flex items-start gap-3">
-              <span className="mt-0.5 text-2xl leading-none">&#9888;&#65039;</span>
-              <div>
-                <h3 className="text-lg font-semibold text-amber-900 dark:text-amber-200">
-                  Always Test Before Your Real Interview
-                </h3>
-                <p className="mt-2 text-sm text-amber-800 dark:text-amber-300">
-                  If your system prompt gets too long, the AI&apos;s answer quality can actually
-                  get <strong>worse</strong> — not better. After filling in your Background Summary
-                  and Custom Instructions, run a few practice questions on the{' '}
-                  <Link href="/interview" className="font-medium underline">
-                    Interview page
-                  </Link>{' '}
-                  to make sure the answers are accurate and relevant before your real interview.
-                </p>
-              </div>
-            </div>
-          </div>
-
           <h2 className="text-3xl font-bold text-zinc-900 dark:text-zinc-100 text-center">
             Need Help Writing Your Background Summary?
           </h2>
