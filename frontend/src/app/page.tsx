@@ -94,56 +94,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* How It Works Section */}
-      <section className="flex min-h-screen flex-col items-center justify-center bg-zinc-50 px-6 py-20 dark:bg-zinc-950">
-        <div className="w-full max-w-5xl">
-          <h2 className="text-4xl font-bold text-zinc-900 dark:text-zinc-100 mb-4 text-center">
-            How InterviewMate Works
-          </h2>
-          <p className="text-lg text-zinc-600 dark:text-zinc-400 mb-16 text-center max-w-2xl mx-auto">
-            Three simple steps to ace your next interview
-          </p>
-          <div className="grid gap-8 text-left md:grid-cols-3">
-            <div className="rounded-2xl border border-zinc-200 bg-white p-8 dark:border-zinc-800 dark:bg-zinc-900 shadow-sm">
-              <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-full bg-zinc-900 text-2xl font-bold text-white dark:bg-zinc-100 dark:text-zinc-900">
-                1
-              </div>
-              <h3 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100 mb-3">
-                Upload Your Context
-              </h3>
-              <p className="text-base text-zinc-600 dark:text-zinc-400">
-                Upload your resume, target company info, and job description.
-                Our AI learns your background and experience.
-              </p>
-            </div>
-            <div className="rounded-2xl border border-zinc-200 bg-white p-8 dark:border-zinc-800 dark:bg-zinc-900 shadow-sm">
-              <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-full bg-zinc-900 text-2xl font-bold text-white dark:bg-zinc-100 dark:text-zinc-900">
-                2
-              </div>
-              <h3 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100 mb-3">
-                AI Generates Q&A Pairs
-              </h3>
-              <p className="text-base text-zinc-600 dark:text-zinc-400">
-                Claude AI creates 30+ personalized interview Q&A pairs
-                tailored to your experience and the target role.
-              </p>
-            </div>
-            <div className="rounded-2xl border border-zinc-200 bg-white p-8 dark:border-zinc-800 dark:bg-zinc-900 shadow-sm">
-              <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-full bg-zinc-900 text-2xl font-bold text-white dark:bg-zinc-100 dark:text-zinc-900">
-                3
-              </div>
-              <h3 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100 mb-3">
-                Use During Real Interviews
-              </h3>
-              <p className="text-base text-zinc-600 dark:text-zinc-400">
-                Deepgram transcribes questions in real-time. Claude AI
-                generates personalized answers in under 2 seconds.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Use Cases Section */}
       <section className="flex min-h-screen flex-col items-center justify-center bg-zinc-50 px-6 py-20 dark:bg-zinc-950">
         <div className="w-full max-w-5xl">
