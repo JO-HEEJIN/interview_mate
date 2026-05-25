@@ -7,6 +7,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useProfile } from '@/contexts/ProfileContext';
 
@@ -529,6 +530,30 @@ School Admissions:
                         </a>
                     </div>
                 </form>
+
+                {/*
+                  Primary "next step" CTA — mirror of the landing page
+                  Let's begin button. Profile setup is done, the natural
+                  follow-on is starting an interview. Per diary_v2 § 2.5.
+                  Auto-save handles persistence so the user can leave
+                  without explicitly clicking Save.
+                */}
+                <div className="mt-16 flex justify-center pb-12">
+                    <Link
+                        href="/interview"
+                        className="group inline-flex h-16 items-center justify-center gap-3 rounded-full bg-zinc-900 px-12 text-xl font-bold text-white shadow-2xl shadow-zinc-900/30 transition-all duration-300 hover:scale-105 hover:bg-white hover:text-zinc-900 hover:shadow-zinc-900/50 dark:bg-white dark:text-zinc-900 dark:shadow-white/30 dark:hover:bg-zinc-900 dark:hover:text-white dark:hover:shadow-white/50"
+                    >
+                        Go to Interview
+                        <svg
+                            className="h-5 w-5 animate-pulse transition-transform duration-300 group-hover:translate-x-1 group-hover:animate-none"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                        </svg>
+                    </Link>
+                </div>
             </main>
         </div>
     );
