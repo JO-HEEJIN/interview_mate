@@ -12,12 +12,6 @@ import { useProfile } from '@/contexts/ProfileContext';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
-const ANSWER_STYLES = [
-    { value: 'concise', label: 'Concise', description: 'Brief, direct answers (20-30 words)' },
-    { value: 'balanced', label: 'Balanced', description: 'Moderate detail (30-60 words)' },
-    { value: 'detailed', label: 'Detailed', description: 'Comprehensive answers (60-100 words)' },
-];
-
 export default function InterviewSettingsPage() {
     const router = useRouter();
     const [userId, setUserId] = useState<string | null>(null);
@@ -385,68 +379,6 @@ School Admissions:
                                 </details>
                             </div>
 
-                            <div>
-                                <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                                    Skills & Expertise (comma-separated)
-                                </label>
-                                <input
-                                    type="text"
-                                    value={formData.technical_stack}
-                                    onChange={(e) => setFormData({ ...formData, technical_stack: e.target.value })}
-                                    placeholder="e.g., React, Machine Learning, Research Methods, Data Analysis"
-                                    className="w-full rounded-lg border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                                    Key Strengths (comma-separated)
-                                </label>
-                                <input
-                                    type="text"
-                                    value={formData.key_strengths}
-                                    onChange={(e) => setFormData({ ...formData, key_strengths: e.target.value })}
-                                    placeholder="e.g., Problem solving, Leadership, Research, Communication"
-                                    className="w-full rounded-lg border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Communication Style */}
-                    <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950">
-                        <h2 className="mb-4 text-lg font-medium text-zinc-900 dark:text-zinc-100">
-                            Communication Style
-                        </h2>
-
-                        <div className="space-y-3">
-                            {ANSWER_STYLES.map((style) => (
-                                <label
-                                    key={style.value}
-                                    className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors ${
-                                        formData.answer_style === style.value
-                                            ? 'border-zinc-900 bg-zinc-50 dark:border-zinc-100 dark:bg-zinc-800'
-                                            : 'border-zinc-200 hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-900'
-                                    }`}
-                                >
-                                    <input
-                                        type="radio"
-                                        name="answer_style"
-                                        value={style.value}
-                                        checked={formData.answer_style === style.value}
-                                        onChange={(e) => setFormData({ ...formData, answer_style: e.target.value as typeof formData.answer_style })}
-                                        className="mt-1"
-                                    />
-                                    <div>
-                                        <div className="font-medium text-zinc-900 dark:text-zinc-100">
-                                            {style.label}
-                                        </div>
-                                        <div className="text-sm text-zinc-500 dark:text-zinc-400">
-                                            {style.description}
-                                        </div>
-                                    </div>
-                                </label>
-                            ))}
                         </div>
                     </div>
 
