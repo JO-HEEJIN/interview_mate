@@ -263,6 +263,21 @@ export default function QAPairsPage() {
         }
     };
 
+    const handleExportAnki = () => {
+        if (!userId || !activeProfile || qaPairs.length === 0) return;
+        // Use a direct anchor click so the browser honors the server's
+        // Content-Disposition filename (window.open would name it after the URL).
+        const url = new URL(`${API_URL}/api/qa-pairs/${userId}/export`);
+        url.searchParams.set('profile_id', activeProfile.id);
+        url.searchParams.set('profile_name', activeProfile.profile_name);
+        const a = document.createElement('a');
+        a.href = url.toString();
+        a.rel = 'noopener';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    };
+
     const handleEdit = (pair: QAPair) => {
         setEditingPair(pair);
         setFormData({
@@ -381,14 +396,23 @@ export default function QAPairsPage() {
                         {!isCreating && !showBulkUpload && (
                             <>
                                 {qaPairs.length > 0 && (
-                                    <button
-                                        onClick={() => {
-                                            handleDeleteAll();
-                                        }}
-                                        className="rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-950"
-                                    >
-                                        Delete All
-                                    </button>
+                                    <>
+                                        <button
+                                            onClick={handleExportAnki}
+                                            title="Download as Anki-compatible CSV"
+                                            className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                                        >
+                                            ⬇ Export to Anki
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                handleDeleteAll();
+                                            }}
+                                            className="rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-950"
+                                        >
+                                            Delete All
+                                        </button>
+                                    </>
                                 )}
                                 <button
                                     onClick={() => {
