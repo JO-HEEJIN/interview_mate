@@ -149,6 +149,89 @@ export default function Home() {
         </div>
       </section>
 
+      {/*
+        Zoom / Google Meet setup guide — three screenshots showing the
+        flow from clicking Start Recording → choosing Entire Screen →
+        toggling "Also share system audio" on. Sits above Use Cases so
+        a visitor sees concrete proof of how the product hooks into
+        their call before reading what kinds of interviews it supports.
+
+        Image files live at /public/zoom-guide/ — see PR body for the
+        three screenshots that need to be placed there.
+      */}
+      <section className="flex flex-col items-center justify-center px-6 py-20">
+        <div className="mx-auto w-full max-w-5xl">
+          <h2 className="mb-3 text-center text-3xl font-bold text-zinc-900 dark:text-zinc-100 sm:text-4xl">
+            How to use InterviewMate.tech with Zoom or Google Meet?
+          </h2>
+          <p className="mx-auto mb-10 max-w-2xl text-center text-base text-zinc-600 dark:text-zinc-400">
+            Three steps to capture the call&apos;s audio so the AI can hear your interviewer.
+          </p>
+
+          <div className="grid gap-6 md:grid-cols-3">
+            {/* Step 1 — Start Recording */}
+            <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-full bg-zinc-900 text-base font-bold text-white dark:bg-zinc-100 dark:text-zinc-900">
+                1
+              </div>
+              <div className="mb-4 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800">
+                <img
+                  src="/zoom-guide/step1-start-recording.png"
+                  alt="Red 'Start Recording' button on the Interview page"
+                  className="h-auto w-full"
+                />
+              </div>
+              <h3 className="mb-2 text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+                Click &ldquo;Start Recording&rdquo;
+              </h3>
+              <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                On the Interview page, hit the red <strong>Start Recording</strong> button. Your browser will prompt you to share a screen.
+              </p>
+            </div>
+
+            {/* Step 2 — Choose Entire Screen */}
+            <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-full bg-zinc-900 text-base font-bold text-white dark:bg-zinc-100 dark:text-zinc-900">
+                2
+              </div>
+              <div className="mb-4 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800">
+                <img
+                  src="/zoom-guide/step2-choose-screen.png"
+                  alt="Chrome dialog asking what to share, with Entire Screen tab selected"
+                  className="h-auto w-full"
+                />
+              </div>
+              <h3 className="mb-2 text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+                Pick &ldquo;Entire Screen&rdquo;
+              </h3>
+              <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                In Chrome&apos;s share dialog, choose the <strong>Entire Screen</strong> tab and pick the screen where your video call will be running.
+              </p>
+            </div>
+
+            {/* Step 3 — Toggle system audio */}
+            <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-full bg-zinc-900 text-base font-bold text-white dark:bg-zinc-100 dark:text-zinc-900">
+                3
+              </div>
+              <div className="mb-4 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800">
+                <img
+                  src="/zoom-guide/step3-share-audio.png"
+                  alt="Toggle labeled 'Also share system audio' switched on"
+                  className="h-auto w-full"
+                />
+              </div>
+              <h3 className="mb-2 text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+                Toggle &ldquo;Also share system audio&rdquo; ON
+              </h3>
+              <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                Flip the <strong>Also share system audio</strong> switch at the bottom — without this the AI can&apos;t hear your interviewer. Then click Share.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Use Cases Section */}
       <section className="flex min-h-screen flex-col items-center justify-center bg-zinc-50 px-6 py-20 dark:bg-zinc-950">
         <div className="w-full max-w-5xl">
