@@ -19,13 +19,22 @@ export default function Home() {
               - hover = full inverted colors (light→dark→light) for unmistakable affordance
               - arrow translates on hover for the "forward motion" cue
           */}
+          {/*
+            Color: bg-[#0f1530] — black with a barely-perceptible navy
+            wash (per design feedback "아주 미세하게 Navy 색이 살짝 섞인
+            검은색"). dark: stays inverted to white.
+            Motion: animate-pulse-scale on the whole button (custom keyframe
+            in globals.css) — the entire pill breathes, not just the arrow.
+            Pauses on hover so the scale fight with hover:scale-105 doesn't
+            jitter.
+          */}
           <Link
             href="/profile/interview-settings"
-            className="group mt-2 inline-flex h-20 items-center justify-center gap-3 rounded-full bg-zinc-900 px-16 text-2xl font-bold text-white shadow-2xl shadow-zinc-900/30 transition-all duration-300 hover:scale-105 hover:bg-white hover:text-zinc-900 hover:shadow-zinc-900/50 dark:bg-white dark:text-zinc-900 dark:shadow-white/30 dark:hover:bg-zinc-900 dark:hover:text-white dark:hover:shadow-white/50"
+            className="group mt-2 inline-flex h-20 animate-pulse-scale items-center justify-center gap-3 rounded-full bg-[#0f1530] px-16 text-2xl font-bold text-white shadow-2xl shadow-[#0f1530]/30 transition-all duration-300 hover:animate-none hover:scale-110 hover:bg-white hover:text-[#0f1530] hover:shadow-[#0f1530]/50 dark:bg-white dark:text-[#0f1530] dark:shadow-white/30 dark:hover:bg-[#0f1530] dark:hover:text-white dark:hover:shadow-white/50"
           >
             Let&apos;s begin
             <svg
-              className="h-6 w-6 animate-pulse transition-transform duration-300 group-hover:translate-x-1 group-hover:animate-none"
+              className="h-6 w-6 transition-transform duration-300 group-hover:translate-x-1"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"

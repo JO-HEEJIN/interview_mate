@@ -41,3 +41,18 @@ body {
 .animate-progress {
   animation: progress 3s ease-in-out infinite;
 }
+
+/*
+  Scale-pulse — gentler than animate-bounce, more visible than animate-pulse
+  (which only changes opacity). Used by the landing-page 'Let's begin' CTA
+  so the whole button breathes in/out and is impossible to miss. Pauses on
+  hover via Tailwind's group-hover:animate-none.
+*/
+@keyframes pulse-scale {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.05); }
+}
+
+.animate-pulse-scale {
+  animation: pulse-scale 1.6s ease-in-out infinite;
+}
