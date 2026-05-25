@@ -151,6 +151,12 @@ app.add_middleware(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins_list,
+    # Vercel auto-generates a unique preview URL per PR / per branch
+    # (e.g. interview-mate-git-feat-landing-followup-XXXX-momos-projects-YYYY.vercel.app)
+    # so we can't enumerate them in CORS_ORIGINS. Pattern-match anything
+    # under our project's vercel.app subdomain — scoped to project prefix
+    # so it's not a *.vercel.app blanket allow.
+    allow_origin_regex=r"^https://interview-mate(-[a-z0-9-]+)?\.vercel\.app$",
     allow_credentials=settings.CORS_ALLOW_CREDENTIALS,
     allow_methods=settings.CORS_ALLOW_METHODS,
     allow_headers=settings.CORS_ALLOW_HEADERS,
