@@ -345,6 +345,11 @@ async def websocket_transcribe(websocket: WebSocket):
     user_id = None
     profile_id = None  # For multi-profile support
     user_profile = None  # Interview profile for personalized prompts
+    # Onboarding scenario picker (Hybrid + Option 4 user-turn cue, see
+    # PR #29). Free text e.g. "system design" / "PhD admission".
+    # Empty/None = no cue; we leave system prompt completely alone to
+    # avoid the car_wash dilution effect.
+    scenario = None  # type: ignore[assignment]
     user_context = {
         "resume_text": "",
         "star_stories": [],
@@ -577,10 +582,16 @@ async def websocket_transcribe(websocket: WebSocket):
                                 "source": "generated"
                             })
 
+                            # Onboarding scenario picker — Option 4 user-turn
+                            # cue. Prepend "[Round: X] " to the LLM-bound
+                            # question only; system prompt and DB-persisted
+                            # question stay untouched (avoids car_wash dilution).
+                            cued_question = f"[Round: {scenario}] {question}" if scenario else question
+
                             # Stream answer chunks in real-time (RAG already done)
                             generated_answer = ""
                             async for chunk in llm_service.generate_answer_stream(
-                                question=question,
+                                question=cued_question,
                                 resume_text=user_context["resume_text"],
                                 star_stories=user_context["star_stories"],
                                 talking_points=user_context["talking_points"],
@@ -735,6 +746,13 @@ async def websocket_transcribe(websocket: WebSocket):
                             user_context["star_stories"] = data.get("star_stories", [])
                             user_context["talking_points"] = data.get("talking_points", [])
                             user_context["qa_pairs"] = data.get("qa_pairs", [])
+
+                            # Onboarding scenario picker — Option 4 user-turn cue.
+                            # Empty string clears the cue (user toggled it off).
+                            incoming_scenario = (data.get("scenario") or "").strip()
+                            scenario = incoming_scenario or None
+                            if scenario:
+                                logger.info(f"[{connection_id}] Scenario set: {scenario!r}")
 
                             # Verify JWT token to authenticate user
                             access_token = data.get("access_token")
