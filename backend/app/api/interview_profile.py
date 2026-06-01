@@ -3,11 +3,12 @@ REST API endpoints for user interview profile management
 Supports multiple profiles per user (e.g., Google SWE, MIT PhD, F1 Visa)
 """
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from typing import Optional, List
 from supabase import create_client, Client
 from app.core.config import settings
+from app.core.auth import get_current_user_id, require_user_match
 
 router = APIRouter(prefix="/api/interview-profiles", tags=["interview-profiles"])
 
@@ -79,8 +80,12 @@ class InterviewProfileResponse(BaseModel):
 # ===== Multi-Profile Endpoints =====
 
 @router.get("/{user_id}")
-async def list_interview_profiles(user_id: str):
+async def list_interview_profiles(
+    user_id: str,
+    current_user_id: str = Depends(get_current_user_id),
+):
     """List all interview profiles for a user"""
+    require_user_match(user_id, current_user_id)
     supabase = get_supabase()
 
     response = supabase.table("user_interview_profiles") \
@@ -103,8 +108,13 @@ async def list_interview_profiles(user_id: str):
 
 
 @router.post("/{user_id}")
-async def create_interview_profile(user_id: str, profile: InterviewProfileCreate):
+async def create_interview_profile(
+    user_id: str,
+    profile: InterviewProfileCreate,
+    current_user_id: str = Depends(get_current_user_id),
+):
     """Create a new interview profile"""
+    require_user_match(user_id, current_user_id)
     supabase = get_supabase()
 
     # Check if profile with same name exists
@@ -156,8 +166,13 @@ async def create_interview_profile(user_id: str, profile: InterviewProfileCreate
 
 
 @router.get("/{user_id}/{profile_id}")
-async def get_interview_profile(user_id: str, profile_id: str):
+async def get_interview_profile(
+    user_id: str,
+    profile_id: str,
+    current_user_id: str = Depends(get_current_user_id),
+):
     """Get a specific interview profile"""
+    require_user_match(user_id, current_user_id)
     supabase = get_supabase()
 
     response = supabase.table("user_interview_profiles") \
@@ -173,8 +188,14 @@ async def get_interview_profile(user_id: str, profile_id: str):
 
 
 @router.put("/{user_id}/{profile_id}")
-async def update_interview_profile(user_id: str, profile_id: str, profile: InterviewProfileUpdate):
+async def update_interview_profile(
+    user_id: str,
+    profile_id: str,
+    profile: InterviewProfileUpdate,
+    current_user_id: str = Depends(get_current_user_id),
+):
     """Update a specific interview profile"""
+    require_user_match(user_id, current_user_id)
     supabase = get_supabase()
 
     # Check profile exists and belongs to user
@@ -216,8 +237,13 @@ async def update_interview_profile(user_id: str, profile_id: str, profile: Inter
 
 
 @router.delete("/{user_id}/{profile_id}")
-async def delete_interview_profile(user_id: str, profile_id: str):
+async def delete_interview_profile(
+    user_id: str,
+    profile_id: str,
+    current_user_id: str = Depends(get_current_user_id),
+):
     """Delete a specific interview profile"""
+    require_user_match(user_id, current_user_id)
     supabase = get_supabase()
 
     # Check if this is the only profile
@@ -257,8 +283,13 @@ async def delete_interview_profile(user_id: str, profile_id: str):
 
 
 @router.post("/{user_id}/{profile_id}/set-default")
-async def set_default_profile(user_id: str, profile_id: str):
+async def set_default_profile(
+    user_id: str,
+    profile_id: str,
+    current_user_id: str = Depends(get_current_user_id),
+):
     """Set a profile as the default"""
+    require_user_match(user_id, current_user_id)
     supabase = get_supabase()
 
     # Check profile exists
@@ -287,8 +318,14 @@ async def set_default_profile(user_id: str, profile_id: str):
 
 
 @router.post("/{user_id}/{profile_id}/duplicate")
-async def duplicate_profile(user_id: str, profile_id: str, new_name: str = Query(..., min_length=1)):
+async def duplicate_profile(
+    user_id: str,
+    profile_id: str,
+    new_name: str = Query(..., min_length=1),
+    current_user_id: str = Depends(get_current_user_id),
+):
     """Duplicate an existing profile with a new name"""
+    require_user_match(user_id, current_user_id)
     supabase = get_supabase()
 
     # Get source profile
@@ -338,8 +375,12 @@ async def duplicate_profile(user_id: str, profile_id: str, new_name: str = Query
 # ===== Legacy Endpoints (backward compatibility) =====
 
 @legacy_router.get("/{user_id}")
-async def legacy_get_profile(user_id: str):
+async def legacy_get_profile(
+    user_id: str,
+    current_user_id: str = Depends(get_current_user_id),
+):
     """Legacy: Get user's default interview profile"""
+    require_user_match(user_id, current_user_id)
     supabase = get_supabase()
 
     # First try to get default profile
@@ -364,8 +405,13 @@ async def legacy_get_profile(user_id: str):
 
 
 @legacy_router.post("/{user_id}")
-async def legacy_create_profile(user_id: str, profile: InterviewProfileUpdate):
+async def legacy_create_profile(
+    user_id: str,
+    profile: InterviewProfileUpdate,
+    current_user_id: str = Depends(get_current_user_id),
+):
     """Legacy: Create interview profile (creates as 'Default')"""
+    require_user_match(user_id, current_user_id)
     create_data = InterviewProfileCreate(
         profile_name="Default",
         full_name=profile.full_name,
@@ -382,8 +428,13 @@ async def legacy_create_profile(user_id: str, profile: InterviewProfileUpdate):
 
 
 @legacy_router.put("/{user_id}")
-async def legacy_update_profile(user_id: str, profile: InterviewProfileUpdate):
+async def legacy_update_profile(
+    user_id: str,
+    profile: InterviewProfileUpdate,
+    current_user_id: str = Depends(get_current_user_id),
+):
     """Legacy: Update user's default interview profile (upsert)"""
+    require_user_match(user_id, current_user_id)
     supabase = get_supabase()
 
     # Find default profile
@@ -411,8 +462,12 @@ async def legacy_update_profile(user_id: str, profile: InterviewProfileUpdate):
 
 
 @legacy_router.delete("/{user_id}")
-async def legacy_delete_profile(user_id: str):
+async def legacy_delete_profile(
+    user_id: str,
+    current_user_id: str = Depends(get_current_user_id),
+):
     """Legacy: Delete user's default interview profile"""
+    require_user_match(user_id, current_user_id)
     supabase = get_supabase()
 
     # This deletes ALL profiles for the user (legacy behavior)
