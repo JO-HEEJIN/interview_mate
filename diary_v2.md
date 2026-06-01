@@ -135,3 +135,44 @@ Profile 설정 후 다음 한 클릭이 *명확*해야 함. 페이지 하단에 
 - **"오늘의 과제" 시나리오 picker** (피드백 1번의 추가 제안) — Block 2가 onboarding 갭의 *프로필 layer*는 메우지만, 인터뷰 페이지 자체의 onboarding 갭은 별개. follow-up
 
 이 세 가지는 Block 2 머지 후 데이터 보고 결정.
+
+---
+
+## Phase 7 회고 — Block 2 이후 후속 PR들 (2026-05-25 → 06-01)
+
+Block 2 머지 후 follow-up 4개 다 들어감. 순서대로:
+
+### PR #27 — Anki Q&A export (피드백 2번)
+- `/profile/qa-pairs`에 ⬇ Export to Anki 버튼. 백엔드 `GET /api/qa-pairs/{user_id}/export` CSV (Front/Back/Tags, UTF-8 BOM, `csv.QUOTE_ALL`)
+- 가장 작은 작업이라 첫 자리. 1시간 안에 끝.
+
+### main 직접 commit — "Interview Practice" → "Live Interview"
+- 1줄 라벨 변경 2곳 (`interview/page.tsx:486`, `payment/success/page.tsx:149`). PR 안 만들고 main에 직접.
+- 피드백 1번의 절반 해결 — "뭘 해야 할지 모르겠다"의 일부 원인이 *라벨이 mock mode를 암시*하는 거였음 (이건 실시간 tool인데).
+
+### PR #28 — Session history + Anki/Text/MD export (피드백 1번 일부 + 2번 후속)
+- 사용자가 trade-off (lock-in vs portability) 결정 → **둘 다 가는 결정**. 사이트 히스토리 + 다운로드 동시.
+- 기존 `interview_sessions`/`session_messages`에 이미 매 메시지가 저장되고 있었음 (websocket.py:89). 백엔드 추가는 export endpoint 확장 1개. 신규는 frontend 페이지 2개(/profile/sessions, /profile/sessions/[id]).
+- `/interview` 헤더에 "📋 Past sessions →" 항상 노출 — 매 세션이 lock-in 신호.
+
+### PR #29 — Onboarding scenario picker (피드백 1번의 나머지 절반)
+
+**문제:** 라벨 변경(B)으론 "뭘 해야 할지 모르겠다"의 절반만 해결. 나머지 절반은 *세션을 시작하기 전 의도 설정*이 없다는 것.
+
+**노출 결정:** Hybrid (첫 세션 모달 + 이후 헤더 링크). 항상 모달은 숙련자 friction, 첫 세션만은 재설정 경로 부재. Hybrid가 두 비용 다 작음.
+
+**Effect 결정 — car_wash 긴장:**
+초안에서 "system prompt에 hint 한 줄 추가"를 권장했지만 사용자가 즉시 제동 — "system prompt가 길어질수록 환각/품질 저하 우려". 정당한 지적. car_wash 발견의 정신은 *"레이어 추가 누적이 핵심 reasoning을 희석"*이고, 60줄→61줄에서 dilution이 갑자기 0이 되는 게 아님. 단지 작아질 뿐.
+
+→ **Option 4 (user-turn cue)** 로 선회. 시스템 프롬프트는 한 글자도 안 건드리고 매 question에 `[Round: X]` prefix만 LLM-bound copy에 붙임. RAG search/DB 저장은 raw question 그대로 (cosine 유사도/히스토리 깨끗 유지). Dilution risk 0.
+
+**Chip suggestion 도메인 중립:** InterviewMate는 SWE / PhD / Visa / Marketing 등 다양한 use case. SWE 중심 default chip이면 non-SWE가 답답함. → "Behavioral / System design / Case / Coding / PhD admission / Visa" 6개 혼합.
+
+**구현 분해 (3 commit):**
+1. Backend — `websocket.py` scenario state + 컨텍스트 핸들러 + LLM 호출 직전 prefix
+2. Frontend — `ScenarioPickerModal` 컴포넌트 + `sendContext` 타입 확장 (rule 3.0 동기화)
+3. Frontend — `/interview` 통합 (localStorage flag, badge, Change link)
+
+**교훈:**
+- 사용자가 *본인 코드베이스에서 나온 자기 연구*를 알고 있을 때, 그 연구와 충돌하는 권장은 정직하게 인정하고 대안 제시해야 함. "1줄이라 괜찮아"는 게으른 추정.
+- 환각/품질 우려가 있으면 **시스템 프롬프트 무수정** 옵션이 항상 가장 안전. 비용은 attention signal이 약간 더 약하다는 것뿐 — 가까운 user-turn cue는 멀리 있는 system instruction보다 attention 우위.
