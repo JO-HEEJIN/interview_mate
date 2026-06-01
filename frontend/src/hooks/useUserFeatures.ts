@@ -4,6 +4,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import { authFetch } from '@/lib/authFetch';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -41,7 +42,7 @@ export function useUserFeatures(userId: string | null) {
     try {
       setFeatures(prev => ({ ...prev, isLoading: true, error: null }));
 
-      const response = await fetch(`${API_URL}/api/subscriptions/${userId}/summary`);
+      const response = await authFetch(`${API_URL}/api/subscriptions/${userId}/summary`);
 
       if (!response.ok) {
         throw new Error('Failed to fetch user features');
