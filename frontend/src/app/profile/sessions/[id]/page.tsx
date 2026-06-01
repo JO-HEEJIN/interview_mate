@@ -10,6 +10,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { authFetch } from '@/lib/authFetch';
 
 interface SessionMeta {
     id: string;
@@ -74,7 +75,7 @@ export default function SessionDetailPage() {
         (async () => {
             setIsLoading(true);
             try {
-                const res = await fetch(`${API_URL}/api/interview-sessions/${sessionId}/export?format=json`);
+                const res = await authFetch(`${API_URL}/api/interview-sessions/${sessionId}/export?format=json`);
                 if (!res.ok) throw new Error(`Failed (${res.status})`);
                 const body = await res.json();
                 setData(body);

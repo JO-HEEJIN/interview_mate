@@ -7,6 +7,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { authFetch } from '@/lib/authFetch';
 
 interface StarStory {
     id: string;
@@ -74,7 +75,7 @@ export default function StarStoriesPage() {
     const fetchStories = async () => {
         try {
             setIsLoading(true);
-            const response = await fetch(`${API_URL}/api/profile/star-stories/${userId}`);
+            const response = await authFetch(`${API_URL}/api/profile/star-stories/${userId}`);
             const data = await response.json();
             setStories(data.stories || []);
         } catch (err) {
@@ -99,14 +100,14 @@ export default function StarStoriesPage() {
         try {
             if (editingStory) {
                 // Update
-                await fetch(`${API_URL}/api/profile/star-stories/${editingStory.id}`, {
+                await authFetch(`${API_URL}/api/profile/star-stories/${editingStory.id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(storyData),
                 });
             } else {
                 // Create
-                await fetch(`${API_URL}/api/profile/star-stories/${userId}`, {
+                await authFetch(`${API_URL}/api/profile/star-stories/${userId}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(storyData),
@@ -125,7 +126,7 @@ export default function StarStoriesPage() {
         if (!confirm('Are you sure you want to delete this story?')) return;
 
         try {
-            await fetch(`${API_URL}/api/profile/star-stories/${id}`, {
+            await authFetch(`${API_URL}/api/profile/star-stories/${id}`, {
                 method: 'DELETE',
             });
             fetchStories();
