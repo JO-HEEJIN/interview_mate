@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from typing import Optional, List
 from supabase import create_client, Client
 from app.core.config import settings
+from app.core.auth import get_current_user_id, require_user_match
 
 router = APIRouter(prefix="/api/profile", tags=["profile"])
 
@@ -75,8 +76,13 @@ class TalkingPointResponse(BaseModel):
 
 # STAR Stories Endpoints
 @router.get("/star-stories/{user_id}")
-async def get_star_stories(user_id: str, profile_id: Optional[str] = None):
+async def get_star_stories(
+    user_id: str,
+    profile_id: Optional[str] = None,
+    current_user_id: str = Depends(get_current_user_id),
+):
     """Get all STAR stories for a user, optionally filtered by profile"""
+    require_user_match(user_id, current_user_id)
     supabase = get_supabase()
 
     query = supabase.table("star_stories").select("*").eq("user_id", user_id)
@@ -90,8 +96,13 @@ async def get_star_stories(user_id: str, profile_id: Optional[str] = None):
 
 
 @router.post("/star-stories/{user_id}")
-async def create_star_story(user_id: str, story: StarStoryCreate):
+async def create_star_story(
+    user_id: str,
+    story: StarStoryCreate,
+    current_user_id: str = Depends(get_current_user_id),
+):
     """Create a new STAR story"""
+    require_user_match(user_id, current_user_id)
     supabase = get_supabase()
 
     data = {
@@ -143,8 +154,13 @@ async def delete_star_story(story_id: str):
 
 # Talking Points Endpoints
 @router.get("/talking-points/{user_id}")
-async def get_talking_points(user_id: str, profile_id: Optional[str] = None):
+async def get_talking_points(
+    user_id: str,
+    profile_id: Optional[str] = None,
+    current_user_id: str = Depends(get_current_user_id),
+):
     """Get all talking points for a user, optionally filtered by profile"""
+    require_user_match(user_id, current_user_id)
     supabase = get_supabase()
 
     query = supabase.table("talking_points").select("*").eq("user_id", user_id)
@@ -158,8 +174,13 @@ async def get_talking_points(user_id: str, profile_id: Optional[str] = None):
 
 
 @router.post("/talking-points/{user_id}")
-async def create_talking_point(user_id: str, point: TalkingPointCreate):
+async def create_talking_point(
+    user_id: str,
+    point: TalkingPointCreate,
+    current_user_id: str = Depends(get_current_user_id),
+):
     """Create a new talking point"""
+    require_user_match(user_id, current_user_id)
     supabase = get_supabase()
 
     data = {
@@ -208,8 +229,13 @@ async def delete_talking_point(point_id: str):
 
 # User Context Endpoint (for interview session)
 @router.get("/context/{user_id}")
-async def get_user_context(user_id: str, profile_id: Optional[str] = None):
+async def get_user_context(
+    user_id: str,
+    profile_id: Optional[str] = None,
+    current_user_id: str = Depends(get_current_user_id),
+):
     """Get all user context for interview session (stories, talking points, resume)"""
+    require_user_match(user_id, current_user_id)
     supabase = get_supabase()
 
     # Get STAR stories (filtered by profile if specified)

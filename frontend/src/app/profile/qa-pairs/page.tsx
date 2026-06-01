@@ -8,6 +8,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { authFetch } from '@/lib/authFetch';
 import { useUserFeatures } from '@/hooks/useUserFeatures';
 import { useProfile } from '@/contexts/ProfileContext';
 
@@ -115,7 +116,7 @@ export default function QAPairsPage() {
             setIsLoading(true);
             const url = new URL(`${API_URL}/api/qa-pairs/${userId}`);
             url.searchParams.set('profile_id', activeProfile.id);
-            const response = await fetch(url.toString());
+            const response = await authFetch(url.toString());
             if (!response.ok) throw new Error('Failed to fetch Q&A pairs');
             const data = await response.json();
             setQaPairs(data || []);
@@ -137,7 +138,7 @@ export default function QAPairsPage() {
         try {
             setIsParsing(true);
             setError(null);
-            const response = await fetch(`${API_URL}/api/qa-pairs/${userId}/bulk-parse`, {
+            const response = await authFetch(`${API_URL}/api/qa-pairs/${userId}/bulk-parse`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ text: bulkText }),
@@ -165,7 +166,7 @@ export default function QAPairsPage() {
         try {
             setIsUploading(true);
             setError(null);
-            const response = await fetch(`${API_URL}/api/qa-pairs/${userId}/bulk-upload`, {
+            const response = await authFetch(`${API_URL}/api/qa-pairs/${userId}/bulk-upload`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -205,14 +206,14 @@ export default function QAPairsPage() {
         try {
             if (editingPair) {
                 // Update
-                await fetch(`${API_URL}/api/qa-pairs/${editingPair.id}`, {
+                await authFetch(`${API_URL}/api/qa-pairs/${editingPair.id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(pairData),
                 });
             } else {
                 // Create
-                await fetch(`${API_URL}/api/qa-pairs/${userId}`, {
+                await authFetch(`${API_URL}/api/qa-pairs/${userId}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(pairData),
@@ -231,7 +232,7 @@ export default function QAPairsPage() {
         if (!confirm('Are you sure you want to delete this Q&A pair?')) return;
 
         try {
-            await fetch(`${API_URL}/api/qa-pairs/${id}`, {
+            await authFetch(`${API_URL}/api/qa-pairs/${id}`, {
                 method: 'DELETE',
             });
             fetchQAPairs();
@@ -249,7 +250,7 @@ export default function QAPairsPage() {
         try {
             const url = new URL(`${API_URL}/api/qa-pairs/${userId}/all`);
             url.searchParams.set('profile_id', activeProfile.id);
-            const response = await fetch(url.toString(), {
+            const response = await authFetch(url.toString(), {
                 method: 'DELETE',
             });
 

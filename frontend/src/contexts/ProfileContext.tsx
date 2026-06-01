@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react';
 import { supabase } from '@/lib/supabase';
+import { authFetch } from '@/lib/authFetch';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -64,7 +65,7 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
             setIsLoading(true);
             setError(null);
 
-            const response = await fetch(`${API_URL}/api/interview-profiles/${uid}`);
+            const response = await authFetch(`${API_URL}/api/interview-profiles/${uid}`);
 
             if (!response.ok) {
                 throw new Error('Failed to load profiles');
@@ -191,7 +192,7 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
         setIsCreating(true);
 
         try {
-            const response = await fetch(`${API_URL}/api/interview-profiles/${userId}`, {
+            const response = await authFetch(`${API_URL}/api/interview-profiles/${userId}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -230,7 +231,7 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
         if (!userId) return null;
 
         try {
-            const response = await fetch(`${API_URL}/api/interview-profiles/${userId}/${profileId}`, {
+            const response = await authFetch(`${API_URL}/api/interview-profiles/${userId}/${profileId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data),
@@ -263,7 +264,7 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
         if (!userId) return false;
 
         try {
-            const response = await fetch(`${API_URL}/api/interview-profiles/${userId}/${profileId}`, {
+            const response = await authFetch(`${API_URL}/api/interview-profiles/${userId}/${profileId}`, {
                 method: 'DELETE',
             });
 

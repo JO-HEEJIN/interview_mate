@@ -11,6 +11,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { authFetch } from '@/lib/authFetch';
 
 interface SessionRow {
     id: string;
@@ -72,7 +73,7 @@ export default function SessionsListPage() {
         (async () => {
             setIsLoading(true);
             try {
-                const res = await fetch(`${API_URL}/api/interview-sessions/${userId}/sessions?limit=50`);
+                const res = await authFetch(`${API_URL}/api/interview-sessions/${userId}/sessions?limit=50`);
                 if (!res.ok) throw new Error(`Failed (${res.status})`);
                 const data = await res.json();
                 setSessions(data || []);
@@ -99,7 +100,7 @@ export default function SessionsListPage() {
     const handleDelete = async (sessionId: string) => {
         if (!confirm('Delete this session and all its messages? This cannot be undone.')) return;
         try {
-            const res = await fetch(`${API_URL}/api/interview-sessions/${sessionId}`, { method: 'DELETE' });
+            const res = await authFetch(`${API_URL}/api/interview-sessions/${sessionId}`, { method: 'DELETE' });
             if (!res.ok) throw new Error(`Failed (${res.status})`);
             setSessions((prev) => prev.filter((s) => s.id !== sessionId));
         } catch (e) {
