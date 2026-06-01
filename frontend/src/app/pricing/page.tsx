@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { authFetch } from '@/lib/authFetch';
 import Link from 'next/link';
 
 interface PricingPlan {
@@ -51,7 +52,7 @@ export default function PricingPage() {
       // Fetch plans and user features in parallel (no need to wait)
       Promise.all([
         fetch(`${API_URL}/api/subscriptions/plans`).then(res => res.ok ? res.json() : []),
-        fetch(`${API_URL}/api/subscriptions/${session.user.id}/summary`).then(res => res.ok ? res.json() : null)
+        authFetch(`${API_URL}/api/subscriptions/${session.user.id}/summary`).then(res => res.ok ? res.json() : null)
       ]).then(([plansData, featuresData]) => {
         setPlans(plansData);
         if (featuresData) {

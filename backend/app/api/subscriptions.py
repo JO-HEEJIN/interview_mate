@@ -3,11 +3,12 @@ Subscription and Credit Management API
 Handles user subscriptions, credit purchases, and feature access
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 from app.core.supabase import get_supabase_client
+from app.core.auth import get_current_user_id, require_user_match
 import logging
 
 logger = logging.getLogger(__name__)
@@ -94,10 +95,14 @@ async def get_pricing_plans():
 
 
 @router.get("/{user_id}/summary", response_model=FeaturesSummary)
-async def get_user_features_summary(user_id: str):
+async def get_user_features_summary(
+    user_id: str,
+    current_user_id: str = Depends(get_current_user_id),
+):
     """
     Get comprehensive summary of user's features, credits, and subscriptions.
     """
+    require_user_match(user_id, current_user_id)
     try:
         supabase = get_supabase_client()
 
@@ -123,10 +128,14 @@ async def get_user_features_summary(user_id: str):
 
 
 @router.get("/{user_id}/subscriptions", response_model=List[UserSubscription])
-async def get_user_subscriptions(user_id: str):
+async def get_user_subscriptions(
+    user_id: str,
+    current_user_id: str = Depends(get_current_user_id),
+):
     """
     Get all active and depleted subscriptions for a user.
     """
+    require_user_match(user_id, current_user_id)
     try:
         supabase = get_supabase_client()
 
@@ -162,10 +171,14 @@ async def get_user_subscriptions(user_id: str):
 
 
 @router.get("/{user_id}/credits")
-async def get_user_credits(user_id: str):
+async def get_user_credits(
+    user_id: str,
+    current_user_id: str = Depends(get_current_user_id),
+):
     """
     Get user's total available interview credits.
     """
+    require_user_match(user_id, current_user_id)
     try:
         supabase = get_supabase_client()
 
@@ -186,11 +199,16 @@ async def get_user_credits(user_id: str):
 
 
 @router.post("/{user_id}/credits/consume")
-async def consume_credit(user_id: str, session_id: Optional[str] = None):
+async def consume_credit(
+    user_id: str,
+    session_id: Optional[str] = None,
+    current_user_id: str = Depends(get_current_user_id),
+):
     """
     Consume one interview credit.
     Called when an interview session is completed.
     """
+    require_user_match(user_id, current_user_id)
     try:
         supabase = get_supabase_client()
 
@@ -235,11 +253,13 @@ async def consume_credit(user_id: str, session_id: Optional[str] = None):
 async def get_credit_usage_log(
     user_id: str,
     limit: int = 50,
-    offset: int = 0
+    offset: int = 0,
+    current_user_id: str = Depends(get_current_user_id),
 ):
     """
     Get credit usage history for a user.
     """
+    require_user_match(user_id, current_user_id)
     try:
         supabase = get_supabase_client()
 
@@ -259,7 +279,11 @@ async def get_credit_usage_log(
 
 
 @router.get("/{user_id}/feature/{feature_code}")
-async def check_feature_access(user_id: str, feature_code: str):
+async def check_feature_access(
+    user_id: str,
+    feature_code: str,
+    current_user_id: str = Depends(get_current_user_id),
+):
     """
     Check if user has access to a specific feature.
 
@@ -269,6 +293,7 @@ async def check_feature_access(user_id: str, feature_code: str):
     - qa_pairs_crud
     - qa_bulk_upload
     """
+    require_user_match(user_id, current_user_id)
     try:
         supabase = get_supabase_client()
 
@@ -294,11 +319,13 @@ async def check_feature_access(user_id: str, feature_code: str):
 async def get_payment_transactions(
     user_id: str,
     limit: int = 20,
-    offset: int = 0
+    offset: int = 0,
+    current_user_id: str = Depends(get_current_user_id),
 ):
     """
     Get payment transaction history for a user.
     """
+    require_user_match(user_id, current_user_id)
     try:
         supabase = get_supabase_client()
 

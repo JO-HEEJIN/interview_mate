@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { authFetch } from '@/lib/authFetch';
 import { useUserFeatures } from '@/hooks/useUserFeatures';
 import { useProfile } from '@/contexts/ProfileContext';
 
@@ -109,7 +110,7 @@ export default function ContextUploadPage() {
       if (profileId) {
         url.searchParams.set('profile_id', profileId);
       }
-      const response = await fetch(url.toString());
+      const response = await authFetch(url.toString());
       if (!response.ok) throw new Error('Failed to load contexts');
       const data = await response.json();
       setUploadedContexts(data);
@@ -131,7 +132,7 @@ export default function ContextUploadPage() {
       formData.append('file', resumeFile);
       formData.append('profile_id', activeProfile.id);
 
-      const response = await fetch(`${API_URL}/api/context/${userId}/upload-resume`, {
+      const response = await authFetch(`${API_URL}/api/context/${userId}/upload-resume`, {
         method: 'POST',
         body: formData,
       });
@@ -180,7 +181,7 @@ export default function ContextUploadPage() {
         formData.append('context_type', 'company_info');
         formData.append('profile_id', activeProfile.id);
 
-        const response = await fetch(`${API_URL}/api/context/${userId}/upload-screenshot`, {
+        const response = await authFetch(`${API_URL}/api/context/${userId}/upload-screenshot`, {
           method: 'POST',
           body: formData,
         });
@@ -196,7 +197,7 @@ export default function ContextUploadPage() {
           return;
         }
 
-        const response = await fetch(`${API_URL}/api/context/${userId}/upload-text`, {
+        const response = await authFetch(`${API_URL}/api/context/${userId}/upload-text`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -247,7 +248,7 @@ export default function ContextUploadPage() {
         formData.append('context_type', 'job_posting');
         formData.append('profile_id', activeProfile.id);
 
-        const response = await fetch(`${API_URL}/api/context/${userId}/upload-screenshot`, {
+        const response = await authFetch(`${API_URL}/api/context/${userId}/upload-screenshot`, {
           method: 'POST',
           body: formData,
         });
@@ -263,7 +264,7 @@ export default function ContextUploadPage() {
           return;
         }
 
-        const response = await fetch(`${API_URL}/api/context/${userId}/upload-text`, {
+        const response = await authFetch(`${API_URL}/api/context/${userId}/upload-text`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -301,7 +302,7 @@ export default function ContextUploadPage() {
     setError(null);
 
     try {
-      const response = await fetch(`${API_URL}/api/context/${userId}/generate-qa`, {
+      const response = await authFetch(`${API_URL}/api/context/${userId}/generate-qa`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -340,7 +341,7 @@ export default function ContextUploadPage() {
     if (!context) return;
 
     try {
-      const response = await fetch(`${API_URL}/api/context/${userId}/contexts/${context.id}`, {
+      const response = await authFetch(`${API_URL}/api/context/${userId}/contexts/${context.id}`, {
         method: 'DELETE',
       });
 

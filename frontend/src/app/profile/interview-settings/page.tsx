@@ -9,6 +9,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import { authFetch } from '@/lib/authFetch';
 import { useProfile } from '@/contexts/ProfileContext';
 import { BackgroundUploadModal } from '@/components/BackgroundUploadModal';
 
@@ -190,7 +191,7 @@ export default function InterviewSettingsPage() {
                 fd.append('organization_text', data.organization_text);
                 fd.append('interview_text', data.interview_text);
 
-                const res = await fetch(
+                const res = await authFetch(
                     `${API_URL}/api/context/${userId}/extract-background`,
                     { method: 'POST', body: fd },
                 );

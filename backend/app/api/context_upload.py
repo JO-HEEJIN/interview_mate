@@ -10,6 +10,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from app.core.supabase import get_supabase_client
+from app.core.auth import get_current_user_id, require_user_match
 from app.services.upload_service import upload_service
 from app.services.background_extraction_service import stream_background_extraction
 from app.core.rate_limit import limiter
@@ -44,7 +45,8 @@ async def upload_resume(
     request: Request,
     user_id: str,
     file: UploadFile = File(...),
-    profile_id: Optional[str] = Form(None)
+    profile_id: Optional[str] = Form(None),
+    current_user_id: str = Depends(get_current_user_id),
 ):
     """
     Upload PDF resume and extract text.
@@ -61,6 +63,7 @@ async def upload_resume(
         400: Invalid file format
         500: Upload or extraction failed
     """
+    require_user_match(user_id, current_user_id)
     logger.info(f"Resume upload requested for user {user_id}, profile {profile_id}")
 
     try:
@@ -109,7 +112,8 @@ async def upload_screenshot(
     user_id: str,
     context_type: str = Form(...),  # company_info or job_posting
     file: UploadFile = File(...),
-    profile_id: Optional[str] = Form(None)
+    profile_id: Optional[str] = Form(None),
+    current_user_id: str = Depends(get_current_user_id),
 ):
     """
     Upload screenshot (company info or job posting) and extract text via Vision API.
@@ -127,6 +131,7 @@ async def upload_screenshot(
         400: Invalid context type or file format
         500: Upload or extraction failed
     """
+    require_user_match(user_id, current_user_id)
     logger.info(f"Screenshot upload requested for user {user_id}, type: {context_type}, profile {profile_id}")
 
     try:
@@ -184,7 +189,8 @@ async def upload_screenshot(
 @router.post("/{user_id}/upload-text")
 async def upload_text_context(
     user_id: str,
-    data: TextContextUpload
+    data: TextContextUpload,
+    current_user_id: str = Depends(get_current_user_id),
 ):
     """
     Upload pasted text (company info, job posting, or additional context).
@@ -200,6 +206,7 @@ async def upload_text_context(
         400: Invalid context type or text too short
         500: Save failed
     """
+    require_user_match(user_id, current_user_id)
     logger.info(f"Text upload requested for user {user_id}, type: {data.context_type}")
 
     try:
@@ -252,7 +259,8 @@ async def upload_text_context(
 @router.get("/{user_id}/contexts")
 async def list_user_contexts(
     user_id: str,
-    profile_id: Optional[str] = None
+    profile_id: Optional[str] = None,
+    current_user_id: str = Depends(get_current_user_id),
 ):
     """
     List all uploaded contexts for user.
@@ -267,6 +275,7 @@ async def list_user_contexts(
     Raises:
         500: Database query failed
     """
+    require_user_match(user_id, current_user_id)
     logger.info(f"Listing contexts for user {user_id}, profile {profile_id}")
 
     try:
@@ -293,7 +302,8 @@ async def list_user_contexts(
 async def get_contexts_by_type(
     user_id: str,
     context_type: str,
-    profile_id: Optional[str] = None
+    profile_id: Optional[str] = None,
+    current_user_id: str = Depends(get_current_user_id),
 ):
     """
     Get all contexts of a specific type for user.
@@ -310,6 +320,7 @@ async def get_contexts_by_type(
         400: Invalid context type
         500: Database query failed
     """
+    require_user_match(user_id, current_user_id)
     logger.info(f"Getting {context_type} contexts for user {user_id}, profile {profile_id}")
 
     try:
@@ -346,7 +357,8 @@ async def get_contexts_by_type(
 @router.delete("/{user_id}/contexts/{context_id}")
 async def delete_context(
     user_id: str,
-    context_id: str
+    context_id: str,
+    current_user_id: str = Depends(get_current_user_id),
 ):
     """
     Delete uploaded context.
@@ -361,6 +373,7 @@ async def delete_context(
         404: Context not found
         500: Delete failed
     """
+    require_user_match(user_id, current_user_id)
     logger.info(f"Deleting context {context_id}")
 
     try:
@@ -393,7 +406,8 @@ class GenerateQARequest(BaseModel):
 async def generate_qa_pairs(
     request: Request,
     user_id: str,
-    body: Optional[GenerateQARequest] = None
+    body: Optional[GenerateQARequest] = None,
+    current_user_id: str = Depends(get_current_user_id),
 ):
     """
     Generate initial 30 Q&A pairs from all uploaded contexts.
@@ -416,6 +430,7 @@ async def generate_qa_pairs(
         500: Generation failed
     """
     profile_id = body.profile_id if body else None
+    require_user_match(user_id, current_user_id)
     logger.info(f"Q&A generation requested for user {user_id}, profile {profile_id}")
 
     try:
@@ -467,7 +482,8 @@ class GenerateIncrementalRequest(BaseModel):
 async def generate_incremental_qa(
     request: Request,
     user_id: str,
-    body: Optional[GenerateIncrementalRequest] = None
+    body: Optional[GenerateIncrementalRequest] = None,
+    current_user_id: str = Depends(get_current_user_id),
 ):
     """
     Generate 10 additional Q&A pairs after new context is added.
@@ -492,6 +508,7 @@ async def generate_incremental_qa(
     """
     profile_id = body.profile_id if body else None
     new_context_ids = body.new_context_ids if body else None
+    require_user_match(user_id, current_user_id)
     logger.info(f"Incremental Q&A generation requested for user {user_id}, profile {profile_id}")
 
     try:
@@ -517,7 +534,8 @@ async def generate_incremental_qa(
 @router.get("/{user_id}/generation-status/{batch_id}")
 async def get_generation_status(
     user_id: str,
-    batch_id: str
+    batch_id: str,
+    current_user_id: str = Depends(get_current_user_id),
 ):
     """
     Get status of Q&A generation batch.
@@ -533,6 +551,7 @@ async def get_generation_status(
         404: Batch not found
         500: Database query failed
     """
+    require_user_match(user_id, current_user_id)
     logger.info(f"Generation status check for batch {batch_id}")
 
     try:
@@ -579,6 +598,7 @@ async def extract_background(
     file: UploadFile = File(..., description="Resume — PDF, md, or docx"),
     organization_text: str = Form(..., description="Required: company / school / org context"),
     interview_text: str = Form(..., description="Required: role / interview details"),
+    current_user_id: str = Depends(get_current_user_id),
 ):
     """
     Stream a plain-text background summary via Server-Sent Events.
@@ -591,6 +611,7 @@ async def extract_background(
     Frontend reads via fetch + ReadableStream (EventSource doesn't support
     POST/multipart). See BackgroundUploadModal.tsx.
     """
+    require_user_match(user_id, current_user_id)
     if not organization_text.strip():
         raise HTTPException(400, "Organization information is required")
     if not interview_text.strip():
