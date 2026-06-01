@@ -13,6 +13,7 @@ from pydantic import BaseModel
 from supabase import Client
 
 from app.core.supabase import get_supabase_client
+from app.core.auth import get_current_user_id, require_user_match
 
 logger = logging.getLogger(__name__)
 
@@ -82,12 +83,14 @@ class SessionHistoryResponse(BaseModel):
 async def start_session(
     user_id: str,
     session: SessionCreate,
-    supabase: Client = Depends(get_supabase_client)
+    supabase: Client = Depends(get_supabase_client),
+    current_user_id: str = Depends(get_current_user_id),
 ):
     """
     Start a new interview session.
     Returns session_id to track all Q&A during the interview.
     """
+    require_user_match(user_id, current_user_id)
     try:
         data = {
             "user_id": user_id,
@@ -263,12 +266,14 @@ async def list_user_sessions(
     user_id: str,
     status: Optional[str] = None,
     limit: int = 20,
-    supabase: Client = Depends(get_supabase_client)
+    supabase: Client = Depends(get_supabase_client),
+    current_user_id: str = Depends(get_current_user_id),
 ):
     """
     List all interview sessions for a user.
     Optionally filter by status.
     """
+    require_user_match(user_id, current_user_id)
     try:
         query = supabase.table("interview_sessions").select("*").eq("user_id", user_id)
 
