@@ -11,6 +11,11 @@ import { AudioLevelIndicator } from '@/components/interview/AudioLevelIndicator'
 import { TranscriptionDisplay } from '@/components/interview/TranscriptionDisplay';
 import { AnswerDisplay } from '@/components/interview/AnswerDisplay';
 import { RecordingControls } from '@/components/interview/RecordingControls';
+import {
+    ScenarioPickerModal,
+    SCENARIO_STORAGE_KEY,
+    ONBOARDED_FLAG_KEY,
+} from '@/components/interview/ScenarioPickerModal';
 
 interface Answer {
     question: string;
@@ -52,6 +57,14 @@ export default function PracticePage() {
     // Feature gating - check interview credits and AI generator
     const { interview_credits, ai_generator_available, isLoading: featuresLoading } = useUserFeatures(userId);
     const hasCredits = interview_credits > 0;
+
+    // Onboarding scenario picker (Hybrid exposure + Option 4 user-turn
+    // cue). First visit shows the modal; afterward users can reopen it
+    // from the "Change" link in the page header. Persisted in localStorage
+    // so the next session inherits the previous round by default.
+    const [scenario, setScenario] = useState<string>('');
+    const [scenarioModalOpen, setScenarioModalOpen] = useState(false);
+    const [isFirstVisit, setIsFirstVisit] = useState(false);
 
     const [currentText, setCurrentText] = useState('');
     const [accumulatedText, setAccumulatedText] = useState('');
@@ -319,12 +332,45 @@ export default function PracticePage() {
                     resume_text: '',
                     star_stories: starStories,
                     talking_points: [],
-                    qa_pairs: qaPairs
+                    qa_pairs: qaPairs,
+                    scenario: scenario || undefined,
                 });
             };
             sendAuthenticatedContext();
         }
-    }, [isConnected, contextLoaded, userId, activeProfile, starStories, qaPairs, sendContext]);
+    }, [isConnected, contextLoaded, userId, activeProfile, starStories, qaPairs, scenario, sendContext]);
+
+    // Onboarding modal trigger — read localStorage on mount.
+    // First visit (no ONBOARDED_FLAG_KEY) → show modal.
+    // Returning visit → load previous scenario (if any), no modal.
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        const saved = localStorage.getItem(SCENARIO_STORAGE_KEY) || '';
+        if (saved) setScenario(saved);
+        const onboarded = localStorage.getItem(ONBOARDED_FLAG_KEY);
+        if (!onboarded) {
+            setIsFirstVisit(true);
+            setScenarioModalOpen(true);
+        }
+    }, []);
+
+    const handleScenarioConfirm = useCallback((value: string) => {
+        setScenario(value);
+        if (typeof window !== 'undefined') {
+            localStorage.setItem(SCENARIO_STORAGE_KEY, value);
+            localStorage.setItem(ONBOARDED_FLAG_KEY, '1');
+        }
+        setScenarioModalOpen(false);
+        setIsFirstVisit(false);
+    }, []);
+
+    const handleScenarioSkip = useCallback(() => {
+        if (typeof window !== 'undefined') {
+            localStorage.setItem(ONBOARDED_FLAG_KEY, '1');
+        }
+        setScenarioModalOpen(false);
+        setIsFirstVisit(false);
+    }, []);
 
     // Session timer
     useEffect(() => {
@@ -485,13 +531,27 @@ export default function PracticePage() {
                         <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
                             Live Interview
                         </h1>
-                        <a
-                            href="/profile/sessions"
-                            className="mt-1 inline-block text-xs text-zinc-500 hover:text-zinc-900 hover:underline dark:text-zinc-400 dark:hover:text-zinc-100"
-                            title="Every interview is saved — extract them any time"
-                        >
-                            📋 Past sessions →
-                        </a>
+                        <div className="mt-1 flex flex-wrap items-center gap-3">
+                            {scenario && (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+                                    🎯 {scenario}
+                                </span>
+                            )}
+                            <button
+                                type="button"
+                                onClick={() => setScenarioModalOpen(true)}
+                                className="text-xs text-zinc-500 hover:text-zinc-900 hover:underline dark:text-zinc-400 dark:hover:text-zinc-100"
+                            >
+                                {scenario ? 'Change scenario' : 'Set scenario'}
+                            </button>
+                            <a
+                                href="/profile/sessions"
+                                className="text-xs text-zinc-500 hover:text-zinc-900 hover:underline dark:text-zinc-400 dark:hover:text-zinc-100"
+                                title="Every interview is saved — extract them any time"
+                            >
+                                📋 Past sessions →
+                            </a>
+                        </div>
                     </div>
                     <div className="flex items-center gap-4">
                         <div className="text-2xl font-mono text-zinc-700 dark:text-zinc-300">
@@ -636,6 +696,14 @@ export default function PracticePage() {
                     </div>
                 </div>
             </main>
+
+            <ScenarioPickerModal
+                open={scenarioModalOpen}
+                initialValue={scenario}
+                isFirstVisit={isFirstVisit}
+                onSkip={handleScenarioSkip}
+                onConfirm={handleScenarioConfirm}
+            />
         </div>
     );
 }
