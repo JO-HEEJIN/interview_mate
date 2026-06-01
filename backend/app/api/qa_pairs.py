@@ -14,6 +14,7 @@ from pydantic import BaseModel
 from supabase import Client
 
 from app.core.supabase import get_supabase_client
+from app.core.auth import get_current_user_id, require_user_match
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -134,11 +135,13 @@ async def list_qa_pairs(
     user_id: str,
     question_type: Optional[str] = None,
     profile_id: Optional[str] = None,
-    supabase: Client = Depends(get_supabase_client)
+    supabase: Client = Depends(get_supabase_client),
+    current_user_id: str = Depends(get_current_user_id),
 ):
     """
     List all Q&A pairs for a user, optionally filtered by question type and profile.
     """
+    require_user_match(user_id, current_user_id)
     try:
         query = supabase.table("qa_pairs").select("*").eq("user_id", user_id)
 
@@ -161,12 +164,14 @@ async def create_qa_pair(
     user_id: str,
     qa_pair: QAPairCreate,
     background_tasks: BackgroundTasks,
-    supabase: Client = Depends(get_supabase_client)
+    supabase: Client = Depends(get_supabase_client),
+    current_user_id: str = Depends(get_current_user_id),
 ):
     """
     Create a single Q&A pair.
     Automatically syncs to Qdrant if embeddings are generated.
     """
+    require_user_match(user_id, current_user_id)
     try:
         data = {
             "user_id": user_id,
@@ -200,12 +205,14 @@ async def create_qa_pair(
 async def bulk_parse_qa_pairs(
     user_id: str,
     request: BulkParseRequest,
-    supabase: Client = Depends(get_supabase_client)
+    supabase: Client = Depends(get_supabase_client),
+    current_user_id: str = Depends(get_current_user_id),
 ):
     """
     Parse free-form text containing Q&A pairs using Claude AI.
     Returns parsed pairs without saving them (user can review and confirm).
     """
+    require_user_match(user_id, current_user_id)
     try:
         # Import here to avoid circular dependency
         from app.services.claude import get_claude_service
@@ -233,11 +240,13 @@ class BulkUploadRequest(BaseModel):
 async def bulk_upload_qa_pairs(
     user_id: str,
     request: BulkUploadRequest,
-    supabase: Client = Depends(get_supabase_client)
+    supabase: Client = Depends(get_supabase_client),
+    current_user_id: str = Depends(get_current_user_id),
 ):
     """
     Bulk upload multiple Q&A pairs (after user confirms parsed results).
     """
+    require_user_match(user_id, current_user_id)
     try:
         data = [
             {
@@ -332,11 +341,13 @@ async def delete_all_qa_pairs(
     user_id: str,
     profile_id: Optional[str] = None,
     background_tasks: BackgroundTasks = None,
-    supabase: Client = Depends(get_supabase_client)
+    supabase: Client = Depends(get_supabase_client),
+    current_user_id: str = Depends(get_current_user_id),
 ):
     """
     Delete all Q&A pairs for a user (optionally filtered by profile).
     """
+    require_user_match(user_id, current_user_id)
     try:
         # First, get all QA pair IDs for Qdrant cleanup
         query = supabase.table("qa_pairs").select("id").eq("user_id", user_id)
@@ -376,6 +387,7 @@ async def export_qa_pairs_csv(
     profile_id: Optional[str] = None,
     profile_name: Optional[str] = None,
     supabase: Client = Depends(get_supabase_client),
+    current_user_id: str = Depends(get_current_user_id),
 ):
     """
     Export a user's Q&A pairs as an Anki-compatible CSV.
@@ -387,6 +399,7 @@ async def export_qa_pairs_csv(
     Optional filters mirror the list endpoint (profile_id). profile_name
     is a display hint used only to shape the download filename.
     """
+    require_user_match(user_id, current_user_id)
     try:
         query = supabase.table("qa_pairs").select(
             "question, answer, question_type, source"
@@ -466,12 +479,14 @@ async def increment_usage(
 @router.post("/{user_id}/migrate-to-qdrant")
 async def migrate_user_embeddings_to_qdrant(
     user_id: str,
-    supabase: Client = Depends(get_supabase_client)
+    supabase: Client = Depends(get_supabase_client),
+    current_user_id: str = Depends(get_current_user_id),
 ):
     """
     TEMPORARY: Migrate user's Q&A embeddings from Supabase to Qdrant.
     This endpoint will be removed after migration is complete.
     """
+    require_user_match(user_id, current_user_id)
     try:
         from app.core.config import settings
         
@@ -538,10 +553,14 @@ async def migrate_user_embeddings_to_qdrant(
 
 
 @router.get("/{user_id}/qdrant-status")
-async def check_qdrant_status(user_id: str):
+async def check_qdrant_status(
+    user_id: str,
+    current_user_id: str = Depends(get_current_user_id),
+):
     """
     TEMPORARY: Check Qdrant collection status and search capability
     """
+    require_user_match(user_id, current_user_id)
     try:
         qdrant = get_qdrant_service()
         if not qdrant:
