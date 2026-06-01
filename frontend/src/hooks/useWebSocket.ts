@@ -25,7 +25,7 @@ interface UseWebSocketReturn {
     connect: () => void;
     disconnect: () => void;
     sendAudio: (data: Blob) => void;
-    sendContext: (context: { user_id?: string; profile_id?: string; access_token?: string; resume_text: string; star_stories: any[]; talking_points: any[]; qa_pairs?: any[] }) => void;
+    sendContext: (context: { user_id?: string; profile_id?: string; access_token?: string; resume_text: string; star_stories: any[]; talking_points: any[]; qa_pairs?: any[]; scenario?: string }) => void;
     requestAnswer: (question: string, question_type?: string) => void;
     clearSession: () => void;
     finalizeAudio: () => void;
@@ -164,7 +164,7 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
         }
     }, []);
 
-    const sendContext = useCallback((context: { user_id?: string; profile_id?: string; access_token?: string; resume_text: string; star_stories: any[]; talking_points: any[]; qa_pairs?: any[] }) => {
+    const sendContext = useCallback((context: { user_id?: string; profile_id?: string; access_token?: string; resume_text: string; star_stories: any[]; talking_points: any[]; qa_pairs?: any[]; scenario?: string }) => {
         if (wsRef.current?.readyState === WebSocket.OPEN) {
             wsRef.current.send(JSON.stringify({
                 type: 'context',
