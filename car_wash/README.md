@@ -125,6 +125,25 @@ This holds consistently across different accounts and sessions:
 
 ---
 
+## Reproduce
+
+Prerequisites: Python 3.10+ and an Anthropic API key.
+
+```bash
+cd car_wash
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+export ANTHROPIC_API_KEY=sk-ant-...     # see .env.example
+
+python experiment.py          # conditions A_bare … E_full_stack
+python run_f_condition.py     # condition F_role_star_profile
+```
+
+- **Cost / time:** ~120 API calls (5 conditions × 20 runs + recovery challenges, plus F). On `claude-sonnet-4-5-20250929` the prompts and responses are short, so it runs in **~15 minutes for roughly $1–3**.
+- **What's pinned:** the model id and temperature are hardcoded in the scripts (`claude-sonnet-4-5-20250929`, `0.7`) — that's what anchors the result, not the client library version. Temperature 0.7 means per-run answers are non-deterministic; the pass rates are aggregates over 20 runs.
+- **Output:** each run writes a timestamped folder under `results/` containing `raw.jsonl` (every prompt/response), `summary.json`, and `report.md`.
+- Cross-model follow-up (`experiment_gemini_only.py`, `experiment_cross_model.py`) additionally needs `GOOGLE_API_KEY` / `OPENAI_API_KEY` and the optional deps commented in `requirements.txt`.
+
 ## Methodology Notes
 
 - **Experiment code:** [`experiment.py`](experiment.py) (A–E conditions), [`run_f_condition.py`](run_f_condition.py) (F condition)

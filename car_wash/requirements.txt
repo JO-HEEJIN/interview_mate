@@ -1,0 +1,13 @@
+# Core — required to reproduce the main variable-isolation study:
+#   experiment.py        (conditions A_bare … E_full_stack)
+#   run_f_condition.py   (condition F_role_star_profile)
+# The result is pinned by the model id + temperature set inside the scripts
+# (claude-sonnet-4-5-20250929, temperature 0.7), not by this client version.
+anthropic>=0.40.0
+
+# Optional — only for the cross-model follow-up scripts.
+# experiment_gemini_only.py  uses the new google-genai SDK (`from google import genai`)
+# experiment_cross_model.py  uses openai + the old google-generativeai SDK
+# openai>=1.40.0
+# google-genai>=0.3.0
+# google-generativeai>=0.8.0
