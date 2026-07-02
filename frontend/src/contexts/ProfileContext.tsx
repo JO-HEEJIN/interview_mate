@@ -164,8 +164,12 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
 
         checkAuth();
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-            await syncSession(session?.user?.id ?? null);
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            // supabase-js holds the auth lock for the duration of this callback.
+            // syncSession -> loadProfiles -> authFetch -> getSession() needs that
+            // same lock, so awaiting here deadlocks and the app hangs on
+            // "Loading...". Defer out of the callback so the lock releases first.
+            setTimeout(() => { syncSession(session?.user?.id ?? null); }, 0);
         });
 
         return () => subscription.unsubscribe();
