@@ -8,7 +8,7 @@ SELECT
     result,
     tags
 FROM star_stories
-WHERE user_id = (SELECT id::text FROM auth.users WHERE email = 'midmost44@gmail.com')
+WHERE user_id = (SELECT id::text FROM auth.users WHERE email = 'owner@example.com')
 AND title IN (
     'LLM Cost Optimization - 80% Reduction at Birth2Death',
     'P95 Latency Reduction from 3s to under 1s',

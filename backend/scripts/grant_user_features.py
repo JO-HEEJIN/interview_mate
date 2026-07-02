@@ -180,8 +180,8 @@ def grant_credits_and_ai_generator(email: str, credits: int):
 if __name__ == "__main__":
     # Grant 47 credits + AI Generator to these users
     users = [
-        "moon.econlaw@gmail.com",
-        "yoosunna0707@gmail.com"
+        "redacted-user-2@example.com",
+        "redacted-user-4@example.com"
     ]
 
     for email in users:

@@ -12,7 +12,7 @@ SELECT
     source,
     usage_count
 FROM public.qa_pairs
-WHERE user_id = (SELECT id FROM auth.users WHERE email = 'midmost44@gmail.com')
+WHERE user_id = (SELECT id FROM auth.users WHERE email = 'owner@example.com')
 ORDER BY question;
 
 -- Also check for specific red flag phrases
@@ -28,7 +28,7 @@ SELECT
         ELSE 'OK'
     END as red_flag
 FROM public.qa_pairs
-WHERE user_id = (SELECT id FROM auth.users WHERE email = 'midmost44@gmail.com')
+WHERE user_id = (SELECT id FROM auth.users WHERE email = 'owner@example.com')
 AND (
     answer ILIKE '%1000%' OR
     answer ILIKE '%1,000%' OR

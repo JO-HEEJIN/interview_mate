@@ -179,7 +179,7 @@ WHERE u.created_at < NOW() - INTERVAL '14 days'
       AND c.metadata->>'granted_reason' = 'reengagement_2026_06_signup_churn'
   )
   AND u.email NOT IN (
-    'kate@gmail.com', 'midmost44@gmail.com', 'csoheon@...', 'info@birth2death.com'
+    'redacted-user-1@example.com', 'owner@example.com', 'csoheon@...', 'info@birth2death.com'
     -- TODO: pull canonical exclusion list before run
   );
 ```

@@ -125,7 +125,7 @@ AND p.created_at < NOW()
 
 admin / test / special accounts 명시적 exclusion.
 
-→ 우리 케이스: top-up 마이그레이션에서 `kate@gmail.com` (admin grant) + `metadata.granted_by = 'admin'` 둘 다 제외. SQL에서 explicit.
+→ 우리 케이스: top-up 마이그레이션에서 `redacted-user-1@example.com` (admin grant) + `metadata.granted_by = 'admin'` 둘 다 제외. SQL에서 explicit.
 
 ### 2.6. 데이터 마이그레이션 발급량 결정 trade-off 명시
 

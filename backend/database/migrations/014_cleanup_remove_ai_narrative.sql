@@ -9,7 +9,7 @@ BEGIN
     -- Get user ID
     SELECT id INTO heejin_uuid
     FROM auth.users
-    WHERE email = 'midmost44@gmail.com';
+    WHERE email = 'owner@example.com';
 
     IF heejin_uuid IS NULL THEN
         RAISE EXCEPTION 'User not found';
@@ -84,7 +84,7 @@ SELECT
     question_type,
     source
 FROM qa_pairs
-WHERE user_id = (SELECT id FROM auth.users WHERE email = 'midmost44@gmail.com')
+WHERE user_id = (SELECT id FROM auth.users WHERE email = 'owner@example.com')
 AND (
     answer LIKE '%AI%' OR
     answer LIKE '%resume%' OR

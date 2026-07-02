@@ -13,7 +13,7 @@
 --     profile (see Phase 4 of diary.md), so the apology is owed.
 --
 -- Exclusions:
---   - kate@gmail.com (admin/test account, see migration 040)
+--   - redacted-user-1@example.com (admin/test account, see migration 040)
 --   - admin-granted subscriptions (metadata.granted_by = 'admin') — these are
 --     comp grants, not real purchases.
 --
@@ -43,7 +43,7 @@ BEGIN
     -- ------------------------------------------------------------------
     SELECT id INTO kate_user_id
     FROM auth.users
-    WHERE email = 'kate@gmail.com';
+    WHERE email = 'redacted-user-1@example.com';
 
     SELECT credits_amount INTO universal_grant
     FROM public.pricing_plans

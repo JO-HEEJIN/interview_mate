@@ -8,7 +8,7 @@ BEGIN
     -- Get user ID
     SELECT id INTO heejin_uuid
     FROM auth.users
-    WHERE email = 'midmost44@gmail.com';
+    WHERE email = 'owner@example.com';
 
     IF heejin_uuid IS NULL THEN
         RAISE EXCEPTION 'User not found';
@@ -38,7 +38,7 @@ END $$;
 -- Verify updates
 SELECT question, LEFT(answer, 120) as answer_preview
 FROM qa_pairs
-WHERE user_id = (SELECT id FROM auth.users WHERE email = 'midmost44@gmail.com')
+WHERE user_id = (SELECT id FROM auth.users WHERE email = 'owner@example.com')
 AND question IN (
     'Can you share an example of how you have successfully navigated cross-functional communication in the past?',
     'Could you share an example of a time when you took feedback from users or customers and then turned that feedback into an actionable improvement?',

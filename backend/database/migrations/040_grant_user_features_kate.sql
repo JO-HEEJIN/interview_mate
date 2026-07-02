@@ -1,5 +1,5 @@
--- Migration 040: Grant all one-time features to kate@gmail.com
--- User email: kate@gmail.com
+-- Migration 040: Grant all one-time features to redacted-user-1@example.com
+-- User email: redacted-user-1@example.com
 
 -- ============================================================================
 -- GRANT FEATURES TO USER
@@ -7,7 +7,7 @@
 DO $$
 DECLARE
     target_user_id UUID;
-    target_email TEXT := 'kate@gmail.com';
+    target_email TEXT := 'redacted-user-1@example.com';
 BEGIN
     -- Get user ID from auth.users table
     SELECT id INTO target_user_id

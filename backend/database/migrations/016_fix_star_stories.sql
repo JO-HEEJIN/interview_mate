@@ -8,7 +8,7 @@ BEGIN
     -- Get user ID as text
     SELECT id::text INTO heejin_user_id
     FROM auth.users
-    WHERE email = 'midmost44@gmail.com';
+    WHERE email = 'owner@example.com';
 
     IF heejin_user_id IS NULL THEN
         RAISE EXCEPTION 'User not found';
@@ -43,7 +43,7 @@ SELECT
     title,
     result
 FROM star_stories
-WHERE user_id = (SELECT id::text FROM auth.users WHERE email = 'midmost44@gmail.com')
+WHERE user_id = (SELECT id::text FROM auth.users WHERE email = 'owner@example.com')
 AND title IN (
     'LLM Cost Optimization - 80% Reduction at Birth2Death',
     'P95 Latency Reduction from 3s to under 1s',

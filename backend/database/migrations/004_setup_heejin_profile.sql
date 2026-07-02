@@ -1,4 +1,4 @@
--- Setup complete profile for Heejin Jo (midmost44@gmail.com)
+-- Setup complete profile for Heejin Jo (owner@example.com)
 -- This script will:
 -- 1. Add unique constraint on email (if not exists)
 -- 2. Create profile
@@ -25,11 +25,11 @@ BEGIN
     -- First, check if user exists in auth.users
     SELECT id INTO auth_user_id
     FROM auth.users
-    WHERE email = 'midmost44@gmail.com';
+    WHERE email = 'owner@example.com';
 
     -- If no auth user exists, raise an error
     IF auth_user_id IS NULL THEN
-        RAISE EXCEPTION 'No authenticated user found with email midmost44@gmail.com. Please sign up first.';
+        RAISE EXCEPTION 'No authenticated user found with email owner@example.com. Please sign up first.';
     END IF;
 
     -- Check if profile exists, if not create it
@@ -40,7 +40,7 @@ BEGIN
     IF heejin_uuid IS NULL THEN
         -- Create profile using the auth user's ID
         INSERT INTO public.profiles (id, email, full_name)
-        VALUES (auth_user_id, 'midmost44@gmail.com', 'Heejin Jo')
+        VALUES (auth_user_id, 'owner@example.com', 'Heejin Jo')
         RETURNING id INTO heejin_uuid;
     ELSE
         -- Update existing profile
@@ -246,6 +246,6 @@ BEGIN
 END $$;
 
 -- Verify the data was inserted
-SELECT 'Profile created:' as status, id, email, full_name FROM profiles WHERE email = 'midmost44@gmail.com';
-SELECT 'STAR stories count:' as status, COUNT(*) as count FROM star_stories WHERE user_id::uuid = (SELECT id FROM profiles WHERE email = 'midmost44@gmail.com');
-SELECT 'Q&A pairs count:' as status, COUNT(*) as count FROM qa_pairs WHERE user_id::uuid = (SELECT id FROM profiles WHERE email = 'midmost44@gmail.com');
+SELECT 'Profile created:' as status, id, email, full_name FROM profiles WHERE email = 'owner@example.com';
+SELECT 'STAR stories count:' as status, COUNT(*) as count FROM star_stories WHERE user_id::uuid = (SELECT id FROM profiles WHERE email = 'owner@example.com');
+SELECT 'Q&A pairs count:' as status, COUNT(*) as count FROM qa_pairs WHERE user_id::uuid = (SELECT id FROM profiles WHERE email = 'owner@example.com');

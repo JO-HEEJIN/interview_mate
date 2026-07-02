@@ -446,7 +446,7 @@ class ClaudeService:
             SELECT question, answer, question_type, source
             FROM qa_pairs
             WHERE user_id = (
-                SELECT id FROM auth.users WHERE email = 'midmost44@gmail.com'
+                SELECT id FROM auth.users WHERE email = 'owner@example.com'
             )
             ORDER BY created_at
         """).fetchall()

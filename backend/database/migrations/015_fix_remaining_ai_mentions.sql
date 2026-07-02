@@ -8,7 +8,7 @@ BEGIN
     -- Get user ID
     SELECT id INTO heejin_uuid
     FROM auth.users
-    WHERE email = 'midmost44@gmail.com';
+    WHERE email = 'owner@example.com';
 
     IF heejin_uuid IS NULL THEN
         RAISE EXCEPTION 'User not found';
@@ -32,6 +32,6 @@ END $$;
 -- Verify: Should return 1 row (only "Tell me about yourself" which is correct)
 SELECT question, answer
 FROM qa_pairs
-WHERE user_id = (SELECT id FROM auth.users WHERE email = 'midmost44@gmail.com')
+WHERE user_id = (SELECT id FROM auth.users WHERE email = 'owner@example.com')
 AND answer LIKE '%resume%'
 ORDER BY question;

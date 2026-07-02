@@ -1,5 +1,5 @@
 -- Migration 037: Grant 1000 credits and all one-time features to specific user
--- User email: midmost44@gmail.com
+-- User email: owner@example.com
 
 -- ============================================================================
 -- GRANT FEATURES TO USER
@@ -7,7 +7,7 @@
 DO $$
 DECLARE
     target_user_id UUID;
-    target_email TEXT := 'midmost44@gmail.com';
+    target_email TEXT := 'owner@example.com';
 BEGIN
     -- Get user ID from auth.users table
     SELECT id INTO target_user_id

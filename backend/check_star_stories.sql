@@ -8,7 +8,7 @@ SELECT
     LEFT(result, 100) as result_preview,
     tags
 FROM star_stories
-WHERE user_id = (SELECT id::text FROM auth.users WHERE email = 'midmost44@gmail.com')
+WHERE user_id = (SELECT id::text FROM auth.users WHERE email = 'owner@example.com')
 ORDER BY title;
 
 -- Also check for specific red flags in STAR stories
@@ -25,7 +25,7 @@ SELECT
         ELSE 'OK'
     END as red_flag
 FROM star_stories
-WHERE user_id = (SELECT id::text FROM auth.users WHERE email = 'midmost44@gmail.com')
+WHERE user_id = (SELECT id::text FROM auth.users WHERE email = 'owner@example.com')
 AND (
     situation LIKE '%1000%' OR situation LIKE '%1,000%' OR
     task LIKE '%1000%' OR task LIKE '%1,000%' OR

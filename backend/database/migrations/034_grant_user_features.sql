@@ -1,5 +1,5 @@
 -- Migration 034: Grant 100 credits and all one-time features to specific user
--- User email: sc.im@mail.utoronto.ca
+-- User email: redacted-user-3@example.com
 
 -- ============================================================================
 -- 1. CREATE ADMIN GRANT PLAN (for free credits grant)
@@ -14,7 +14,7 @@ ON CONFLICT (plan_code) DO NOTHING;
 DO $$
 DECLARE
     target_user_id UUID;
-    target_email TEXT := 'sc.im@mail.utoronto.ca';
+    target_email TEXT := 'redacted-user-3@example.com';
 BEGIN
     -- Get user ID from auth.users table
     SELECT id INTO target_user_id

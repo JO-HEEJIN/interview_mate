@@ -161,7 +161,7 @@
 | **credits_starter** | 25 @ $5 (그대로 유지 — "결제 의례용" 진입점, 실용성은 적음) |
 | **credits_popular** | 60 @ $10 (10 → 60) |
 | **credits_pro** | 150 @ $20 (50 → 150) |
-| **기존 40명 top-up** | 전원 +30 (단, `kate@gmail.com` 제외) |
+| **기존 40명 top-up** | 전원 +30 (단, `redacted-user-1@example.com` 제외) |
 | **first-profile 무료 자동 적용** | YES — 기존 유저의 default 프로필에도 자동 |
 | **기결제자 (5명) 보상** | 추가 +50 보너스 크레딧 + 진심 어린 사과 이메일 |
 | **이탈 유저 재활성화 이메일** | 두 그룹 모두 발송 (제목은 함께 결정 — 어그로 톤 필요, 이탈자라 약한 제목으론 안 열림) |
@@ -248,7 +248,7 @@ GROUP BY reason;
 SELECT us.metadata->>'granted_reason'
 FROM public.user_subscriptions us
 JOIN auth.users au ON us.user_id = au.id
-WHERE au.email = 'kate@gmail.com'
+WHERE au.email = 'redacted-user-1@example.com'
   AND us.metadata->>'granted_reason' LIKE 'topup_2026_05%';
 -- 기대: 0 rows
 

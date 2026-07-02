@@ -8,7 +8,7 @@ BEGIN
     -- Get user ID
     SELECT id INTO heejin_uuid
     FROM auth.users
-    WHERE email = 'midmost44@gmail.com';
+    WHERE email = 'owner@example.com';
 
     IF heejin_uuid IS NULL THEN
         RAISE EXCEPTION 'User not found';
@@ -32,5 +32,5 @@ END $$;
 -- Verify
 SELECT question, LEFT(answer, 150) as answer_preview
 FROM qa_pairs
-WHERE user_id = (SELECT id FROM auth.users WHERE email = 'midmost44@gmail.com')
+WHERE user_id = (SELECT id FROM auth.users WHERE email = 'owner@example.com')
 AND question = 'Tell me about yourself';

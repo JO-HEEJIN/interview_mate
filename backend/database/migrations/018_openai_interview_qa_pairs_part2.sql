@@ -8,7 +8,7 @@ DECLARE
 BEGIN
     SELECT id INTO heejin_uuid
     FROM auth.users
-    WHERE email = 'midmost44@gmail.com';
+    WHERE email = 'owner@example.com';
 
     IF heejin_uuid IS NULL THEN
         RAISE EXCEPTION 'User not found';
