@@ -99,3 +99,18 @@ docs/.doctrees/
 
 # Swift build
 overlay/.build/
+
+# Personal / prep / strategy docs — kept local, not published
+/diary.md
+/diary_v2.md
+/interview_prep.md
+/RESUME_ANALYSIS.md
+/MONETIZATION_PLAN.md
+/re_engagement_emails.md
+/PRODUCT_HUNT_LAUNCH.md
+/PRODUCT_DIRECTORY_SUBMISSION.md
+/commit_history.md
+/backend/INTERVIEW_SCRIPT.md
+/backend/INTERVIEW_SCRIPT_FINAL.md
+/backend/OPENING_STATEMENT_FINAL.md
+/backend/FINAL_SCRIPT_ALL_AIS_CONSENSUS.md
