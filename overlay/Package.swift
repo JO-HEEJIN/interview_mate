@@ -7,10 +7,9 @@ let package = Package(
     targets: [
         .executableTarget(
             name: "InterviewMateOverlay",
-            path: "Sources/InterviewMateOverlay",
-            resources: [
-                .copy("../../Resources/Info.plist")
-            ]
+            path: "Sources/InterviewMateOverlay"
+            // Info.plist is copied into the .app bundle by build.sh —
+            // SPM rejects resource paths outside the target directory.
         )
     ]
 )

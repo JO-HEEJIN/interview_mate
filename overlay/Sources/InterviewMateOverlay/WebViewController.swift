@@ -25,8 +25,9 @@ class WebViewController: NSViewController, WKNavigationDelegate, WKUIDelegate, W
         let config = WKWebViewConfiguration()
         config.mediaTypesRequiringUserActionForPlayback = []
         config.preferences.setValue(true, forKey: "developerExtrasEnabled")
-        config.preferences.setValue(true, forKey: "mediaDevicesEnabled")
-        config.preferences.setValue(true, forKey: "screenCaptureEnabled")
+        // NOTE: "mediaDevicesEnabled" / "screenCaptureEnabled" private keys removed.
+        // They were documented as not helping (learning_log #4) and private KVC keys
+        // can disappear in macOS updates, crashing with NSUnknownKeyException.
 
         // JS → Native message handlers
         config.userContentController.add(self, name: "startSystemAudio")
@@ -80,6 +81,16 @@ class WebViewController: NSViewController, WKNavigationDelegate, WKUIDelegate, W
 
     private var nativeSendCount = 0
 
+    /// JSON-encodes a Swift string into a safe JS string literal
+    /// (handles quotes, newlines, unicode — raw interpolation broke on apostrophes).
+    private static func jsStringLiteral(_ s: String) -> String {
+        guard let data = try? JSONSerialization.data(withJSONObject: [s]),
+              let json = String(data: data, encoding: .utf8) else {
+            return "\"\""
+        }
+        return String(json.dropFirst().dropLast()) // strip surrounding [ ]
+    }
+
     private func setupAudioCapture() {
         audioCapture.onAudioData = { [weak self] base64 in
             guard let self else { return }
@@ -87,6 +98,7 @@ class WebViewController: NSViewController, WKNavigationDelegate, WKUIDelegate, W
             if self.nativeSendCount % 100 == 1 {
                 NSLog("Native→JS: sending audio chunk #%d (%d chars)", self.nativeSendCount, base64.count)
             }
+            // base64 alphabet contains no quotes — safe to interpolate directly
             self.webView.evaluateJavaScript("window.__nativeAudioReceive('\(base64)')") { _, error in
                 if let error {
                     NSLog("Native→JS evaluateJavaScript error: %@", error.localizedDescription)
@@ -95,7 +107,8 @@ class WebViewController: NSViewController, WKNavigationDelegate, WKUIDelegate, W
         }
 
         audioCapture.onError = { [weak self] error in
-            self?.webView.evaluateJavaScript("window.__nativeAudioError('\(error)')", completionHandler: nil)
+            let literal = Self.jsStringLiteral(error)
+            self?.webView.evaluateJavaScript("window.__nativeAudioError(\(literal))", completionHandler: nil)
         }
 
         audioCapture.onStopped = { [weak self] in
@@ -200,6 +213,11 @@ class WebViewController: NSViewController, WKNavigationDelegate, WKUIDelegate, W
                                     window.__nativeAudioCapturing = false;
                                     audioQueue.length = 0;
                                     try { window.webkit.messageHandlers.stopSystemAudio.postMessage({}); } catch(e) {}
+                                    // Release the dummy AudioContext — WebKit caps the number of
+                                    // live AudioContexts, so leaking one per session eventually
+                                    // makes getDisplayMedia fail after repeated start/stop cycles.
+                                    try { oscillator.stop(); } catch(e) {}
+                                    try { dummyCtx.close(); } catch(e) {}
                                 };
                             });
                             if (videoTrack) combinedStream.addTrack(videoTrack);
@@ -207,6 +225,8 @@ class WebViewController: NSViewController, WKNavigationDelegate, WKUIDelegate, W
                             console.log('[NativeAudio] Returning dummy stream. Real audio via __nativeAudioQueue');
                             resolve(combinedStream);
                         } else {
+                            try { oscillator.stop(); } catch(e) {}
+                            try { dummyCtx.close(); } catch(e) {}
                             reject(new Error('Failed to create dummy audio stream'));
                         }
                     }, 300);
@@ -290,20 +310,25 @@ class WebViewController: NSViewController, WKNavigationDelegate, WKUIDelegate, W
     }
 
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
-        NSLog("WebView provisional navigation failed: \(error.localizedDescription)")
+        let failingURL = (error as NSError).userInfo[NSURLErrorFailingURLErrorKey] as? URL
+        NSLog("WebView provisional navigation failed: \(error.localizedDescription) — url: \(failingURL?.absoluteString ?? "unknown")")
+    }
+
+    func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+        // Page is navigating away (reload, URL change). The JS side of the bridge is about
+        // to be destroyed without sending stopSystemAudio, so stop native capture here —
+        // otherwise ScreenCaptureKit keeps recording with no consumer (orphaned capture,
+        // purple indicator stays on). The frontend re-requests capture after load.
+        NSLog("WebView navigation started — stopping native audio capture")
+        audioCapture.stopCapture()
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         NSLog("WebView loaded: \(webView.url?.absoluteString ?? "unknown")")
-
-        // Re-apply the getDisplayMedia patch after page load to ensure it sticks
-        webView.evaluateJavaScript(Self.nativeAudioBridgeJS) { _, error in
-            if let error {
-                NSLog("Patch injection error: \(error.localizedDescription)")
-            } else {
-                NSLog("Native audio patch applied successfully after page load")
-            }
-        }
+        // NOTE: bridge JS re-injection removed. The WKUserScript (atDocumentStart) already
+        // runs on every load, and the Proxy approach survives WebKit resets (learning_log #7).
+        // Re-evaluating the IIFE here created a SECOND closure whose fresh audioQueue and
+        // isCapturing=false clobbered the globals the frontend was already holding.
     }
 
     func webView(
