@@ -99,3 +99,6 @@ docs/.doctrees/
 
 # Swift build
 overlay/.build/
+
+# Python
+__pycache__/

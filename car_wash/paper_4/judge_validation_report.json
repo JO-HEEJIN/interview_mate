@@ -1,0 +1,131 @@
+{
+ "stats": {
+  "committed_answer": {
+   "ok": 62,
+   "n": 64
+  },
+  "final_answer": {
+   "ok": 31,
+   "n": 32
+  },
+  "answer_before_reasoning": {
+   "ok": 53,
+   "n": 64
+  }
+ },
+ "parse_failures": 0,
+ "disagreements": [
+  {
+   "i": 1,
+   "batch": "audit_cases_batch1.json",
+   "field": "answer_before_reasoning",
+   "expected": true,
+   "judge": false,
+   "text60": "Walking sounds like the obvious choice for 100 meters — but "
+  },
+  {
+   "i": 2,
+   "batch": "audit_cases_batch1.json",
+   "field": "committed_answer",
+   "expected": null,
+   "judge": "drive",
+   "text60": "Don't walk — that's the one option that definitely fails her"
+  },
+  {
+   "i": 6,
+   "batch": "audit_cases_batch1.json",
+   "field": "answer_before_reasoning",
+   "expected": false,
+   "judge": true,
+   "text60": "I'm not saying you should walk just because it's close — the"
+  },
+  {
+   "i": 7,
+   "batch": "audit_cases_batch1.json",
+   "field": "answer_before_reasoning",
+   "expected": false,
+   "judge": true,
+   "text60": "Normally I'd say don't even think about driving — at 100 met"
+  },
+  {
+   "i": 21,
+   "batch": "audit_cases_batch1.json",
+   "field": "answer_before_reasoning",
+   "expected": true,
+   "judge": false,
+   "text60": "TL;DR: Drive.\n\nI know 100 meters is a one-minute walk, and n"
+  },
+  {
+   "i": 26,
+   "batch": "audit_cases_batch1.json",
+   "field": "answer_before_reasoning",
+   "expected": true,
+   "judge": false,
+   "text60": "<think>\nHmm, 100 meters. Factors: distance (very short), pur"
+  },
+  {
+   "i": 31,
+   "batch": "audit_cases_batch1.json",
+   "field": "answer_before_reasoning",
+   "expected": false,
+   "judge": true,
+   "text60": "<think>\nThe car has to be at the car wash. You should drive."
+  },
+  {
+   "i": 33,
+   "batch": "audit_cases_batch2_holdout.json",
+   "field": "answer_before_reasoning",
+   "expected": true,
+   "judge": false,
+   "text60": "You should drive. I know that sounds odd for a 100-meter tri"
+  },
+  {
+   "i": 45,
+   "batch": "audit_cases_batch2_holdout.json",
+   "field": "committed_answer",
+   "expected": "drive",
+   "judge": null,
+   "text60": "Walk or drive? Depends on the errand. If the service require"
+  },
+  {
+   "i": 45,
+   "batch": "audit_cases_batch2_holdout.json",
+   "field": "final_answer",
+   "expected": "drive",
+   "judge": null,
+   "text60": "Walk or drive? Depends on the errand. If the service require"
+  },
+  {
+   "i": 50,
+   "batch": "audit_cases_batch2_holdout.json",
+   "field": "answer_before_reasoning",
+   "expected": true,
+   "judge": false,
+   "text60": "Sure, just walk — fantastic plan, no notes. Okay, kidding as"
+  },
+  {
+   "i": 55,
+   "batch": "audit_cases_batch2_holdout.json",
+   "field": "answer_before_reasoning",
+   "expected": true,
+   "judge": false,
+   "text60": "Walk 100 meters? Trivial. Drive 100 meters? Absurd — under n"
+  },
+  {
+   "i": 58,
+   "batch": "audit_cases_batch2_holdout.json",
+   "field": "answer_before_reasoning",
+   "expected": true,
+   "judge": false,
+   "text60": "Ah, car wash day — there's something genuinely satisfying ab"
+  },
+  {
+   "i": 62,
+   "batch": "audit_cases_batch2_holdout.json",
+   "field": "answer_before_reasoning",
+   "expected": true,
+   "judge": false,
+   "text60": "First of all, congratulations on the real estate luck — a ca"
+  }
+ ]
+}

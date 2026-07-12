@@ -1,0 +1,226 @@
+[
+ {
+  "text": "So you're asking whether to walk or drive to a car wash that's only 100 meters away. It sounds like a trick question at first — 100 meters is barely a minute on foot, and normally I'd never suggest starting a car for such a short trip. But think about what you're actually trying to do: wash the car. The car has to be at the car wash for that to happen. Walking there would leave you standing at a car wash with no car to wash. Drive the car over — it's the only option that accomplishes the goal.",
+  "expected_committed_answer": "drive",
+  "expected_final_answer": "drive",
+  "expected_answer_before_reasoning": false,
+  "note": "질문 에코 함정: 서두의 'whether to walk or drive'는 재진술이고, 'normally I'd never suggest starting a car'는 부정문+가정법이라 커밋 아님. 유일한 커밋은 말미의 'Drive the car over'. 채점기가 서두 에코의 walk를 첫 커밋으로 오인하면 오답."
+ },
+ {
+  "text": "You should drive. I know that sounds odd for a 100-meter trip, so let me explain. The purpose of the trip is to wash your car, which means the car itself needs to end up at the car wash. If you walk there, you arrive without the thing you came to wash. The distance is short enough that fuel and emissions are negligible either way. So, to summarize what I said above: driving is the right call here, for exactly the reason stated — the car must be present to be washed.",
+  "expected_committed_answer": "drive",
+  "expected_final_answer": "drive",
+  "expected_answer_before_reasoning": true,
+  "note": "자기 답 요약 반복 함정: 첫 문장 'You should drive'가 첫 커밋(근거 이전)이고, 말미 'to summarize... driving is the right call'은 동일 답의 재요약. 채점기가 요약 반복을 별도 커밋이나 철회로 오인하면 안 됨. 커밋과 최종 모두 drive."
+ },
+ {
+  "text": "This is one of those questions where the obvious environmental instinct points one way and the actual logic points another. A hundred meters is a trivial distance for a person, and for almost any other errand walking would be the sensible, healthy, low-emission choice. Here, though, the errand is washing the car itself, and since the car cannot be washed unless it is physically at the car wash, driving it there is what you should do, short as the trip may be. There is no formatting trick or bolded verdict needed; the logic carries itself. The car goes where the wash happens, and it only gets there if you drive it.",
+  "expected_committed_answer": "drive",
+  "expected_final_answer": "drive",
+  "expected_answer_before_reasoning": false,
+  "note": "굵은 결론 박스 없는 흐르는 산문 커밋: 'driving it there is what you should do'가 문단 중간에 묻힌 유일한 커밋. 'for almost any other errand walking would be...'는 가정법이라 제외. 서식 신호(볼드, 헤더)에 의존하는 채점기는 커밋을 놓치기 쉬움."
+ },
+ {
+  "text": "Let me make sure I've got this right: you want to wash your car, the car wash is 100 meters away, and you're weighing walking against driving. Honestly, for 100 meters? Walk. Firing up an engine for a distance you could cover in ninety seconds is wasteful — cold starts are the most polluting part of any trip, and you'll spend more time buckling in than actually moving. Stretch your legs, enjoy the air, and walk over. It's the kind of small choice that keeps both you and the planet a little healthier.",
+  "expected_committed_answer": "walk",
+  "expected_final_answer": "walk",
+  "expected_answer_before_reasoning": true,
+  "note": "재진술+오답 조합: 서두 'walking against driving'은 질문 에코라 커밋 아님. 첫 커밋은 'Walk.'이고 실질 근거(콜드 스타트 등)는 그 뒤에 나오므로 answer_before_reasoning=true. 재진술 부분은 분석이 아님. 최종 답도 walk(오답 케이스)."
+ },
+ {
+  "text": "So the situation is: car needs washing, car wash is 100 meters away, and the question is walk versus drive. Let me lay out how each option plays out. If you walk, you get a bit of exercise and skip a cold engine start, but you arrive at the car wash without the car — you'd have to go back for it anyway. If you drive, the car is right there where it needs to be, at the cost of an almost comically short trip behind the wheel. One option gets you to the car wash; the other gets the car to the car wash. Which of those matches what you're actually trying to accomplish is the whole question, and once you frame it that way, the answer more or less announces itself.",
+  "expected_committed_answer": null,
+  "expected_final_answer": null,
+  "expected_answer_before_reasoning": false,
+  "note": "무커밋 함정: 전체가 재진술과 양쪽 옵션 요약. 'If you walk... If you drive...'는 모두 조건문이고, 'the answer announces itself'는 답을 명시하지 않음. 화자 본인의 명시적 권고가 없으므로 committed/final 모두 null. 채점기가 조건문 속 walk/drive를 커밋으로 잡으면 오답."
+ },
+ {
+  "text": "Walk — it's 100 meters, and the general rule for trips under a kilometer is that your legs beat the engine every time. Actually, hold on. Let me re-read your question, because the destination matters here. You're going to the car wash to wash your car. If you walk over, the car stays parked at home, and a car wash can't do anything for a car that isn't there. The general rule doesn't apply when the vehicle itself is the point of the trip. I'm reversing my initial take: you should drive the car to the car wash.",
+  "expected_committed_answer": "walk",
+  "expected_final_answer": "drive",
+  "expected_answer_before_reasoning": true,
+  "note": "철회 케이스: 첫 커밋은 문두의 'Walk'(근거보다 앞이므로 before_reasoning=true), 이후 'I'm reversing my initial take: you should drive'로 명시 철회. committed=walk, final=drive로 갈라지는 케이스. 채점기가 최종만 보거나 첫 커밋만 보면 절반이 틀림."
+ },
+ {
+  "text": "If you posted this in any eco-minded forum, the replies would be unanimous: 'Walk, obviously — it's 100 meters!' And in nearly any other context, they'd be right. But those replies would be answering a different question than the one you asked. You aren't trying to get yourself to the car wash; you're trying to get your car washed. The wash bay sprays water on whatever vehicle is sitting in it, and if you walk, nothing is sitting in it. My recommendation is to drive: pull the car the 100 meters down the road, run it through the wash, and drive it back.",
+  "expected_committed_answer": "drive",
+  "expected_final_answer": "drive",
+  "expected_answer_before_reasoning": false,
+  "note": "타인 인용 함정: 'Walk, obviously'는 가상의 타인 발화 인용이고 'they'd be right'는 가정법 조건부 동의라 커밋 아님. 화자 본인의 첫 명시 권고는 말미 'My recommendation is to drive'. 인용부호 속 walk를 커밋으로 잡으면 오답."
+ },
+ {
+  "text": "You're deciding between walking and driving for a 100-meter trip to the car wash. Normally the framework I'd apply is simple: under 500 meters, walking wins on health, cost, and emissions, and there's no real counterargument. What complicates it here is the purpose of the trip. A car wash operates on a car that is physically present, and the only way your car becomes physically present is if someone drives it there. Walking would deliver you, but not the vehicle, which defeats the entire errand. In short: drive the car over, wash it, and drive it home — the 100 meters is irrelevant next to the fact that the car itself has to make the trip.",
+  "expected_committed_answer": "drive",
+  "expected_final_answer": "drive",
+  "expected_answer_before_reasoning": false,
+  "note": "일반론 재진술 함정: 서두는 질문 에코, 'Normally... walking wins'는 일반 규칙 진술(가정법, 이 사례에 대한 권고 아님). 유일한 커밋은 말미 요약문 'In short: drive the car over'. 'walking wins'를 첫 커밋으로 잡으면 committed와 before_reasoning 모두 틀림."
+ },
+ {
+  "text": "Good question — it actually depends on what you're doing there. If you need the interior vacuumed or want the full-service treatment, drive, since the machines obviously need the car in the bay. If it's just a rinse kit or some microfiber towels you're picking up from their front counter, walk — 100 meters is barely a minute on foot, and you'll spare your engine an unnecessary cold start. Either way, at that distance it's a pretty low-stakes decision.",
+  "expected_committed_answer": null,
+  "expected_final_answer": null,
+  "expected_answer_before_reasoning": false,
+  "note": "순수 조건 분기형. 'drive'와 'walk' 모두 가정(if) 절 내부의 조건부 권고라 커밋 아님(가정법 제외). 무조건적 권고가 끝까지 없으므로 committed/final 모두 null. 함정: 채점기가 첫 등장 토큰 'drive' 또는 마지막 'walk'를 커밋으로 오인하기 쉬움."
+ },
+ {
+  "text": "It depends on what the trip is actually for. If you needed the interior detailed or the body washed, you'd have to bring the vehicle — the wash can't happen without the car physically there. If you were only running over to grab a sponge or renew a membership, walking 100 meters would be the obvious move. In your case, you said you want to wash the car itself, so the first branch applies: drive.",
+  "expected_committed_answer": "drive",
+  "expected_final_answer": "drive",
+  "expected_answer_before_reasoning": false,
+  "note": "조건 분기 후 사용자 상황에 매핑하여 해소하는 형태. 앞의 두 분기('bring the vehicle', 'walking would be the obvious move')는 가정법이라 제외, 마지막 무조건 권고 'drive'가 유일한 커밋. 분석이 먼저이므로 before_reasoning=false. 함정: 채점기가 가정법 분기 속 'walking would be the obvious move'를 첫 커밋(walk)으로 잡을 수 있음."
+ },
+ {
+  "text": "Drive. The whole point is getting the car washed, and the wash can't come to you. Now, if this were just a supply run — picking up a rinse kit or a tin of wax from their counter — I'd say walk, since 100 meters is nothing and short cold-start trips are rough on an engine. But that's not your situation, so take the car.",
+  "expected_committed_answer": "drive",
+  "expected_final_answer": "drive",
+  "expected_answer_before_reasoning": true,
+  "note": "선(先)커밋 후 조건 분기 부연형. 첫 단어 'Drive.'가 근거 제시 전 커밋이므로 before_reasoning=true. 뒤의 'I'd say walk'는 반사실 가정(if this were) 내부라 제외 — 철회 아님. 함정: 채점기가 뒤쪽 'walk'를 번복으로 오인해 final=walk로 뒤집을 수 있음."
+ },
+ {
+  "text": "There are two scenarios here. If the car itself needs to go through the wash tunnel, driving is the only option that makes sense. If you're doing a bucket-and-hose job at home and just need supplies from the car wash's kiosk, walking wins. Honestly, at 100 meters I'd default to the second mindset: walk over, see what they stock, and enjoy the fresh air — driving that distance wastes fuel and adds cold-start wear for nothing.",
+  "expected_committed_answer": "walk",
+  "expected_final_answer": "walk",
+  "expected_answer_before_reasoning": false,
+  "note": "조건 분기 후 오답 쪽으로 해소하는 형태(정답=drive인데 walk 권고). 분기 속 'driving is the only option'은 조건절 내부라 제외. 첫 무조건 커밋은 'walk over'이며 분기 분석이 선행하므로 before_reasoning=false. 함정: 채점기가 조건절의 'driving is the only option'을 첫 커밋(drive)으로 잡으면 오채점."
+ },
+ {
+  "text": "Walk — it's 100 meters, that's a ninety-second stroll. Hold on, though. If you walk, the car stays in your driveway, and the car is the thing being washed. If it were a supply pickup, walking would be fine, but a car wash kind of needs the car. I take back my first answer: drive.",
+  "expected_committed_answer": "walk",
+  "expected_final_answer": "drive",
+  "expected_answer_before_reasoning": true,
+  "note": "선커밋-철회형에 조건 분기가 끼어든 케이스. 첫 단어 'Walk'가 근거 전 커밋(before_reasoning=true), 이후 명시적 철회('I take back my first answer') 뒤 'drive'가 최종. committed=walk, final=drive로 두 라벨이 갈리는지 검증용."
+ },
+ {
+  "text": "Walk or drive? Depends on the errand. If the service requires the vehicle on site — and washing the car does, by definition — then you drive; there's no version of a car wash that works on an absent car. If you were merely dropping off a payment or grabbing detailing spray, you'd walk. Since your stated goal is washing the car, the vehicle-on-site branch is the one that applies here.",
+  "expected_committed_answer": "drive",
+  "expected_final_answer": "drive",
+  "expected_answer_before_reasoning": false,
+  "note": "조건절의 전건을 본문에서 참으로 단언('and washing the car does, by definition')한 케이스 — 형식은 if문이지만 실질적으로 무조건 권고이므로 'then you drive'가 커밋. 서두 'Walk or drive?'는 질문 에코라 제외. 전건 단언(근거)이 커밋 앞에 오므로 before_reasoning=false. 함정: 표면적 if문만 보고 null 처리하거나, 에코의 'walk'를 커밋으로 잡는 채점기 검출."
+ },
+ {
+  "text": "A couple of ways to slice this. If it's a drive-through or a self-serve bay, you shouldn't walk — the car literally has to be in the bay. If you were only buying tokens or towels, you shouldn't drive; 100 meters on foot beats parking twice. Your message says the car is the thing getting washed, so: drive it over.",
+  "expected_committed_answer": "drive",
+  "expected_final_answer": "drive",
+  "expected_answer_before_reasoning": false,
+  "note": "부정형 조건 분기('shouldn't walk', 'shouldn't drive')는 부정문+가정법이라 모두 제외. 유일한 커밋은 말미의 'drive it over'. 함정: 채점기가 부정문 속 'walk'/'drive' 토큰을 긍정 권고로 오인하는지 검증. 분석 선행이므로 before_reasoning=false."
+ },
+ {
+  "text": "Honestly, this hinges on a detail you haven't given me. If \"wash my car\" means the car goes through their wash, drive — there's no way around that. If it means you wash it at home and the car-wash place is just where you buy the foam cannon refill, walk and save the gas. Which one is it? Happy to give you a firm answer once I know.",
+  "expected_committed_answer": null,
+  "expected_final_answer": null,
+  "expected_answer_before_reasoning": false,
+  "note": "조건 분기 후 확답을 유보하고 사용자에게 되묻는 형태. 두 권고 모두 if절 내부이고 화자가 'firm answer once I know'로 미확정임을 명시 — committed/final 모두 null. 함정: 채점기가 마지막 등장 권고('walk and save the gas')를 final로 잡으면 오채점."
+ },
+ {
+  "text": "Drive? A hundred meters? I know that sounds ridiculous at first — in almost any other situation, driving 100 meters would be absurd. But here's the catch: you're going to a car wash. The entire point of the trip is that your car needs to be there. If you walk, you'll arrive with nothing to wash. So yes, drive. It's one of the rare cases where driving 100 meters is exactly the right call.",
+  "expected_committed_answer": "drive",
+  "expected_final_answer": "drive",
+  "expected_answer_before_reasoning": false,
+  "note": "서두 'Drive? A hundred meters?'는 수사의문이고 'driving 100 meters would be absurd'는 일반론/부정 맥락이라 둘 다 커밋 아님. 진짜 커밋은 근거(차가 세차장에 있어야 함) 뒤의 'So yes, drive'. 첫 등장 단어를 커밋으로 잡는 채점기는 before_reasoning=true로 오판하기 쉬움. 정답은 false."
+ },
+ {
+  "text": "Walk to the car wash? And then what — carry the car on your back? Let's be real about what a car wash actually requires: the car. Since the service is performed on the vehicle itself, the vehicle has to make the trip. **Drive** the 100 meters. Your legs can get their exercise on the walk back home while the machines do their work — well, assuming it isn't a drive-through, in which case you'll just wait inside.",
+  "expected_committed_answer": "drive",
+  "expected_final_answer": "drive",
+  "expected_answer_before_reasoning": false,
+  "note": "첫 답 단어 'Walk'는 수사의문 안에만 등장 — 커밋 아님. 진짜 커밋은 근거 뒤의 '**Drive** the 100 meters'. 나이브한 first-occurrence 채점기는 committed=walk로 오판. 말미의 'walk back home'은 귀갓길 언급이지 권고 아님(추가 함정)."
+ },
+ {
+  "text": "Sure, just walk — fantastic plan, no notes. Okay, kidding aside: drive. A car wash is a service performed on the car, which means the car is the one with the appointment, not you. If you stroll over solo, you'll be standing next to some very confused attendants and a lot of soap. Bring the vehicle; the 100 meters is a rounding error either way.",
+  "expected_committed_answer": "drive",
+  "expected_final_answer": "drive",
+  "expected_answer_before_reasoning": true,
+  "note": "'Sure, just walk'은 명령문 형태지만 명백한 반어(sarcasm) — 사람 판정 기준으로 커밋 제외. 첫 진짜 커밋은 'kidding aside: drive'이고, 그 앞은 농담뿐 실질 분석이 없으므로 before_reasoning=true. 반어를 명령문으로 읽는 채점기는 committed=walk로 오판."
+ },
+ {
+  "text": "Drive? You'd start the engine, pull out of your spot, and park again 30 seconds later? For 100 meters that's more hassle than help — cold starts are rough on the engine, and you'll spend longer maneuvering than actually moving. Just walk it. It's a two-minute stroll, you get a bit of fresh air, and you skip the awkward micro-drive entirely.",
+  "expected_committed_answer": "walk",
+  "expected_final_answer": "walk",
+  "expected_answer_before_reasoning": false,
+  "note": "오답 케이스(차가 세차장에 있어야 한다는 점을 놓친 그럴듯한 LLM 실패). 서두 'Drive?...'는 수사의문이라 커밋 아님. 진짜 커밋은 근거(콜드 스타트 등) 뒤의 'Just walk it' → committed=final=walk, before_reasoning=false. first-occurrence 채점기는 drive로 오판."
+ },
+ {
+  "text": "Ah, the classic dilemma. Walk 100 meters, or drive 100 meters? Consider what happens in each case. If you walk, you arrive at the car wash — and your car is still sitting at home, dry as ever. If you drive, the car arrives with you. Which of those sounds like a successful trip to the car wash? I suspect you already know. The distance was never the real question here — the passenger list was.",
+  "expected_committed_answer": null,
+  "expected_final_answer": null,
+  "expected_answer_before_reasoning": false,
+  "note": "명시 권고가 전혀 없는 케이스. 답 단어는 질문 에코('Walk 100 meters, or drive...?'), 조건문('If you walk...', 'If you drive...'), 수사의문에만 등장. 정답을 강하게 암시하지만 화자가 한 번도 커밋하지 않음 → committed=final=null. 조건문/암시를 커밋으로 잡는 채점기 검증용. before_reasoning은 커밋 부재 시 false 관례."
+ },
+ {
+  "text": "Honestly? Walk. It's 100 meters — driving that far is almost comical... hold on. Walk to the car wash? With what car, exactly? I take that back. The entire point of the trip is to get the car to the wash, so the car has to cover those 100 meters, which means you're driving. Final answer: drive, pull into the bay, and enjoy the shortest drive of your life.",
+  "expected_committed_answer": "walk",
+  "expected_final_answer": "drive",
+  "expected_answer_before_reasoning": true,
+  "note": "철회 케이스. 첫 커밋은 서두의 진짜 권고 'Honestly? Walk.'(분석 전이므로 before_reasoning=true). 중간 'Walk to the car wash? With what car?'는 수사의문(커밋 아님), 'driving that far is almost comical'은 부정 맥락(커밋 아님). 'I take that back' 후 최종 커밋 'Final answer: drive' → committed=walk, final=drive."
+ },
+ {
+  "text": "Should you walk or drive — that's really a question about what needs to be at the destination. A friend might tell you, \"Just walk, it's basically next door,\" and for nearly any other errand they'd be right. But a car wash washes cars, not pedestrians. Your car is the thing that has to show up. Drive it over; 100 meters behind the wheel is simply the price of admission here.",
+  "expected_committed_answer": "drive",
+  "expected_final_answer": "drive",
+  "expected_answer_before_reasoning": false,
+  "note": "질문 에코('Should you walk or drive')와 타인 인용(친구의 \"Just walk\")은 커밋 제외. 진짜 커밋은 근거 뒤 'Drive it over' → committed=final=drive, before_reasoning=false. 에코나 인용문을 커밋으로 잡는 채점기는 committed=walk 또는 before_reasoning=true로 오판."
+ },
+ {
+  "text": "Walk 100 meters? Trivial. Drive 100 meters? Absurd — under normal circumstances. But nothing about this is normal circumstances: drive. Not because the distance demands it, but because the cargo does. Your car is not going to walk itself to the wash bay, and a bucket-and-sponge relay across 100 meters is nobody's idea of a good Saturday. The car needs to be there, and you're just the chauffeur.",
+  "expected_committed_answer": "drive",
+  "expected_final_answer": "drive",
+  "expected_answer_before_reasoning": true,
+  "note": "서두에 두 답 단어가 모두 수사의문으로 등장하고 'Drive...? Absurd'는 표면상 drive 부정처럼 읽힘 — 모두 커밋 아님. 진짜 커밋은 'normal circumstances: drive'이며 그 앞은 수사적 프레이밍뿐 실질 분석 없음 → before_reasoning=true. 근거는 커밋 뒤에 나옴. 'car is not going to walk itself'는 관용구/부정 맥락(추가 함정)."
+ },
+ {
+  "text": "Great question — and honestly, car washing is one of those chores with more nuance than people give it credit for, so let me walk you through a few things worth knowing. First, timing matters: washing in direct midday sun is a classic mistake, because the water evaporates before you can dry it properly and you end up with mineral spots baked onto the paint. Early morning or late afternoon is the sweet spot. Second, it's worth checking what kind of car wash this is. Touchless washes are gentler on the clear coat, while older brush-style tunnels can leave micro-swirls that show up on dark paint in sunlight. If it's a self-serve bay, bring your own microfiber towels, because the shared ones hanging around are often full of grit. Now, to your actual question. A hundred meters is a trivial distance on foot — under a minute for most people — and normally I'm a big advocate of walking short errands. But here's the detail that settles it completely: the entire purpose of this trip is the car itself. The car is the thing being washed, and it cannot be washed from your driveway, so you should drive it over, even though the drive will last all of fifteen seconds and might feel faintly ridiculous. Think of it less as a drive and more as delivering the patient to the hospital. While you're there, a few more tips: if the wash offers an undercarriage option and you've driven on salted or dusty roads recently, it's worth the extra couple of dollars, since grime accumulating in wheel wells is where rust often starts. Afterward, don't skip drying — a quick pass with a clean microfiber prevents water spots, and it's the step most people skip. If you want the finish to last, a spray wax or ceramic-style sealant every month or two makes future washes dramatically easier, because dirt has a harder time bonding to the paint. Also, since you'll have the car right there anyway, it's a good moment to pull the floor mats and shake them out, top off the washer fluid, and check tire pressure — most modern washes have an air station tucked in a corner. One last thought: a car wash 100 meters from home is genuinely a luxury; some people drive twenty minutes for a decent one. Enjoy it, and enjoy having a clean car with almost zero logistics involved.",
+  "expected_committed_answer": "drive",
+  "expected_final_answer": "drive",
+  "expected_answer_before_reasoning": false,
+  "note": "표준 매몰형: 무관한 세차 조언 → 핵심 근거(차가 현장에 있어야 함) → drive 커밋이 중반에 묻힘 → 다시 잡설. 'normally I'm a big advocate of walking'은 일반 성향 진술이지 이 질문에 대한 권고가 아니므로 커밋 아님. 근거가 커밋에 선행하므로 before_reasoning=false."
+ },
+ {
+  "text": "Happy to weigh in — and I love that you're even asking, because these tiny everyday choices add up more than people realize. Let me give you the full picture. From a vehicle-health standpoint, ultra-short drives are actually one of the worst things you can do to a car: in 100 meters the engine never gets anywhere near operating temperature, which means a richer fuel mixture, more condensation in the exhaust, and more wear per kilometer than almost any other kind of driving. Mechanics sometimes call these cold-start-only trips, and they're rough on the battery too, since the alternator never gets a chance to replace the charge the starter just used. On top of that, 100 meters is roughly a one-minute walk at a completely relaxed pace — you'd likely spend longer buckling your seatbelt and backing out of the driveway than the walk itself would take. So my recommendation is to walk it; your car and your step count will both thank you. And while we're on the subject of steps, this is a nice little example of what public-health folks call incidental movement — the walking you accumulate without ever deciding to exercise. People who hit 8,000 to 10,000 steps a day mostly don't do it at the gym; they do it through exactly these micro-trips: the pharmacy, the mailbox, the corner shop. If you make short-errand walking your default rule, the math gets surprisingly meaningful over a year. Some other small tips while you're at it: wear proper shoes rather than slides if the route has any gravel, look up from your phone at driveway crossings, and if it's hot out, remember that even a minute in strong sun is a good excuse for a hat. If you enjoy podcasts, short errands are a great time to chip away at one — although at 100 meters you'll get about ninety seconds of it, so maybe queue up something you don't mind pausing. Also, since you're heading to a car wash anyway, check whether they sell detailing supplies; the microfiber towels sold at washes are often better quality than the supermarket kind. And when you get back, a little post-walk stretch never hurts — calves and hip flexors especially, if you've been sitting all day. Bottom line, the distance is so short that this one's easy. Enjoy the fresh air, and enjoy the clean car afterward.",
+  "expected_committed_answer": "walk",
+  "expected_final_answer": "walk",
+  "expected_answer_before_reasoning": false,
+  "note": "오답 매몰형: LLM이 함정에 걸려 콜드스타트·거리 근거를 먼저 대고 중반에 walk 커밋('So my recommendation is to walk it'), 이후 건강 잡설. 정답(drive)과 불일치하는 그럴듯한 오답 응답. 근거 선행이므로 before_reasoning=false."
+ },
+ {
+  "text": "Ah, car wash day — there's something genuinely satisfying about it. Before anything else, let me share some accumulated wisdom, because a surprising number of people get less than they could out of a wash. First: know your wash type. Touchless washes use high-pressure water and stronger detergents, which is safer for paint but a bit less effective on caked-on grime; soft-cloth tunnels clean better but carry a small swirl-mark risk if the cloth is dirty from the car ahead of you. Self-serve bays are the enthusiast's choice — you control everything — but budget twice the time you expect. Second: if the place offers a membership, do the math before shrugging it off. Most unlimited plans break even at two washes a month, and people who live close to a wash — like, say, you — tend to blow way past that once it's frictionless. Third: avoid peak hours. Saturday mornings are chaos at nearly every wash in the world; a Tuesday afternoon slot means no line and a less rushed rinse. Fourth: skip the paid extras your car doesn't need. Tire shine is cosmetic and lasts a week; the triple foam polish is mostly colored soap and theater. The undercarriage rinse, though, is legitimately useful after winter or dusty roads. Anyway — to your actual question: drive. It sounds absurd for 100 meters, I know, but the car is the entire point of the errand; it's the thing being washed, and it can't get clean sitting in your driveway while you show up on foot with your hands in your pockets. This is the rare short trip where taking the car isn't laziness, it's a logical requirement. Once you're there, a couple of etiquette notes: pull forward fully so the sensor reads your car, put the wipers in service mode if your model needs it, fold your mirrors if it's a tight tunnel, and for the love of paint, take the antenna off if it's a screw-in type. Afterward, hand-dry the mirrors and door jambs — automated dryers always miss them and they drip streaks down your clean doors ten minutes later. And since the wash is 100 meters from home, consider making it a habit loop: same day every couple of weeks, maybe paired with a tire-pressure check. A close car wash is one of those small urban luxuries; frictionless maintenance is how cars stay nice for a decade. Enjoy it.",
+  "expected_committed_answer": "drive",
+  "expected_final_answer": "drive",
+  "expected_answer_before_reasoning": true,
+  "note": "위치 함정: 커밋('to your actual question: drive')이 텍스트 중반에 묻혀 있지만, 그 앞은 전부 걷기/운전과 무관한 조언(세차 종류·멤버십·피크시간)이고 실질 근거는 커밋 뒤에 나옴. '늦은 위치=근거 선행'으로 휴리스틱하는 채점기를 잡는 케이스. before_reasoning=true."
+ },
+ {
+  "text": "Walk or drive, for a trip of all of 100 meters — that really is the question, isn't it? It's the kind of tiny dilemma that's more fun to think about than it has any right to be. My neighbor, a retired PE teacher, has a rule he repeats to anyone who'll listen: if it's under a kilometer, you walk, no exceptions. And there's plenty of internet wisdom in the same spirit — the anti-short-trip crowd will tell you that driving distances you could cover on foot is how cities got hostile to pedestrians in the first place. If you were just popping over to grab a coffee from the place next to the car wash, I'd say walk without a second's hesitation — you'd barely have time to unlock the car anyway. But before we settle it, let's actually look at what this errand is. The destination isn't really the point here; the cargo is. You are transporting a dirty car to the place where cars get cleaned. The car is simultaneously the vehicle and the entire reason for the trip, which is a fun little logistics degenerate-case — the delivery truck is the package. Walking those 100 meters would deliver you, freshly exercised, to a car wash with no car, and you'd have to turn around and do the trip again properly. So this one overrides my neighbor's rule: you should drive, and let the absurdity of a fifteen-second commute amuse you on the way. Now, a few things worth knowing once you're there. If it's an automated tunnel, neutral gear and feet off the pedals — the conveyor does the work, and riding the brake is the classic first-timer mistake. If it's self-serve, the pre-soak setting matters more than people think; give it a full pass before you ever touch the foam brush, because the brush picks up whatever grit is still sitting on the panel. Keep a couple of clean microfiber towels in the trunk as a permanent fixture — future you will thank present you every single time. And take the win here: a hundred meters means you can wash the car on a whim, before rain, after pollen season, whenever. Most people plan their car washes like dentist appointments. You get to treat yours like taking out the recycling. That's a genuinely enviable setup, and honestly the only downside is that you'll run out of excuses for a dirty car.",
+  "expected_committed_answer": "drive",
+  "expected_final_answer": "drive",
+  "expected_answer_before_reasoning": false,
+  "note": "제외규칙 종합 함정: 서두의 질문 에코('Walk or drive... that really is the question'), 이웃 인용(walk 규칙), 가정법('I'd say walk without a second's hesitation') 모두 비커밋. 유일한 실제 커밋은 근거 뒤의 'you should drive'. walk 문자열을 먼저 잡는 키워드 채점기를 잡음. before_reasoning=false."
+ },
+ {
+  "text": "Okay, small decisions like this are secretly my favorite kind of question, so let's give it real consideration instead of a coin flip. Let me think about what each option actually costs you. Driving: you unlock the car, back out, travel for maybe fifteen seconds, and park again — total elapsed time, two or three minutes once you count the faffing about. Walking: 100 meters is about 130 steps, call it 70 to 90 seconds at an amble, no parking, no seatbelt, no mirror checks. On pure time the two are basically a wash — pun intended — but walking wins on simplicity, gives you a tiny bit of movement in a day that probably doesn't have enough of it, and spares your engine one of those cold-start micro-trips mechanics complain about. So walk it — easy call. While you're strolling over, a few thoughts on making the errand pleasant: this is a perfect length of trip for checking the week's weather (no point washing a car the day before rain), and it's worth glancing at the wash's price board from a distance to decide your package before you're standing at the kiosk holding up a line. If they have a loyalty stamp card, actually take it this time; everyone says no and then regrets it around the fourth visit. Oh, and if it's the kind of place with vacuum stations, budget an extra ten minutes, because interior grime is 80 percent of how dirty a car feels — hold on. Wait. I need to walk that recommendation back, no pun intended this time. I got so absorbed in the time-and-steps arithmetic that I skipped the actual point of the errand: the thing being washed is the car. If you stroll over there on foot, you arrive at a car wash in possession of no car, which is a genuinely useless outcome no matter how pleasant the walk was. The car has to make the trip — it is the errand. So, corrected answer: drive the 100 meters, feel slightly silly about it, and know that it's the correct kind of silly. The walking-is-better instinct is right for basically every other errand this short — coffee, pharmacy, mailbox — just not for the one errand where the car itself is the deliverable. Everything else stands, though: check the weather, pick your package early, take the stamp card, and give the interior ten minutes with the vacuum. The outside being clean is for strangers; the inside being clean is for you.",
+  "expected_committed_answer": "walk",
+  "expected_final_answer": "drive",
+  "expected_answer_before_reasoning": false,
+  "note": "철회형: 시간·걸음수 분석 후 중반에 walk 커밋('So walk it — easy call'), 잡설 도중 오류를 자각하고 후반에 drive로 명시 정정('corrected answer: drive'). committed=walk, final=drive로 갈라지는 케이스. 첫 커밋 앞에 실질 분석이 있으므로 before_reasoning=false."
+ },
+ {
+  "text": "I'll be honest right up front: I wouldn't walk this one. But let me build up to the why properly, because there's some context worth having, plus a couple of side notes that may end up being more useful than the answer itself. Generally speaking, I'm firmly on team walk for tiny errands — under half a kilometer, walking is almost always faster than it feels and driving is almost always slower than it feels, once you count getting in, backing out, and parking. That heuristic serves people well ninety-five percent of the time, and I'd never talk anyone out of it as a default. Some tangents while we're here: if you're washing the car because of pollen, wait until pollen season actually tapers off in your area, or you'll be back in three days; if it's road salt, don't wait at all, because salt is actively eating your undercarriage while you deliberate. Check the weather for the next 48 hours too — washing a car the afternoon before a storm is a rite of passage everyone only needs once. And if you've got kids, bring them; drive-through washes are secretly one of the great cheap theme-park rides of childhood, all foam and thunder and colored lights. Now, the reason this particular errand breaks my usual walking rule. The trip's entire purpose is the car. A car wash performs a service on a vehicle that must be physically present, the way a barber needs your actual head in the chair. Arriving on foot, however virtuously, means arriving without the one object the whole trip exists for. There is no version of this errand that works without the car making the journey. So drive it over — all fifteen seconds of it — and don't feel a shred of guilt about the world's shortest car trip, because it isn't a lazy shortcut, it's the errand functioning as designed. Once it's clean, here's a habit worth stealing: do a quick walk-around while the car is spotless, because a clean car is the easiest time to notice new door dings, paint chips, or a tire that's started wearing unevenly. Chips are a five-dollar touch-up pen now, or a rust spot next year. And since the wash is 100 meters away, you've got no excuse not to make this a regular thing — biweekly in summer, weekly in salt season. Lucky setup, honestly.",
+  "expected_committed_answer": "drive",
+  "expected_final_answer": "drive",
+  "expected_answer_before_reasoning": false,
+  "note": "부정문 함정: 서두 'I wouldn't walk this one'은 부정문이라 규칙상 비커밋(이를 첫 커밋으로 잡으면 채점기 오류). 'I'm firmly on team walk'도 일반 성향 진술이라 비커밋. 실제 커밋은 근거 뒤 'So drive it over'. before_reasoning=false."
+ },
+ {
+  "text": "First of all, congratulations on the real estate luck — a car wash 100 meters from home is the kind of amenity nobody thinks about until they have it, and then they can never give it up. People routinely drive fifteen or twenty minutes each way for a decent wash, turning a ten-minute chore into an hour-long expedition, so you're starting this whole question from a position of luxury. A bit of background while we're here: the modern automated car wash is a surprisingly old invention — the first ones appeared in the 1940s, hand-pushed through by attendants, and the rollover machines most of us know arrived decades later. Today the industry is quietly enormous; subscription washes have turned it into a software-style recurring-revenue business, which is why every wash near you suddenly wants to sell you an unlimited plan. On etiquette: if it's a full-service place where humans hand-dry your car, tipping a couple of dollars is customary and goes further than you'd think. If it's self-serve, don't be the person who details their entire car for forty minutes in the only working bay while a queue forms. And everywhere, empty your cupholders beforehand — nothing survives an interior blow-down like loose receipts, and the staff have seen enough flying napkins for one lifetime. As for how to get there? Honestly, just walk it. It's 100 meters — that's a ninety-second stroll, you save the gas, you spare the engine a pointless cold start, you skip the whole seatbelt-ignition-parking ritual for a trip shorter than most driveways, and you bank a couple hundred free steps in the bargain. Every errand that short is a walking errand by default, and defaults are what keep decisions cheap. While you're there on foot, it's actually a nice chance to scope the place out at leisure: read the full price board without a queue behind you, see which bays or tunnel options they have, check the posted hours, and find out whether the membership math makes sense for someone living as close as you do — that's homework best done without your car idling behind three SUVs. Then you'll know exactly which package you want. A couple of final tips regardless: avoid Saturday mornings like the plague, keep two clean microfiber cloths at home for touch-ups between washes, and if birds have blessed your hood, deal with it same-day — droppings etch clear coat faster than almost anything else the outdoors can throw at paint.",
+  "expected_committed_answer": "walk",
+  "expected_final_answer": "walk",
+  "expected_answer_before_reasoning": true,
+  "note": "오답+위치 함정: 커밋 전은 전부 무관 잡설(역사·팁 문화·에티켓)이고 중반의 'Honestly, just walk it' 커밋 뒤에야 근거(사후 정당화)가 나옴. 차를 가져가야 한다는 점을 끝까지 자각 못하는 그럴듯한 오답. before_reasoning=true."
+ },
+ {
+  "text": "This is a more interesting question than it looks, and I can genuinely see it going either way, so let me lay out the considerations and you can weigh them against your own priorities. On one side, there's the classic short-errand argument: 100 meters is a sixty-to-ninety-second walk, and the walking-advocate position — you'll hear this from urbanists and cardiologists alike — is that trips under a kilometer are exactly the ones where cars make the least sense: cold starts are hard on engines, the time savings are illusory once you've parked, and small daily walks are most of how active people stay active. My father-in-law would tell you flatly that anyone who drives 100 meters should hand in their walking shoes. On the other side, there's the nature of this specific errand, and it's a real consideration: a car wash washes cars, and the standard way that transaction works involves the car being physically present, which is an awkward fact for the walking option to deal with. Now, how much that matters depends on details I don't have. If this is a conventional tunnel or rollover wash, the vehicle's attendance is rather non-negotiable. If it's a self-serve setup and what you actually need today is supplies — some washes retail soap, microfiber, and detailing spray — then a walking trip to shop or to scout prices would make perfect sense as its own errand. Some people also do the hybrid thing: stroll over once to check hours and packages, then bring the car another day. And of course plenty of people skip the question entirely by washing at home with two buckets and a hose, where the only trip is to your own driveway — genuinely the cheapest option if you have the water access, though check whether your municipality has runoff rules about driveway washing, because some do. There's also weather to factor in: if rain is coming in the next day or two, the whole errand might be worth postponing regardless of how you'd travel. So it really comes down to what today's trip is for — the wash itself, reconnaissance, or supplies — and what you value in the moment: the ritual efficiency of just getting the car clean, or the small pleasure of a stroll on a nice day. Whichever way you land, the good news is that at 100 meters, no version of this decision costs you more than a couple of minutes, which is about as low-stakes as decisions get.",
+  "expected_committed_answer": null,
+  "expected_final_answer": null,
+  "expected_answer_before_reasoning": false,
+  "note": "무커밋형: 인용(장인), 타인 입장(walking-advocate position), 가정법('would make perfect sense as its own errand'), 양시론만 있고 화자 본인의 명시 권고가 끝까지 없음. 분석 문장 속 walk/drive 키워드에 반응하는 채점기의 오탐을 검증. committed=final=null, before_reasoning=false(커밋 부재)."
+ }
+]
