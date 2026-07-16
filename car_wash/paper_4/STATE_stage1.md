@@ -128,6 +128,66 @@ stage1_qwen_carwash.py 헤더 주석이면 전체 맥락 복원됨.
 - **STAGE 2 (activation oracle) 착수 가능 상태.** 설계는
   pre_commitment_AO_experiment_design_v0.md §1 STAGE 2 + §2 통제 참조.
 
+## STAGE 2 착수 (2026-07-16) — oracle 경로 로컬 MPS 검증 완료
+
+- AO 저장소: /Users/momo/dev/activation_oracles (repo 밖 클론).
+  oracle LoRA: adamkarvonen/checkpoints_latentqa_cls_past_lens_addition_Qwen3-8B.
+- 데모 노트북 라이브러리 셀 → ao_demo_lib.py 벤더링. **이탈 1건**:
+  신형 transformers가 apply_chat_template(tokenize=True)에서 BatchEncoding
+  반환 → list 언랩 4줄 패치 (create_training_datapoint). 그 외 원본 그대로.
+- CUDA+8bit 대신 MPS+bf16 (bitsandbytes MPS 불가). Colab 불필요.
+- 스모크 (stage2_oracle_smoke.py): car wash 질문 29토큰 전 위치 oracle 응답.
+  중간 토큰에서 "optimal time to leave for the car wash" — 활성값에서
+  도메인 의미 판독 확인. 경계 토큰(im_start/개행)은 모호 — 정상.
+- 다음 결정 (사용자와): oracle 질문 문구 / 위치 그리드 / §2 통제 구성.
+
+## STAGE 2 1차 프로브 결과 (2026-07-16, stage2_results/ao_probes.jsonl)
+
+- 설계: 22 롤아웃(walk 16 = C/A×on/off×4, drive 6) × 그리드 6위치
+  (P0 시작, P1-P3 커밋까지 25/50/75%, P4 커밋 직전, P5 커밋+8).
+  oracle 질문 "What answer is this model going to give?", 단일토큰 프로브,
+  greedy. 스크립트 stage2_ao_experiment.py (resume 내장).
+- walk군 배타언급 적중: P0 0/16, P1 1/16, **P2 8/16**, P3 6/16,
+  P4 4/16, P5 3/16. drive군: 전위치 ~0 (P3 2/6뿐).
+- 해석 (정직): ① 커밋 텍스트 이전 P2에서 50% 신호 — pre-commitment
+  시사 예비 신호. ② **그러나 양성통제 P5(텍스트 노출 후)가 3/16로 약함**
+  — 단일토큰 프로브 신뢰도 부족, 이 상태로는 주장 불가 (설계문서
+  "노이즈 심함, 반복+통계" 경고 실증). ③ drive군 0 근접 — oracle의
+  walk 어휘 편향 vs 진짜 활성값 차이 미분리, 통제 필요.
+- [160]: P2에서 walk 언급, P4/P5 무관 응답(도메인 이탈 환각) —
+  단일 프로브 노이즈 전형.
+- 다음 후보: 위치창 평균(그리드점당 ±2 토큰 5프로브 다수결),
+  segment 입력 모드, layer 25/75% 스윕, oracle 질문 A/B.
+
+## STAGE 2 이터레이션 1 결과 (2026-07-16) — 관문 실패, segment 모드 진입
+
+- 창-다수결(±2, 5표): walk군 P5 3/16 -> 3/16 **복구 실패** (사용자 관문
+  ~10/16+). P5 투표 13/16 롤아웃이 4-5표 none — 요동 아닌 일관 무신호.
+  다수결이 P2 8->4, P4 4->0으로 산발 신호도 억제 — v1 P2 50%는 노이즈 쪽.
+- 사전 분기 집행: 토큰 프로브(단일/다중) 기각 -> **segment 입력 모드**
+  (stage2_ao_segment.py, 실행 중). 변경: 구간째 1질문 주입, 양성통제
+  P5=[commit_tok, +8]로 커밋 토큰 포함 강화 (P0-P4는 커밋 전 엄수 유지).
+- layer 스윕/질문 A/B는 양성통제 선 이후 (사용자 순서 지시).
+
+## STAGE 2 최종 (2026-07-16) — 질문 A/B 복구 → 그리드 → 중립 통제 (B) 판정
+
+- segment도 P5 2/16 실패 → **질문 A/B가 원인 갈랐다**: Q1 개방형 2/16,
+  Q2 "recommending" 7/16, **Q3 폐쇄형("walk or drive?") 11/16** — 질문
+  문구 문제(a), LatentQA 분포엔 폐쇄형. 도구 한계 아니었음.
+- Q3 전체 그리드: walk군 P0 6/16 → P4 10/16 → P5 11/16 (단조 경향,
+  페어드 P0→P4 개선7/악화3 p≈0.34 단독 비유의). drive군 커밋 전
+  위치가 walk로 판독 (P4 5/6) → (A)편향/(B)조기 walk-lean 판별 필요.
+- **중립 통제 (8 무관 프롬프트 × 3위치): oracle 고유 walk율 4/23=17%**
+  (기본값 drive 83%). 사전 규칙 구간(40-60/≥70) 밖, 방향은 (B) 지지:
+  walk 판독만 정보적 — 커밋 전 walk 판독률 15/22=68% vs 기준선 17%.
+- **(B) 판정**: pre-commitment(walk)가 커밋 전 활성값에서 판독되며,
+  drive 최종답 롤아웃조차 커밋 전엔 walk-lean — STAGE 1 "기본상태
+  walk, thinking이 늦게 전복" 행동 서사의 내부 대응물.
+- 각주: drive 판독은 무정보(oracle 기본값), 양성통제는 walk쪽만 성립,
+  drive군 n=6. 위치 곡선 단독 통계 약함 — 중립 대비로만 유의.
+- 사전 합의대로 STAGE 2 프로빙 종료. 산출: stage2_ao_{experiment,window,
+  segment,qab,neutral}.py + stage2_results/*.jsonl 5종.
+
 ## 필수 최종 게이트 (합성 검증과 무관하게 무조건)
 
 풀런 후 **실제 Qwen 롤아웃 15~20개를 수동 대조** (스펙 의무).
