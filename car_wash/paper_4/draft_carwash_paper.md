@@ -2,7 +2,8 @@
 
 Heejin Jo
 
-*Draft v0.2 — 2026-07-16. Numbers frozen against committed result files
+*Draft v0.3 — 2026-07-16 (pre-publication audit applied: cluster-aware
+statistics, corrected counts, methodological justifications). Numbers frozen against committed result files
 (commits ed2f1f7, d5b3e49, 1d8076f, 163510b; every reported statistic is
 reproducible via compute_statistics.py -> stage2_results/statistics.json).*
 
@@ -29,7 +30,8 @@ that eventually answer *drive* also read as walk-leaning before commitment
 (83%), these walk read-outs are not explained by lexical bias; a lexical
 stratification further shows they are not text recovery — spans containing
 "drive" still read out walk, and in balanced lexical fields naming both
-options the walk share is 72% against the oracle's 17% default (p = 4×10⁻⁶). Sample sizes
+options, per-rollout walk-majorities dominate a per-prompt neutral baseline
+(15/22 vs. 1/8, p=.01; drive-committing rollouts 6/6, p=.002). Sample sizes
 are small and the within-rollout positional gradient is not significant
 (p=.34); we frame these results as preliminary. **(3) Methodological.**
 The same oracle, activations, and positions succeed or fail depending
@@ -63,16 +65,22 @@ chain-of-thought (e.g., attribution-graph analyses in which a planted answer
 bends the reasoning): there, reasoning is corrupted toward a given answer;
 here, the reasoning is often *sound in isolation* — the model enumerates
 factors, weighs them, sometimes even touches the critical premise — and the
-answer ignores it. Qualitatively (Section 3.4), the model walks up to the
-door ("the car is at home; the wash is 100 m away") and does not open it.
+answer ignores it. Qualitatively (Section 2.4), the model walks up to the
+door ("if the car is already parked near the car wash, maybe…") and does
+not open it.
 
 ## 2. Behavioral study
 
 ### 2.1 Setup
 
-**Model.** Qwen3-8B (bf16, greedy and temperature-0.7 sampling), local
-Apple-silicon (MPS) inference. Thinking mode toggled via the chat template
-(`enable_thinking`).
+**Model and decoding.** Qwen3-8B (Yang et al., 2025), run locally on
+Apple silicon (MPS) in bf16 — the 8-bit path used by the oracle reference
+setup is CUDA-only (bitsandbytes), and bf16 is the standard full-quality
+precision that fits the model in unified memory. Two decoding settings per
+condition and thinking mode: greedy (deterministic; one rollout as a
+reference point) and temperature-0.7 sampling (n=20, matching the original
+experiment's per-condition n) to observe the commitment distribution.
+Thinking mode toggled via the chat template (`enable_thinking`).
 
 **Conditions.** Five system-prompt conditions taken verbatim from the
 original experiment: `A_bare` (no system prompt), `B_role_only`,
@@ -88,11 +96,13 @@ with a rule-based (regex) scorer, audited it adversarially, and rejected it
 when it failed a fresh 32-case holdout (62.5% case-level disagreement with
 human labels; almost all errors were missed commitments). We replaced it
 with an LLM judge (Qwen3-8B, greedy, rubric prompt, JSON output), adopted
-only after passing a pre-registered gate: 96.9% (62/64) agreement with human
+only after passing a pre-registered gate (acceptance threshold >=95%,
+fixed before scoring): 96.9% (62/64) agreement with human
 labels on synthetic audit cases *not used to tune the judge prompt*, with
 label-level determinism verified (8/8 identical on double-scoring). A
-stratified manual gate over real rollouts (20/20 correct labels,
-hand-checked) closed the loop. A secondary construct
+stratified manual gate over real rollouts — mandated by the experiment
+spec at 15–20 cases; we used 20 (20/20 correct labels, hand-checked) —
+closed the loop. A secondary construct
 (`answer_before_reasoning`) failed validation (82.8%) and is excluded from
 all claims.
 
@@ -130,10 +140,12 @@ Three structural observations:
 ### 2.3 A truncation artifact that almost reversed a conclusion
 
 Our first full run used a 1,024-token generation budget. Thinking-mode
-rollouts showed apparently lower wrong-commitment rates (45–75%), which
-would have supported "thinking mitigates the failure." Inspection of all
-32 null-commitment thinking rollouts showed every one was a `<think>` block
-truncated mid-thought by the budget — no visible answer existed to score.
+rollouts showed apparently lower wrong-commitment rates (45–95% across
+conditions, vs. 85–100% after the fix), which would have supported
+"thinking mitigates the failure." Inspection of the 35 null-commitment
+thinking rollouts showed 31 were `<think>` blocks truncated mid-thought by
+the budget — no visible answer existed to score (the remaining 4 were
+genuine non-commitments).
 After regenerating the entire thinking arm at 4,096 tokens (0/210 truncated),
 the mitigation disappeared. We report this because aggregate-only pipelines
 would have shipped the wrong conclusion; the correction came from reading
@@ -141,14 +153,16 @@ the raw texts behind an anomalous label cluster.
 
 ### 2.4 Qualitative anatomy of one rollout
 
-In a representative `C_role_star` thinking rollout, the think block
-correctly establishes the situation — the car is at home, the wash is 100 m
-away — enumerates walking-speed, weather, effort considerations, and never
-poses the one decisive question (*how does the car get there?*). The visible
-answer then fills the STAR template: "**Action**: Walk to the car wash."
-The reasoning is diligent and internally consistent; it is also premise-blind.
-This is the shape of the phenomenon: not corrupted reasoning, but an answer
-that reasoning never actually authorized.
+In a representative `C_role_star` thinking rollout, the think block frames
+the task as a preference choice — enumerating walking speed, weather, and
+effort — brushes against the decisive fact exactly once ("if the car is
+already parked near the car wash, maybe…") and moves on without resolving
+where the car actually is. The visible answer then fills the STAR template:
+"**Action**: Walk to the car wash." The reasoning is diligent and
+internally consistent; it is also premise-blind: the one question that
+decides the task (*how does the car get there?*) is raised obliquely and
+never answered. This is the shape of the phenomenon: not corrupted
+reasoning, but an answer that reasoning never actually authorized.
 
 ## 3. Probing activations before the commitment (preliminary)
 
@@ -158,14 +172,27 @@ test this with a pretrained activation oracle (LatentQA-style: an LLM
 fine-tuned to answer natural-language questions about injected activations),
 using the public Qwen3-8B oracle checkpoint. Activations are collected by
 teacher-forced prefill over the exact generation-time sequence (prompt +
-generated text), layer 18 of 36.
+generated text), at layer 18 of 36 — 50% depth, the oracle checkpoint's
+training and demo default. We did not sweep layers (see Limitations); the
+per-question positive control below partially de-risks this for the
+question we adopt.
 
-**Design.** 22 rollouts from the behavioral study (16 walk-committing across
-`A_bare`/`C_role_star` × thinking on/off; all 6 drive-committing rollouts
-with a reliably localizable commitment). Six probe sites per rollout:
+**Design.** 22 rollouts from the behavioral study. Walk-committing: the
+first four eligible per cell in dataset order, from `A_bare` (the bare
+condition) and `C_role_star` (the strongest-failure condition) × thinking
+on/off. Eligibility = a localizable commitment position: we anchor the
+position grid on the rejected regex scorer's commitment span, used only
+where it agreed with the judge label (the span supplies a *position*, not
+a label), plus the Section 2.4 exemplar, whose span we hand-localized.
+Drive-committing: the dataset contains 10; 6 satisfied the same
+localizability rule (in the other 4 the regex found no span to anchor on).
+Selection is deterministic given the data but not random, and the
+localization rule inherits the regex scorer's blind spots; with samples
+this small we treat every statistic in this section as preliminary. Six probe sites per rollout:
 assistant start (P0), 25/50/75% of the span to the commitment token
-(P1–P3), immediately before the commitment token (P4), and after the
-commitment text (P5, positive control). P0–P4 windows never touch the
+(P1–P3), immediately before the commitment token (P4), and a span
+starting at the commitment token (P5 = [commit, +8 tokens], positive
+control). Oracle decoding is greedy throughout. P0–P4 windows never touch the
 commitment tokens, so a correct read-out at those sites cannot come from
 the answer text itself (text-inversion control).
 
@@ -175,8 +202,9 @@ Our first three configurations — single-token probes, 5-token majority
 voting, and segment (multi-position) injection — all failed the positive
 control with the open question "What answer is this model going to give?"
 (P5 hit rates 3/16, 3/16, 2/16). The failure was consistent, not noisy:
-under majority voting, 13/16 rollouts produced 4–5 "no answer" votes out
-of 5 at P5.
+under majority voting, 10/16 rollouts produced 4–5 "no answer" votes out
+of 5 at P5. Our pre-set recovery criterion for the positive control, fixed
+before the question comparison, was roughly 10/16.
 
 Holding activations, positions, and injection mode fixed and changing only
 the question:
@@ -201,8 +229,12 @@ hard to use off-distribution.
 Forced-choice questions make the oracle answer something even on empty
 evidence, so read-out rates are only interpretable against the oracle's
 intrinsic preference. On activations from 8 unrelated prompts (philosophy,
-arithmetic, recipes, code; 24 probes), the oracle answers "drive" 19/23 and
-"walk" 4/23 (17%). The oracle's default under this question is *drive*;
+arithmetic, recipes, code; 24 probes), the oracle answers "drive" 19/23
+(83%) and "walk" 4/23 (17%); one probe mentioned both options and is
+excluded from the decisive-read-out denominator. We pre-registered
+interpretation bands before running the control (40–60% walk share would
+support genuine signal; >=70% would indicate walk bias); the observed 17%
+fell outside both bands, in the direction opposite the bias concern. The oracle's default under this question is *drive*;
 consequently "walk" read-outs carry information and "drive" read-outs are
 weak evidence. (This asymmetry cuts both ways: it strengthens walk
 read-outs below, and it means our positive control stands only on the walk
@@ -223,7 +255,8 @@ Two readings, stated with their limits:
 
 1. **The wrong commitment is readable before it is written.** In
    walk-committing rollouts, an oracle whose default answer is "drive"
-   reads "walk" from pre-commit activations at 3.7× the neutral rate.
+   reads "walk" from pre-commit activations at 3.6× the neutral rate
+   (one-sided tests throughout; the direction was fixed in advance).
 2. **Rollouts that eventually answer correctly also start walk-leaning.**
    5/6 drive-committing rollouts read as "walk" at P4. Since 9/10 drive
    commitments arise in thinking mode after long deliberation (Section 2.2),
@@ -254,25 +287,29 @@ pre-commit probes by whether walk/drive literally occur (a) in the injected
 
 **Injected-span (strict text-inversion) test.** Walk read-outs are *not*
 driven by "walk" tokens in the injected span: spans containing "walk" read
-out walk at 2/8, spans without it at 64/102 (63%). In six probes the
-injected span contains "drive"/"driving" and not "walk" — and the oracle
-still answers walk (e.g., span " not need to drive." → "walk"). Recovery
-of injected token identities cannot explain the results.
+out walk at 2/8, spans without it at 64/102 (63%). Eight probes have
+injected spans containing "drive"/"driving" and not "walk"; five of them
+still read out walk (e.g., span " not need to drive." → "walk"). Recovery
+of injected token identities cannot explain the results. (Word matching
+uses strict boundaries — "driveway" does not count as "drive.")
 
 **Context-field test.** The ±25-token lexical field does influence the
 oracle in single-word strata: contexts containing only "walk" read out walk
-12/12; contexts containing only "drive" follow drive (n=6). These strata
-are small because deliberation text is saturated with both words: 90/110
-probes (82%) have a *balanced* field containing both. In that decisive
-stratum, walk read-outs dominate 52 vs. 20 — a 72% walk share against the
-oracle's own 17% neutral default (Fisher p = 4×10⁻⁶) and against a 50/50
-lexical tie (p = 10⁻⁴). Sharpest of all: in drive-committing rollouts with
-both words in context, the oracle reads walk 20/28 and drive 1/28 — a 20:1
-split among decisive read-outs against the oracle's 4:19 default
-(p = 10⁻⁷; conservatively, walk vs. all other read-outs including
-abstentions, p = 1.3×10⁻⁴) — the lexical field names both options, the
-oracle's default is drive, the rollout's own final answer is drive, and
-the read-out is still walk. Pure lexical reading predicts none of this.
+12/13; contexts containing only "drive" lean drive (3/6). These strata are
+small because deliberation text is saturated with both words: 89/110 probes
+(81%) have a *balanced* field containing both. Descriptively, walk
+read-outs dominate that stratum 52 vs. 20 (a 72% walk share against the
+oracle's 17% neutral default). Because probes are clustered within
+rollouts (five per rollout), pooled probe-level tests overstate
+independence; our primary inference is therefore cluster-aware, comparing
+per-rollout majorities in the balanced field against per-prompt majorities
+in the neutral control (walk-majority prompts: 1/8). Walk-committing
+rollouts: 9/16 walk-majorities (p = .051, marginal). Drive-committing
+rollouts: **6/6** walk-majorities (p = .002). Combined: 15/22 (p = .010).
+The drive-group cell remains the sharpest: the lexical field names both
+options, the oracle's default is drive, the rollout's own final answer is
+drive — and every one of the six rollouts reads walk on majority. Pure
+lexical reading predicts none of this.
 
 We conclude the pre-commit walk read-outs cannot be reduced to text
 recovery, while acknowledging that in single-word lexical fields oracle
@@ -346,9 +383,19 @@ answer-commitment task.
   scoring Qwen3-8B rollouts. The 96.9% human-agreement gate and 20/20
   manual check mitigate this; raw texts are preserved so any external
   judge can re-score.
-- **Probing sample sizes.** n=16/6; the positional gradient is
-  non-significant; drive-side positive control unavailable (oracle
-  default). All Section 3 claims are labeled preliminary.
+- **Probing sample sizes and clustering.** n=16/6 rollouts; the positional
+  gradient is non-significant; drive-side positive control unavailable
+  (oracle default). Probes are clustered within rollouts, so pooled
+  probe-level tests are descriptive only and inference is cluster-aware
+  (Section 3.4); the walk-group balanced-field test is only marginal
+  (p=.051) at rollout level. All Section 3 claims are labeled preliminary.
+- **Single probe layer.** All probes use the oracle's default layer (50%
+  depth). A layer sweep was planned but not run; results may differ at
+  other depths.
+- **Non-random rollout selection.** Section 3 rollouts were selected
+  deterministically (first-k eligible per cell) under a localizability
+  rule that inherits the rejected regex scorer's blind spots; 4 of 10
+  drive-committing rollouts were excluded by it.
 - **Teacher-forced prefill.** Probed activations come from re-encoding the
   generated sequence, which matches generation-time computation for the
   same prefix under causal attention, but small tokenizer boundary effects
@@ -365,8 +412,8 @@ answer-commitment task.
 The behavioral result is sturdy: on this task, a competent open-weight
 model commits to a premise-violating answer at 85–100% rates that survive
 sampling, prompt variation, an explicit contradicting profile, and a
-4,096-token thinking budget — and structured-answer formats make it
-strictly worse. The activation-level result, while preliminary, points the
+4,096-token thinking budget — and structured-answer formats push it to the
+ceiling (`C_role_star`: 100% in both modes). The activation-level result, while preliminary, points the
 same way: the default internal state reads as "walk" before any answer is
 written, even in the rare rollouts that end up correct. If that picture
 holds under larger n, "answer-first" is not a formatting quirk but a

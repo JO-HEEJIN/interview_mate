@@ -1230,7 +1230,7 @@
   "verdict": "walk",
   "span_has_walk": false,
   "ctx_has_walk": true,
-  "span_has_drive": true,
+  "span_has_drive": false,
   "ctx_has_drive": true,
   "span_text": " Civic parked in the driveway",
   "ctx_text": " car. The car wash is 100 meters away. She's at home with her 2022 Honda Civic parked in the driveway. She needs to decide whether to walk or drive. Let me break this down using the STAR method.\n\nFirst, the Situation"
@@ -1279,7 +1279,7 @@
   "span_has_walk": false,
   "ctx_has_walk": true,
   "span_has_drive": false,
-  "ctx_has_drive": true,
+  "ctx_has_drive": false,
   "span_text": " 100 meters",
   "ctx_text": " She's at home with her car parked in the driveway. The car wash is 100 meters away. Wait, 100 meters is pretty short. That's like a short walk, right? So, walking would take maybe a couple of minutes. But"
  },

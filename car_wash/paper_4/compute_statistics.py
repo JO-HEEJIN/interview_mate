@@ -63,8 +63,60 @@ def main():
             "walk": dbw, "drive": dbd, "n_probes": len(dboth),
             "p_decisive_20v1": fisher(dbw, dbd),
             "p_conservative_walk_vs_all": fisher(dbw, len(dboth) - dbw),
-            "note": "email/paper display 20/28 fractions -> use p_conservative; "
-                    "decisive-only framing (20:1 vs 4:19) -> p_decisive"},
+            "note": "POOLED probe-level tests: descriptive only. Probes are "
+                    "clustered within rollouts (5 per rollout) -> Fisher "
+                    "independence violated. Primary inference: cluster_aware."},
+    }
+
+    # ---- cluster-aware (per-rollout / per-prompt majorities) ----
+    # 풀링 프로브는 롤아웃 내 비독립(pseudoreplication) — 롤아웃 단위
+    # 다수결을 1차 검정으로 삼는다. 중립 기준선도 프롬프트 단위 다수결.
+    def majority(probes):
+        w = sum(1 for r in probes if r["verdict"] == "walk")
+        d = sum(1 for r in probes if r["verdict"] == "drive")
+        return "walk" if w > d else ("drive" if d > w else "tie")
+
+    neu = [json.loads(l) for l in open("stage2_results/ao_neutral_control.jsonl")]
+    neu_maj = [majority(list(r["probes"].values())) for r in neu]
+    neu_w = sum(1 for m in neu_maj if m == "walk")
+
+    def grp_majorities(answer):
+        ids = sorted({r["_idx"] for r in lex if r["answer"] == answer})
+        return [majority([r for r in both if r["_idx"] == i]) for i in ids]
+
+    wm = grp_majorities("walk")
+    dm = grp_majorities("drive")
+    wmw = sum(1 for m in wm if m == "walk")
+    dmw = sum(1 for m in dm if m == "walk")
+
+    def cf(hits, n):
+        return fisher_exact([[hits, n - hits], [neu_w, len(neu) - neu_w]],
+                            alternative="greater")[1]
+
+    stats["cluster_aware_balanced_field"] = {
+        "unit": "rollout majority over balanced-field pre-commit probes; "
+                "baseline = per-prompt majority over neutral probes",
+        "neutral_prompt_majorities_walk": [neu_w, len(neu)],
+        "walk_group": {"walk_majority": wmw, "n": len(wm), "p": cf(wmw, len(wm))},
+        "drive_group": {"walk_majority": dmw, "n": len(dm), "p": cf(dmw, len(dm))},
+        "combined": {"walk_majority": wmw + dmw, "n": len(wm) + len(dm),
+                     "p": cf(wmw + dmw, len(wm) + len(dm))},
+    }
+    stats["lexical_strata_counts"] = {
+        "balanced_both": {"n": len(both), "walk": bw, "drive": bd},
+        "walk_only": {"n": sum(1 for r in lex if r["ctx_has_walk"] and not r["ctx_has_drive"]),
+                      "walk": sum(1 for r in lex if r["ctx_has_walk"]
+                                  and not r["ctx_has_drive"] and r["verdict"] == "walk")},
+        "drive_only": {"n": sum(1 for r in lex if not r["ctx_has_walk"] and r["ctx_has_drive"]),
+                       "drive": sum(1 for r in lex if not r["ctx_has_walk"]
+                                    and r["ctx_has_drive"] and r["verdict"] == "drive"),
+                       "walk": sum(1 for r in lex if not r["ctx_has_walk"]
+                                   and r["ctx_has_drive"] and r["verdict"] == "walk")},
+        "drive_in_span_no_walk": {"n": sum(1 for r in lex if r["span_has_drive"]
+                                           and not r["span_has_walk"]),
+                                  "walk_verdicts": sum(1 for r in lex if r["span_has_drive"]
+                                                       and not r["span_has_walk"]
+                                                       and r["verdict"] == "walk")},
     }
     with open("stage2_results/statistics.json", "w") as f:
         json.dump(stats, f, indent=1)

@@ -77,8 +77,11 @@ failed configurations discussed in the paper): `stage2_ao_experiment.py`
   11/16 (closed question), same activations and positions.
 - Pre-commit walk read-outs vs. 17% neutral default: walk-committing
   rollouts 10/16 (p=.005), drive-committing rollouts 5/6 (p=.005).
-- Text-inversion control: in balanced lexical fields, walk share 72% vs.
-  17% default (p=4e-6); drive-committing rollouts 20/28 walk vs. 1/28
-  drive (conservative p=1.3e-4).
+- Text-inversion control (cluster-aware, per-rollout majorities in
+  balanced lexical fields vs. per-prompt neutral majorities 1/8):
+  combined 15/22 (p=.01); drive-committing rollouts 6/6 (p=.002);
+  walk-committing rollouts 9/16 (p=.051, marginal). Pooled probe-level
+  counts (52 vs. 20; 72% share) are descriptive only — probes cluster
+  within rollouts.
 - Not significant: within-rollout positional gradient (p=.34). Treated as
   preliminary throughout.

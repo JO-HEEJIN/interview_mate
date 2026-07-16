@@ -24,8 +24,8 @@ MODEL = "Qwen/Qwen3-8B"
 GRID = "stage2_results/ao_probes_grid_q3.jsonl"
 PRECOMMIT = ["P0_assistant_start", "P1_25", "P2_50", "P3_75", "P4_precommit"]
 CTX = 25  # tokens each side for the wide stratum
-WALK_RE = re.compile(r"\bwalk\w*", re.I)
-DRIVE_RE = re.compile(r"\bdriv\w*", re.I)
+WALK_RE = re.compile(r"\bwalk(?:s|ed|ing)?\b", re.I)
+DRIVE_RE = re.compile(r"\bdriv(?:e|es|ing|en)\b", re.I)
 
 
 def main():

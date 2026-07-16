@@ -38,9 +38,51 @@
  "drive_rollouts_balanced_field": {
   "walk": 20,
   "drive": 1,
-  "n_probes": 28,
+  "n_probes": 27,
   "p_decisive_20v1": 1.0659954872248482e-07,
-  "p_conservative_walk_vs_all": 0.00012943313337861697,
-  "note": "email/paper display 20/28 fractions -> use p_conservative; decisive-only framing (20:1 vs 4:19) -> p_decisive"
+  "p_conservative_walk_vs_all": 6.917863695485261e-05,
+  "note": "POOLED probe-level tests: descriptive only. Probes are clustered within rollouts (5 per rollout) -> Fisher independence violated. Primary inference: cluster_aware."
+ },
+ "cluster_aware_balanced_field": {
+  "unit": "rollout majority over balanced-field pre-commit probes; baseline = per-prompt majority over neutral probes",
+  "neutral_prompt_majorities_walk": [
+   1,
+   8
+  ],
+  "walk_group": {
+   "walk_majority": 9,
+   "n": 16,
+   "p": 0.05074707228429128
+  },
+  "drive_group": {
+   "walk_majority": 6,
+   "n": 6,
+   "p": 0.0023310023310023306
+  },
+  "combined": {
+   "walk_majority": 15,
+   "n": 22,
+   "p": 0.009895052473763119
+  }
+ },
+ "lexical_strata_counts": {
+  "balanced_both": {
+   "n": 89,
+   "walk": 52,
+   "drive": 20
+  },
+  "walk_only": {
+   "n": 13,
+   "walk": 12
+  },
+  "drive_only": {
+   "n": 6,
+   "drive": 3,
+   "walk": 1
+  },
+  "drive_in_span_no_walk": {
+   "n": 8,
+   "walk_verdicts": 5
+  }
  }
 }
