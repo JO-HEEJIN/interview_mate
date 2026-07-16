@@ -278,12 +278,61 @@ uninterpretable.
 
 ## 4. Related work
 
-*To be completed with citations:* attribution-graph analyses of unfaithful
-CoT (answer-to-reasoning direction; our phenomenon is reasoning-intact,
-answer-first); LatentQA and Activation Oracles (Karvonen et al.), including
-reported low task accuracies and calibration caveats consistent with our
-question-sensitivity findings; CoT faithfulness literature; "reasoning
-models don't say what they think."
+**CoT faithfulness.** That stated reasoning need not reflect the causal
+process behind an answer is established: biasing features silently flip
+answers while the explanation never mentions them (Turpin et al., 2023),
+intervention tests show models often reach the same answer with corrupted
+or truncated reasoning (Lanham et al., 2023), and reasoning models
+verbalize hints they demonstrably used only 25–39% of the time (Chen et
+al., 2025). Our phenomenon is a complement rather than an instance: in
+those settings the reasoning is bent toward an externally planted answer,
+whereas here no hint exists — the reasoning is often locally sound and
+premise-aware, and the commitment simply precedes and ignores it.
+
+**Mechanistic accounts of answer-first computation.** Attribution-graph
+analyses show language models plan outputs before emitting them (e.g.,
+selecting a rhyme target before writing the line) and construct
+post-hoc justifications in hint-driven settings (Lindsey et al., 2025;
+Ameisen et al., 2025). Those results are single-forward-pass circuit
+analyses on a closed model; we ask the coarser but complementary question
+of whether a commitment is *readable* from open-weight activations at
+pre-emission positions, using only public tooling.
+
+**Activation-to-language decoders.** LatentQA fine-tunes an LLM to answer
+natural-language questions about injected activations (Pan et al., 2024);
+Activation Oracles extend this to general-purpose activation explainers
+trained across diverse tasks and released for several open models
+(Karvonen et al., 2025). Karvonen et al. report substantial variance
+across downstream tasks and note calibration limitations; our
+question-wording result (Section 3.1) is a quantified instance of that
+usability gap, and our stratified controls (Sections 3.2–3.4) are, to our
+knowledge, the first text-inversion analysis of these oracles on an
+answer-commitment task.
+
+## References
+
+- Ameisen, E., Lindsey, J., Pearce, A., et al. (2025). *Circuit Tracing:
+  Revealing Computational Graphs in Language Models.* Transformer Circuits
+  Thread. transformer-circuits.pub/2025/attribution-graphs/methods.html
+- Chen, Y., Benton, J., Radhakrishnan, A., Uesato, J., Denison, C., et al.
+  (2025). *Reasoning Models Don't Always Say What They Think.*
+  arXiv:2505.05410.
+- Karvonen, A., Chua, J., Dumas, C., Fraser-Taliente, K., Kantamneni, S.,
+  Minder, J., Ong, E., Sen Sharma, A., Wen, D., Evans, O., Marks, S.
+  (2025). *Activation Oracles: Training and Evaluating LLMs as
+  General-Purpose Activation Explainers.* arXiv:2512.15674.
+- Lanham, T., Chen, A., Radhakrishnan, A., et al. (2023). *Measuring
+  Faithfulness in Chain-of-Thought Reasoning.* arXiv:2307.13702.
+- Lindsey, J., Gurnee, W., Ameisen, E., et al. (2025). *On the Biology of
+  a Large Language Model.* Transformer Circuits Thread.
+  transformer-circuits.pub/2025/attribution-graphs/biology.html
+- Pan, A., Chen, L., Steinhardt, J. (2024). *LatentQA: Teaching LLMs to
+  Decode Activations Into Natural Language.* arXiv:2412.08686.
+- Turpin, M., Michael, J., Perez, E., Bowman, S. R. (2023). *Language
+  Models Don't Always Say What They Think: Unfaithful Explanations in
+  Chain-of-Thought Prompting.* arXiv:2305.04388.
+- Yang, A., Li, A., Yang, B., et al. (2025). *Qwen3 Technical Report.*
+  arXiv:2505.09388.
 
 ## 5. Limitations
 
