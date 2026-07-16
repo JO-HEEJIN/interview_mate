@@ -1,0 +1,46 @@
+{
+ "neutral_default": {
+  "walk": 4,
+  "drive": 19,
+  "walk_share": 0.17391304347826086
+ },
+ "P4_walk_group_vs_neutral": {
+  "hits": 10,
+  "n": 16,
+  "p": 0.005245119489704977
+ },
+ "P4_drive_group_vs_neutral": {
+  "hits": 5,
+  "n": 6,
+  "p": 0.00548187444739169
+ },
+ "P4_combined_vs_neutral": {
+  "hits": 15,
+  "n": 22,
+  "p": 0.0006763306310859305
+ },
+ "P5_positive_control_walk_group": {
+  "hits": 11,
+  "n": 16,
+  "p": 0.0016724307897506875
+ },
+ "positional_gradient_sign_test_P0_to_P4": {
+  "improved": 7,
+  "worsened": 3,
+  "p": 0.34375
+ },
+ "balanced_field_walk_share": {
+  "walk": 52,
+  "drive": 20,
+  "share": 0.7222222222222222,
+  "p_decisive": 4.187357518850061e-06
+ },
+ "drive_rollouts_balanced_field": {
+  "walk": 20,
+  "drive": 1,
+  "n_probes": 28,
+  "p_decisive_20v1": 1.0659954872248482e-07,
+  "p_conservative_walk_vs_all": 0.00012943313337861697,
+  "note": "email/paper display 20/28 fractions -> use p_conservative; decisive-only framing (20:1 vs 4:19) -> p_decisive"
+ }
+}
