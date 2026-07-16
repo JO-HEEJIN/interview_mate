@@ -188,6 +188,23 @@ stage1_qwen_carwash.py 헤더 주석이면 전체 맥락 복원됨.
 - 사전 합의대로 STAGE 2 프로빙 종료. 산출: stage2_ao_{experiment,window,
   segment,qab,neutral}.py + stage2_results/*.jsonl 5종.
 
+## Lexical 층화 (2026-07-16, 기존 데이터 재분석) — text-inversion 관문 통과
+
+- stage2_lexical_strata.py: 커밋 전 110프로브를 (a)주입 구간 5토큰
+  (b)±25토큰 문맥의 walk/drive 단어 유무로 층화.
+- **주입 구간 inversion 기각**: 구간에 walk 있으면 25%(2/8), 없으면
+  63%(64/102). drive 단어 든 구간 6건이 walk로 판독 (" not need to
+  drive." → walk).
+- **균형 어휘장(둘 다, 90/110=82%)이 결정타**: walk판독 52 vs drive 20
+  — walk share 72% vs oracle 중립 기본 17% (p=4e-6), 50:50 대비 p=1e-4.
+  drive-커밋 롤아웃의 균형장: walk 20/28, drive 1/28 (p=1e-7) —
+  어휘장은 둘 다 명명, oracle 기본은 drive, 최종답도 drive인데 판독은
+  walk. 순수 텍스트 읽기로 설명 불가.
+- 잔여 경고: 단일 단어 장(walk-only 12/12, drive-only 추종)에선 oracle이
+  어휘장을 따름 — 소수층 개별 프로브는 해석 불가. ±25토큰은 "local"의
+  한 조작화일 뿐.
+- 초안 §3.4 신설 + 한계 개정 + 초록 반영.
+
 ## 필수 최종 게이트 (합성 검증과 무관하게 무조건)
 
 풀런 후 **실제 Qwen 롤아웃 15~20개를 수동 대조** (스펙 의무).

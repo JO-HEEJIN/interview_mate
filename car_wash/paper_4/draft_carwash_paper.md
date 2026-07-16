@@ -25,7 +25,10 @@ neutral-context baseline (68% vs. 17%; walk-committing rollouts p=.005,
 drive-committing rollouts p=.005, Fisher exact) — and, notably, rollouts
 that eventually answer *drive* also read as walk-leaning before commitment
 (5/6). Because the oracle's default answer on unrelated content is "drive"
-(83%), these walk read-outs are not explained by lexical bias. Sample sizes
+(83%), these walk read-outs are not explained by lexical bias; a lexical
+stratification further shows they are not text recovery — spans containing
+"drive" still read out walk, and in balanced lexical fields naming both
+options the walk share is 72% against the oracle's 17% default (p = 4×10⁻⁶). Sample sizes
 are small and the within-rollout positional gradient is not significant
 (p=.34); we frame these results as preliminary. **(3) Methodological.**
 The same oracle, activations, and positions succeed or fail depending
@@ -240,6 +243,39 @@ rests on n=6 and is preliminary by any standard. Individual-rollout
 trajectories are noisy (the Section 2.4 rollout reads walk at P2, drive at
 P4, walk at P5).
 
+### 3.4 Lexical stratification: the read-outs are not text recovery
+
+The remaining confound is lexical leakage: probe windows sit inside
+deliberation text that frequently contains the word "walk," so the oracle
+might be reading nearby tokens rather than state. We stratify all 110
+pre-commit probes by whether walk/drive literally occur (a) in the injected
+5-token span itself and (b) within ±25 tokens of it.
+
+**Injected-span (strict text-inversion) test.** Walk read-outs are *not*
+driven by "walk" tokens in the injected span: spans containing "walk" read
+out walk at 2/8, spans without it at 64/102 (63%). In six probes the
+injected span contains "drive"/"driving" and not "walk" — and the oracle
+still answers walk (e.g., span " not need to drive." → "walk"). Recovery
+of injected token identities cannot explain the results.
+
+**Context-field test.** The ±25-token lexical field does influence the
+oracle in single-word strata: contexts containing only "walk" read out walk
+12/12; contexts containing only "drive" follow drive (n=6). These strata
+are small because deliberation text is saturated with both words: 90/110
+probes (82%) have a *balanced* field containing both. In that decisive
+stratum, walk read-outs dominate 52 vs. 20 — a 72% walk share against the
+oracle's own 17% neutral default (Fisher p = 4×10⁻⁶) and against a 50/50
+lexical tie (p = 10⁻⁴). Sharpest of all: in drive-committing rollouts with
+both words in context, the oracle reads walk 20/28 and drive 1/28
+(p = 10⁻⁷ vs. neutral) — the lexical field names both options, the oracle's
+default is drive, the rollout's own final answer is drive, and the
+read-out is still walk. Pure lexical reading predicts none of this.
+
+We conclude the pre-commit walk read-outs cannot be reduced to text
+recovery, while acknowledging that in single-word lexical fields oracle
+answers do track the field, so probes there (a minority) are individually
+uninterpretable.
+
 ## 4. Related work
 
 *To be completed with citations:* attribution-graph analyses of unfaithful
@@ -265,11 +301,12 @@ models don't say what they think."
   generated sequence, which matches generation-time computation for the
   same prefix under causal attention, but small tokenizer boundary effects
   at the prompt/generation seam are possible.
-- **Local lexical context.** Pre-commit windows inside thinking text can
-  be near tokens like "walk" from deliberation; the neutral baseline
-  controls for question-level bias but not fully for local lexical
-  leakage. (The drive-group result is partially robust to this: those
-  think blocks deliberate both options, yet read out as walk 5/6.)
+- **Local lexical context.** Addressed directly in §3.4: injected-span
+  text-inversion is refuted, and the dominant balanced-field stratum
+  favors walk against both the oracle default and a lexical tie. Residual
+  caveat: in single-word lexical fields the oracle tracks the field, so
+  individual probes in those (minority) strata remain uninterpretable, and
+  ±25 tokens is one operationalization of "local" among several.
 
 ## 6. Discussion
 
