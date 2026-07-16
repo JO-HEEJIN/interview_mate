@@ -266,10 +266,12 @@ probes (82%) have a *balanced* field containing both. In that decisive
 stratum, walk read-outs dominate 52 vs. 20 — a 72% walk share against the
 oracle's own 17% neutral default (Fisher p = 4×10⁻⁶) and against a 50/50
 lexical tie (p = 10⁻⁴). Sharpest of all: in drive-committing rollouts with
-both words in context, the oracle reads walk 20/28 and drive 1/28
-(p = 10⁻⁷ vs. neutral) — the lexical field names both options, the oracle's
-default is drive, the rollout's own final answer is drive, and the
-read-out is still walk. Pure lexical reading predicts none of this.
+both words in context, the oracle reads walk 20/28 and drive 1/28 — a 20:1
+split among decisive read-outs against the oracle's 4:19 default
+(p = 10⁻⁷; conservatively, walk vs. all other read-outs including
+abstentions, p = 1.3×10⁻⁴) — the lexical field names both options, the
+oracle's default is drive, the rollout's own final answer is drive, and
+the read-out is still walk. Pure lexical reading predicts none of this.
 
 We conclude the pre-commit walk read-outs cannot be reduced to text
 recovery, while acknowledging that in single-word lexical fields oracle
