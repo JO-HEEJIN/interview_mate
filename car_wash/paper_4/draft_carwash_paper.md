@@ -2,8 +2,9 @@
 
 Heejin Jo
 
-*Draft v0.1 — 2026-07-16. Numbers frozen against commits ed2f1f7 (STAGE 1)
-and d5b3e49 (STAGE 2), branch docs/car-wash-repro.*
+*Draft v0.2 — 2026-07-16. Numbers frozen against committed result files
+(commits ed2f1f7, d5b3e49, 1d8076f, 163510b; every reported statistic is
+reproducible via compute_statistics.py -> stage2_results/statistics.json).*
 
 ## Abstract
 
@@ -65,7 +66,7 @@ factors, weighs them, sometimes even touches the critical premise — and the
 answer ignores it. Qualitatively (Section 3.4), the model walks up to the
 door ("the car is at home; the wash is 100 m away") and does not open it.
 
-## 2. STAGE 1: Behavioral reproduction
+## 2. Behavioral study
 
 ### 2.1 Setup
 
@@ -149,7 +150,7 @@ The reasoning is diligent and internally consistent; it is also premise-blind.
 This is the shape of the phenomenon: not corrupted reasoning, but an answer
 that reasoning never actually authorized.
 
-## 3. STAGE 2: Preliminary activation-level evidence
+## 3. Probing activations before the commitment (preliminary)
 
 If the model is committed to "walk" before emitting it, the commitment may
 be readable from hidden states at positions preceding the answer text. We
@@ -159,7 +160,7 @@ using the public Qwen3-8B oracle checkpoint. Activations are collected by
 teacher-forced prefill over the exact generation-time sequence (prompt +
 generated text), layer 18 of 36.
 
-**Design.** 22 rollouts from STAGE 1 (16 walk-committing across
+**Design.** 22 rollouts from the behavioral study (16 walk-committing across
 `A_bare`/`C_role_star` × thinking on/off; all 6 drive-committing rollouts
 with a reliably localizable commitment). Six probe sites per rollout:
 assistant start (P0), 25/50/75% of the span to the commitment token
@@ -225,7 +226,7 @@ Two readings, stated with their limits:
    reads "walk" from pre-commit activations at 3.7× the neutral rate.
 2. **Rollouts that eventually answer correctly also start walk-leaning.**
    5/6 drive-committing rollouts read as "walk" at P4. Since 9/10 drive
-   commitments arise in thinking mode after long deliberation (STAGE 1),
+   commitments arise in thinking mode after long deliberation (Section 2.2),
    this is consistent with a two-stage picture: *walk is the default
    internal state; occasionally, extended reasoning overrides it late.*
    The behavioral and activation-level views agree on where the default
@@ -345,9 +346,9 @@ answer-commitment task.
   scoring Qwen3-8B rollouts. The 96.9% human-agreement gate and 20/20
   manual check mitigate this; raw texts are preserved so any external
   judge can re-score.
-- **STAGE 2 sample sizes.** n=16/6; the positional gradient is
+- **Probing sample sizes.** n=16/6; the positional gradient is
   non-significant; drive-side positive control unavailable (oracle
-  default). All STAGE 2 claims are labeled preliminary.
+  default). All Section 3 claims are labeled preliminary.
 - **Teacher-forced prefill.** Probed activations come from re-encoding the
   generated sequence, which matches generation-time computation for the
   same prefix under causal attention, but small tokenizer boundary effects
@@ -394,8 +395,10 @@ truncation cases included), 20/20 judge labels confirmed by hand.
 ## Appendix B. Reproducibility
 
 All rollouts, judge outputs, probe responses, and scripts are committed:
-STAGE 1 harness (`stage1_qwen_carwash.py`, resume-capable), judge
+behavioral harness (`stage1_qwen_carwash.py`, resume-capable), judge
 (`judge_rollouts.py`, `--validate` gate), AO pipeline
 (`stage2_ao_{experiment,window,segment,qab,neutral}.py`, vendored demo
-library with a 4-line transformers-compat patch). Hardware: single Apple
+library with a 4-line transformers-compat patch), and every statistic in
+the text as data-plus-code (`compute_statistics.py` ->
+`stage2_results/statistics.json`). Hardware: single Apple
 M-series machine (MPS, bf16); no CUDA, quantization, or cloud GPU required.
