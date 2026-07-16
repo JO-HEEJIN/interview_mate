@@ -102,3 +102,6 @@ overlay/.build/
 
 # Python
 __pycache__/
+
+# private drafts (not for publication)
+car_wash/paper_4/euan_email_draft.md
