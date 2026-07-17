@@ -394,6 +394,22 @@ analyses on a closed model; we ask the coarser but complementary question
 of whether a commitment is \emph{readable} from open-weight activations at
 pre-emission positions, using only public tooling.
 
+\paragraph{Pre-generation probing of decisions.} Two recent works probe
+internal states before reasoning text appears. \citet{mirtaheri} train
+supervised probes on the residual stream to detect \emph{motivated
+reasoning} --- hint-biased answers that the CoT then rationalizes ---
+before and after generation, finding pre-generation probes match or beat
+monitors that read the full CoT. \citet{esakkiraja} decode tool-calling
+decisions from pre-generation activations with linear probes and flip the
+behavior by steering. Both support the picture that decisions precede
+deliberation text. Our setting differs on three axes: no hint or bias is
+injected --- the wrong commitment arises from the task's own surface
+heuristics, and reasoning that touches the decisive premise still fails
+to override it; our read-out tool is a training-free natural-language
+oracle rather than a supervised probe, which is exactly what exposes the
+question-wording brittleness of Section~\ref{sec:wording}; and we measure
+a behavioral failure rate (Section~2) jointly with the internal signal.
+
 \paragraph{Activation-to-language decoders.} LatentQA fine-tunes an LLM to
 answer natural-language questions about injected activations
 \citep{latentqa}; Activation Oracles extend this to general-purpose
@@ -511,6 +527,10 @@ Minder, J., Ong, E., Sen Sharma, A., Wen, D., Evans, O., Marks, S.\
 (2025). \emph{Activation Oracles: Training and Evaluating LLMs as
 General-Purpose Activation Explainers.} arXiv:2512.15674.
 
+\bibitem[Esakkiraja et al.(2026)]{esakkiraja}
+Esakkiraja, E., Rajeswar, S., Akhiyarov, D., Venkatesaramani, R.\ (2026).
+\emph{Therefore I am. I Think.} arXiv:2604.01202.
+
 \bibitem[Lanham et al.(2023)]{lanham}
 Lanham, T., Chen, A., Radhakrishnan, A., et al.\ (2023).
 \emph{Measuring Faithfulness in Chain-of-Thought Reasoning.}
@@ -521,6 +541,11 @@ Lindsey, J., Gurnee, W., Ameisen, E., et al.\ (2025).
 \emph{On the Biology of a Large Language Model.}
 Transformer Circuits Thread.
 \url{https://transformer-circuits.pub/2025/attribution-graphs/biology.html}
+
+\bibitem[Mirtaheri and Belkin(2026)]{mirtaheri}
+Mirtaheri, P., Belkin, M.\ (2026). \emph{Catching rationalization in the
+act: detecting motivated reasoning before and after CoT via activation
+probing.} arXiv:2603.17199.
 
 \bibitem[Pan et al.(2024)]{latentqa}
 Pan, A., Chen, L., Steinhardt, J.\ (2024). \emph{LatentQA: Teaching LLMs

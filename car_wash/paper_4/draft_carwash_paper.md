@@ -338,6 +338,22 @@ analyses on a closed model; we ask the coarser but complementary question
 of whether a commitment is *readable* from open-weight activations at
 pre-emission positions, using only public tooling.
 
+**Pre-generation probing of decisions.** Two recent works probe internal
+states before reasoning text appears. Mirtaheri and Belkin (2026) train
+supervised probes on the residual stream to detect *motivated reasoning*
+— hint-biased answers that the CoT then rationalizes — before and after
+generation, finding pre-generation probes match or beat monitors that
+read the full CoT. Esakkiraja et al. (2026) decode tool-calling decisions
+from pre-generation activations with linear probes and flip the behavior
+by steering. Both support the picture that decisions precede deliberation
+text. Our setting differs on three axes: no hint or bias is injected —
+the wrong commitment arises from the task's own surface heuristics, and
+reasoning that touches the decisive premise still fails to override it;
+our read-out tool is a training-free natural-language oracle rather than
+a supervised probe, which is exactly what exposes the question-wording
+brittleness of Section 3.1; and we measure a behavioral failure rate
+(Section 2) jointly with the internal signal.
+
 **Activation-to-language decoders.** LatentQA fine-tunes an LLM to answer
 natural-language questions about injected activations (Pan et al., 2024);
 Activation Oracles extend this to general-purpose activation explainers
@@ -361,11 +377,16 @@ answer-commitment task.
   Minder, J., Ong, E., Sen Sharma, A., Wen, D., Evans, O., Marks, S.
   (2025). *Activation Oracles: Training and Evaluating LLMs as
   General-Purpose Activation Explainers.* arXiv:2512.15674.
+- Esakkiraja, E., Rajeswar, S., Akhiyarov, D., Venkatesaramani, R.
+  (2026). *Therefore I am. I Think.* arXiv:2604.01202.
 - Lanham, T., Chen, A., Radhakrishnan, A., et al. (2023). *Measuring
   Faithfulness in Chain-of-Thought Reasoning.* arXiv:2307.13702.
 - Lindsey, J., Gurnee, W., Ameisen, E., et al. (2025). *On the Biology of
   a Large Language Model.* Transformer Circuits Thread.
   transformer-circuits.pub/2025/attribution-graphs/biology.html
+- Mirtaheri, P., Belkin, M. (2026). *Catching rationalization in the
+  act: detecting motivated reasoning before and after CoT via activation
+  probing.* arXiv:2603.17199.
 - Pan, A., Chen, L., Steinhardt, J. (2024). *LatentQA: Teaching LLMs to
   Decode Activations Into Natural Language.* arXiv:2412.08686.
 - Turpin, M., Michael, J., Perez, E., Bowman, S. R. (2023). *Language
