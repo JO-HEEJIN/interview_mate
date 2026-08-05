@@ -73,7 +73,17 @@ def main():
     ap.add_argument("--all-rollouts", action="store_true",
                     help="new-task mode: vectors for every rollout incl. "
                          "greedy; anchorless rows get every-5th positions")
+    ap.add_argument("--select-ids", default=None,
+                    help="file with one rollout_id per line: vectors only "
+                         "for these rows (texts still written for all)")
+    ap.add_argument("--stride", type=int, default=5,
+                    help="token stride for anchorless uniform-grid vectors")
+    ap.add_argument("--trusted-anchors-only", action="store_true",
+                    help="anchored mode requires judge_regex_agree; "
+                         "untrusted-anchor rows fall back to the uniform grid")
     args = ap.parse_args()
+    select = (set(open(args.select_ids).read().split())
+              if args.select_ids else None)
 
     outdir = os.path.join(ARCHIVE, args.subset)
     os.makedirs(outdir, exist_ok=True)
@@ -116,9 +126,11 @@ def main():
             else:
                 rid = f"s{r['seed']}_{r['condition']}_{r['thinking_mode']}"
             anchored = r.get("commit_char_pos", -1) >= 0
+            if args.trusted_anchors_only and not r.get("judge_regex_agree"):
+                anchored = False
             if args.all_rollouts:
                 wants_vectors = True
-                vector_mode = "anchored" if anchored else "every5"
+                vector_mode = "anchored" if anchored else f"every{args.stride}"
             else:
                 wants_vectors = r in eligible
                 vector_mode = "anchored" if wants_vectors else None
@@ -146,7 +158,7 @@ def main():
                 }, ensure_ascii=False) + "\n")
                 tf.flush()
 
-            if not wants_vectors:
+            if not wants_vectors or (select is not None and rid not in select):
                 continue
             vec_path = os.path.join(outdir, f"rollout_{rid}.safetensors")
             if os.path.exists(vec_path):
@@ -167,10 +179,10 @@ def main():
                     {t for _, lo, hi in spans for t in range(lo, hi + 1)}
                     | set(range(max(commit_tok - 20, 0),
                                 min(commit_tok + 20, n_tok - 1) + 1)))
-            else:  # every5: no commit anchor, uniform grid from token 0
+            else:  # no trusted commit anchor: uniform grid from token 0
                 commit_tok = None
                 spans = []
-                positions = list(range(0, n_tok, 5))
+                positions = list(range(0, n_tok, args.stride))
 
             acts1 = collect_all_layers(model, tokenizer, device, target)
             acts2 = collect_all_layers(model, tokenizer, device, target)

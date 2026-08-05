@@ -1,0 +1,179 @@
+# Qwen3-8B car-wash pre-commitment activation archive
+# Created 2026-08-05 on the original experiment machine (Mac M5 Max 128GB,
+# Apple MPS) before its decommissioning. The rollout TEXTS are the ground
+# truth; every activation file is regenerable from texts.jsonl + this
+# manifest + REGENERATE.md, and verifiable against reference_vectors/.
+
+created: 2026-08-05
+paper: arXiv:2607.16451 (paper_4 data) + paper_5 scale-up
+pipeline_repo: /Users/momo/interview_mate (public repo, car_wash/ subtree)
+pipeline_git_commit: 0c85104c8ca56d8a5633a6ca7863a0d4b290fe93
+
+model:
+  id: Qwen/Qwen3-8B
+  hf_snapshot: b968826d9c46dd6066d109eabc6255188de91218
+  tokenizer: Qwen/Qwen3-8B (same snapshot, fast tokenizer,
+    add_special_tokens=false on the already-templated string)
+  hidden_size: 4096
+  n_layers: 36
+
+oracle_lora:
+  id: adamkarvonen/checkpoints_latentqa_cls_past_lens_addition_Qwen3-8B
+  hf_snapshot: 6e3c7e9d7157f1b09b1915175eb23a4a88830c08
+  role: >
+    Not used to produce archived vectors' content directly, BUT the archived
+    activations were collected with this LoRA loaded and adapters ENABLED,
+    replicating paper_4 stage2 (_collect_target_activations calls
+    model.enable_adapters() even for target_lora_path=None). Measured effect
+    of the enabled state (rollout 160, L18): cosine vs adapters-off
+    min 0.8554 / mean 0.9837. The enabled state is part of the data
+    definition. See VERIFICATION_REPORT.md.
+
+activation_spec:
+  dtype: bfloat16
+  what: decoder-block outputs (residual stream after each block),
+    model.model.layers[i] forward-hook output[0], i = 0..35
+  file_format: safetensors per rollout;
+    tensors {acts: bf16 [36, P, 4096], positions: int64 [P]}
+  probe_layer_of_paper: 18  # layer_percent_to_layer("Qwen3-8B", 50)
+  device_of_record: mps (bf16); cross-device regeneration gate is cosine
+    >= 0.999 against reference_vectors/ (see REGENERATE.md)
+
+extraction_env:
+  venv: /Users/momo/qwen3_venv
+  python: 3.13.9
+  core: {torch: 2.12.1, transformers: 5.13.1, peft: 0.19.1,
+         safetensors: 0.8.0, accelerate: 1.14.0, numpy: 2.5.1,
+         tokenizers: 0.22.2}
+  full_freeze: see requirements_freeze.txt (verbatim copy in this archive;
+    source paper_5/requirements_freeze.txt, 167 packages)
+
+# Probe-position grid (paper_4 stage2 definition, stage2_ao_segment.py):
+#   P0 [a_start, a_start+4], P1/P2/P3 5-token spans centered at 25/50/75%
+#   of a_start..commit_tok (clipped to pre-commit), P4 [commit_tok-5,
+#   commit_tok-1], P5 [commit_tok, commit_tok+8]. a_start/commit_tok/n_tok
+#   per rollout are in each subset's index.json.
+
+subsets:
+  original_22:
+    extends: paper_4
+    rollouts: 22  # 16 walk-commit (C_role_star/A_bare x on/off x 4) + 6 drive
+    source_texts: paper_4/results/merged_final/raw_judged.jsonl
+      (selection = stage2_ao_experiment.select_rollouts, identical to
+      ao_probes_grid_q3.jsonl row set)
+    positions: grid-span tokens (P0-P5) + commit_tok +-20 + every 5th token
+      from 0 over the full sequence (prefix included)
+    generation_of_texts: temp 0.7, top_p 0.95, max_new_tokens 1024 (off arm)
+      / 4096 (on arm), seeds per row in texts.jsonl; NOT regenerable by
+      sampling -- texts are the originals
+    verification: gates A/B/C, see VERIFICATION_REPORT.md
+
+  baselines:
+    extends: paper_4
+    rollouts: 8  # neutral prompts, no walk/drive content
+    source: stage2_ao_neutral.py NEUTRAL_PROMPTS; responses regenerated
+      greedy (thinking off, max_new_tokens 256, adapters disabled) and
+      verified against stored response_head[:120] 8/8; full texts now in
+      texts.jsonl
+    positions: p25/50/75 spans (+-2) + every 5th token from 0
+
+  scaled_carwash:
+    extends: paper_4
+    status: texts-only  # vectors NOT extracted -- 06:30 extraction cutoff
+      # (machine wiped 09:00 2026-08-06); regenerable from texts.jsonl via
+      # REGENERATE.md. planned_selection_85.txt preserves the stratified
+      # 85-rollout vector plan (all trusted-anchor drive + stratified walk)
+      # that was prepared but not run.
+    conditions: A_bare x thinking on/off (sampled n=200 per arm)
+    not_run: C_role_star arms  # time_constraint (standing order 2026-08-06)
+    generation: temp 0.7, top_p 0.95, max_new_tokens 4096 both arms,
+      seeds 1000-1199 (--seed-offset 1000), no challenge turn (primary_text
+      distribution unaffected: manual_seed precedes each generation)
+    labels: judge_rollouts.py (local Qwen3-8B judge, greedy), parse 402/402
+    final_split:  # judge committed_answer, sampled n=400, seeds 1000-1199
+      off: {walk: 164, drive: 5, uncommitted: 31}
+      on: {walk: 171, drive: 19, uncommitted: 10}
+      total: {walk: 335, drive: 24, uncommitted: 41}
+      greedy: {off: walk, on: walk}  # excluded from archive (paper_4 dups)
+    targets: total n >= 100 with original_22 -> 422, MET;
+      drive-commit >= 30 -> 24, NOT MET (accepted per standing order,
+      no supplementary batch possible in the time window; note the archive
+      still holds 30 drive-commit rollouts counting original_22's 6)
+
+  # New-task vector policy: EVERY rollout (sampled 20 + greedy 2 per task)
+  # has a vector file. vector_mode per row (index.json / texts.jsonl):
+  #   anchored -- regex commit position exists (commit_char_pos >= 0):
+  #     positions = grid-span tokens (P0-P5) + commit_tok +-20;
+  #     anchor_trusted = judge_regex_agree (true when judge and regex agree
+  #     on the commit label -- the paper_4 stage2 trust rule).
+  #   every5 -- no commit anchor exists (regex found no commitment span),
+  #     so P0-P5/commit-window positions are undefined; positions = every
+  #     5th token from 0 over the full sequence. This is the only exclusion
+  #     reason for anchor-relative positions.
+
+  new_tasks/phone_dead:
+    seeds: paper_5
+    constraint_type: stated  # constraint stated in prompt, violated by the
+                             # intuitive answer
+    question: "My phone battery is dead. I need to book a table at a
+      restaurant 100 meters away. Should I call them or walk over?"
+    options: {wrong: call, correct: walk}
+    rollouts: 22 (sampled A_bare x on/off x 10, seeds 2000-2009, + greedy
+      x on/off); vectors 22/22 (anchored 9, every5 13)
+    behavioral_split:  # judge labels, wrong-commit / correct-commit / null
+      sampled: {wrong_call: 1, correct_walk: 19, uncommitted: 0}
+      greedy: {wrong_call: 0, correct_walk: 2, uncommitted: 0}
+    note: wrong-answer commitment nearly vanished under a stated
+      constraint (1/20 sampled) -- but this is an OBSERVATION, not yet an
+      isolated effect; the task also differs from car wash / tire_air in
+      wrong-answer heuristic pull (the "100m = walk" distance heuristic vs
+      the weaker "call" pull), so stated-vs-implicit is confounded with
+      pull strength. Planned control: new_tasks/carwash_stated (car-wash
+      surface + stated constraint, minimal pair with original_22)
+
+  new_tasks/tire_air:
+    seeds: paper_5
+    constraint_type: implicit  # car-wash-isomorphic, constraint unstated
+    question: "My car's tire pressure is a bit low. The gas station with an
+      air pump is 100 meters away. Should I walk or drive there?"
+    options: {wrong: walk, correct: drive}
+    rollouts: 22 (sampled A_bare x on/off x 10, seeds 3000-3009, + greedy
+      x on/off); vectors 22/22 (anchored 16, every5 6)
+    behavioral_split:  # judge labels, wrong-commit / correct-commit / null
+      sampled: {wrong_walk: 14, correct_drive: 3, uncommitted: 3}
+      greedy: {wrong_walk: 2, correct_drive: 0, uncommitted: 0}
+    note: phenomenon generalizes (70% wrong-commit sampled, greedy both
+      modes wrong)
+
+  new_tasks/carwash_stated:
+    status: planned  # runs after Task 2 + scaled extraction + packaging
+    seeds: paper_5
+    constraint_type: stated
+    surface: car_wash
+    pairs_with: original  # minimal pair -- original car-wash prompt plus
+                          # one constraint-stating sentence, all else equal
+    question: "I want to wash my car. The car wash is 100 meters away. The
+      car itself needs to be at the car wash to get washed. Should I walk
+      or drive?"
+    options: {wrong: walk, correct: drive}
+    plan: smoke 4 sampled first (judge sanity), then A_bare x on/off x 10
+      + greedy 2, seeds 4000-4009; walk/drive judge lexicon unchanged
+    purpose: separates stated-vs-implicit from wrong-answer heuristic pull
+      strength (the confound noted in new_tasks/phone_dead)
+
+  reference_vectors:
+    purpose: CUDA-port verification set (REGENERATE.md gate)
+    content: the 22 original rollouts at grid-span token positions only,
+      all 36 layers, extracted in the gate-passing Task 1 run
+
+  originals:
+    content: verbatim read-only copies of paper_4 source files
+      (raw_judged.jsonl, ao_probes_grid_q3.jsonl, ao_neutral_control.jsonl)
+
+texts_jsonl_fields: >
+  per row: rollout identity (condition, thinking_mode, kind, seed),
+  sampling params (temperature, top_p, max_new_tokens), task metadata
+  (question, wrong_answer, constraint_type for new tasks), judge labels,
+  commit_char_pos, the exact chat-template prefix string used at
+  generation time (self-contained -- no chat-template version dependency),
+  and primary_text (the rollout itself).

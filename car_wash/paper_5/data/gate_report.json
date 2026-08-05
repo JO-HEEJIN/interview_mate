@@ -1,0 +1,2365 @@
+{
+ "gate_A": [
+  {
+   "_idx": 160,
+   "a_start": [
+    117,
+    117
+   ],
+   "commit_tok": [
+    766,
+    766
+   ],
+   "n_tok": [
+    880,
+    880
+   ],
+   "pass": true
+  },
+  {
+   "_idx": 147,
+   "a_start": [
+    117,
+    117
+   ],
+   "commit_tok": [
+    309,
+    309
+   ],
+   "n_tok": [
+    866,
+    866
+   ],
+   "pass": true
+  },
+  {
+   "_idx": 151,
+   "a_start": [
+    117,
+    117
+   ],
+   "commit_tok": [
+    305,
+    305
+   ],
+   "n_tok": [
+    569,
+    569
+   ],
+   "pass": true
+  },
+  {
+   "_idx": 153,
+   "a_start": [
+    117,
+    117
+   ],
+   "commit_tok": [
+    308,
+    308
+   ],
+   "n_tok": [
+    1099,
+    1099
+   ],
+   "pass": true
+  },
+  {
+   "_idx": 43,
+   "a_start": [
+    121,
+    121
+   ],
+   "commit_tok": [
+    243,
+    243
+   ],
+   "n_tok": [
+    264,
+    264
+   ],
+   "pass": true
+  },
+  {
+   "_idx": 44,
+   "a_start": [
+    121,
+    121
+   ],
+   "commit_tok": [
+    182,
+    182
+   ],
+   "n_tok": [
+    317,
+    317
+   ],
+   "pass": true
+  },
+  {
+   "_idx": 45,
+   "a_start": [
+    121,
+    121
+   ],
+   "commit_tok": [
+    159,
+    159
+   ],
+   "n_tok": [
+    262,
+    262
+   ],
+   "pass": true
+  },
+  {
+   "_idx": 48,
+   "a_start": [
+    121,
+    121
+   ],
+   "commit_tok": [
+    263,
+    263
+   ],
+   "n_tok": [
+    288,
+    288
+   ],
+   "pass": true
+  },
+  {
+   "_idx": 107,
+   "a_start": [
+    32,
+    32
+   ],
+   "commit_tok": [
+    344,
+    344
+   ],
+   "n_tok": [
+    1849,
+    1849
+   ],
+   "pass": true
+  },
+  {
+   "_idx": 108,
+   "a_start": [
+    32,
+    32
+   ],
+   "commit_tok": [
+    328,
+    328
+   ],
+   "n_tok": [
+    1209,
+    1209
+   ],
+   "pass": true
+  },
+  {
+   "_idx": 109,
+   "a_start": [
+    32,
+    32
+   ],
+   "commit_tok": [
+    286,
+    286
+   ],
+   "n_tok": [
+    3135,
+    3135
+   ],
+   "pass": true
+  },
+  {
+   "_idx": 110,
+   "a_start": [
+    32,
+    32
+   ],
+   "commit_tok": [
+    346,
+    346
+   ],
+   "n_tok": [
+    839,
+    839
+   ],
+   "pass": true
+  },
+  {
+   "_idx": 0,
+   "a_start": [
+    36,
+    36
+   ],
+   "commit_tok": [
+    59,
+    59
+   ],
+   "n_tok": [
+    144,
+    144
+   ],
+   "pass": true
+  },
+  {
+   "_idx": 2,
+   "a_start": [
+    36,
+    36
+   ],
+   "commit_tok": [
+    198,
+    198
+   ],
+   "n_tok": [
+    241,
+    241
+   ],
+   "pass": true
+  },
+  {
+   "_idx": 5,
+   "a_start": [
+    36,
+    36
+   ],
+   "commit_tok": [
+    309,
+    309
+   ],
+   "n_tok": [
+    331,
+    331
+   ],
+   "pass": true
+  },
+  {
+   "_idx": 9,
+   "a_start": [
+    36,
+    36
+   ],
+   "commit_tok": [
+    259,
+    259
+   ],
+   "n_tok": [
+    304,
+    304
+   ],
+   "pass": true
+  },
+  {
+   "_idx": 10,
+   "a_start": [
+    36,
+    36
+   ],
+   "commit_tok": [
+    174,
+    174
+   ],
+   "n_tok": [
+    227,
+    227
+   ],
+   "pass": true
+  },
+  {
+   "_idx": 113,
+   "a_start": [
+    32,
+    32
+   ],
+   "commit_tok": [
+    56,
+    56
+   ],
+   "n_tok": [
+    2449,
+    2449
+   ],
+   "pass": true
+  },
+  {
+   "_idx": 170,
+   "a_start": [
+    119,
+    119
+   ],
+   "commit_tok": [
+    125,
+    125
+   ],
+   "n_tok": [
+    2531,
+    2531
+   ],
+   "pass": true
+  },
+  {
+   "_idx": 173,
+   "a_start": [
+    119,
+    119
+   ],
+   "commit_tok": [
+    124,
+    124
+   ],
+   "n_tok": [
+    3831,
+    3831
+   ],
+   "pass": true
+  },
+  {
+   "_idx": 195,
+   "a_start": [
+    164,
+    164
+   ],
+   "commit_tok": [
+    236,
+    236
+   ],
+   "n_tok": [
+    2700,
+    2700
+   ],
+   "pass": true
+  },
+  {
+   "_idx": 199,
+   "a_start": [
+    164,
+    164
+   ],
+   "commit_tok": [
+    398,
+    398
+   ],
+   "n_tok": [
+    3415,
+    3415
+   ],
+   "pass": true
+  }
+ ],
+ "gate_B": [
+  {
+   "_idx": 160,
+   "min_cosine_all_layers": 0.9999985098838806,
+   "min_cosine_l18": 0.9999996423721313,
+   "pass": true
+  },
+  {
+   "_idx": 147,
+   "min_cosine_all_layers": 0.9999983310699463,
+   "min_cosine_l18": 0.9999991655349731,
+   "pass": true
+  },
+  {
+   "_idx": 151,
+   "min_cosine_all_layers": 0.9999983310699463,
+   "min_cosine_l18": 0.9999998211860657,
+   "pass": true
+  },
+  {
+   "_idx": 153,
+   "min_cosine_all_layers": 0.999998152256012,
+   "min_cosine_l18": 0.9999992847442627,
+   "pass": true
+  },
+  {
+   "_idx": 43,
+   "min_cosine_all_layers": 0.9999983906745911,
+   "min_cosine_l18": 1.0000001192092896,
+   "pass": true
+  },
+  {
+   "_idx": 44,
+   "min_cosine_all_layers": 0.9999985098838806,
+   "min_cosine_l18": 0.9999999403953552,
+   "pass": true
+  },
+  {
+   "_idx": 45,
+   "min_cosine_all_layers": 0.9999985694885254,
+   "min_cosine_l18": 1.0000001192092896,
+   "pass": true
+  },
+  {
+   "_idx": 48,
+   "min_cosine_all_layers": 0.9999982118606567,
+   "min_cosine_l18": 0.9999996423721313,
+   "pass": true
+  },
+  {
+   "_idx": 107,
+   "min_cosine_all_layers": 0.9999984502792358,
+   "min_cosine_l18": 0.9999994039535522,
+   "pass": true
+  },
+  {
+   "_idx": 108,
+   "min_cosine_all_layers": 0.999998152256012,
+   "min_cosine_l18": 0.9999998211860657,
+   "pass": true
+  },
+  {
+   "_idx": 109,
+   "min_cosine_all_layers": 0.9999979138374329,
+   "min_cosine_l18": 0.9999992251396179,
+   "pass": true
+  },
+  {
+   "_idx": 110,
+   "min_cosine_all_layers": 0.9999984502792358,
+   "min_cosine_l18": 0.9999995827674866,
+   "pass": true
+  },
+  {
+   "_idx": 0,
+   "min_cosine_all_layers": 0.9999985694885254,
+   "min_cosine_l18": 0.9999997615814209,
+   "pass": true
+  },
+  {
+   "_idx": 2,
+   "min_cosine_all_layers": 0.9999985098838806,
+   "min_cosine_l18": 1.0,
+   "pass": true
+  },
+  {
+   "_idx": 5,
+   "min_cosine_all_layers": 0.9999985098838806,
+   "min_cosine_l18": 1.0,
+   "pass": true
+  },
+  {
+   "_idx": 9,
+   "min_cosine_all_layers": 0.9999982118606567,
+   "min_cosine_l18": 1.0000001192092896,
+   "pass": true
+  },
+  {
+   "_idx": 10,
+   "min_cosine_all_layers": 0.9999982714653015,
+   "min_cosine_l18": 1.0,
+   "pass": true
+  },
+  {
+   "_idx": 113,
+   "min_cosine_all_layers": 0.9999983310699463,
+   "min_cosine_l18": 0.9999992251396179,
+   "pass": true
+  },
+  {
+   "_idx": 170,
+   "min_cosine_all_layers": 0.9999983310699463,
+   "min_cosine_l18": 0.9999992847442627,
+   "pass": true
+  },
+  {
+   "_idx": 173,
+   "min_cosine_all_layers": 0.999998152256012,
+   "min_cosine_l18": 0.9999992251396179,
+   "pass": true
+  },
+  {
+   "_idx": 195,
+   "min_cosine_all_layers": 0.9999980926513672,
+   "min_cosine_l18": 0.9999991655349731,
+   "pass": true
+  },
+  {
+   "_idx": 199,
+   "min_cosine_all_layers": 0.9999973773956299,
+   "min_cosine_l18": 0.9999990463256836,
+   "pass": true
+  },
+  {
+   "prompt_idx": 0,
+   "min_cosine_all_layers": 0.9999992251396179,
+   "min_cosine_l18": 1.000000238418579,
+   "pass": true
+  },
+  {
+   "prompt_idx": 1,
+   "min_cosine_all_layers": 0.9999986886978149,
+   "min_cosine_l18": 1.0000003576278687,
+   "pass": true
+  },
+  {
+   "prompt_idx": 2,
+   "min_cosine_all_layers": 0.9999983310699463,
+   "min_cosine_l18": 1.0000001192092896,
+   "pass": true
+  },
+  {
+   "prompt_idx": 3,
+   "min_cosine_all_layers": 0.9999982714653015,
+   "min_cosine_l18": 1.000000238418579,
+   "pass": true
+  },
+  {
+   "prompt_idx": 4,
+   "min_cosine_all_layers": 0.9999985694885254,
+   "min_cosine_l18": 1.0000001192092896,
+   "pass": true
+  },
+  {
+   "prompt_idx": 5,
+   "min_cosine_all_layers": 0.9999985694885254,
+   "min_cosine_l18": 1.000000238418579,
+   "pass": true
+  },
+  {
+   "prompt_idx": 6,
+   "min_cosine_all_layers": 0.999998927116394,
+   "min_cosine_l18": 1.0000001192092896,
+   "pass": true
+  },
+  {
+   "prompt_idx": 7,
+   "min_cosine_all_layers": 0.999998927116394,
+   "min_cosine_l18": 1.0000004768371582,
+   "pass": true
+  }
+ ],
+ "gate_C": [
+  {
+   "_idx": 160,
+   "probes": {
+    "P0_assistant_start": {
+     "span": [
+      117,
+      121
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking if the distance is short and the weather is good, otherwise recommend driving.",
+     "stored": "The assistant will suggest walking if the distance is short and the weather is good, otherwise recommend driving."
+    },
+    "P1_25": {
+     "span": [
+      277,
+      281
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest driving to the gas station.",
+     "stored": "The assistant will suggest driving to the gas station."
+    },
+    "P2_50": {
+     "span": [
+      439,
+      443
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest driving to the store, as it is more efficient and saves time.",
+     "stored": "The assistant will suggest driving to the store, as it is more efficient and saves time."
+    },
+    "P3_75": {
+     "span": [
+      602,
+      606
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking, as it is the most energy-efficient option.",
+     "stored": "The assistant will suggest walking, as it is the most energy-efficient option."
+    },
+    "P4_precommit": {
+     "span": [
+      761,
+      765
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The model will suggest driving to the car wash.",
+     "stored": "The model will suggest driving to the car wash."
+    },
+    "P5_postcommit": {
+     "span": [
+      766,
+      774
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The model will suggest walking to the car wash.",
+     "stored": "The model will suggest walking to the car wash."
+    }
+   },
+   "all_match": true,
+   "all_verdict_match": true
+  },
+  {
+   "_idx": 147,
+   "probes": {
+    "P0_assistant_start": {
+     "span": [
+      117,
+      121
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking to the store, as it is a short distance and walking is more environmentally friendly.",
+     "stored": "The assistant will suggest walking to the store, as it is a short distance and walking is more environmentally friendly."
+    },
+    "P1_25": {
+     "span": [
+      163,
+      167
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking to the car wash.",
+     "stored": "The assistant will suggest walking to the car wash."
+    },
+    "P2_50": {
+     "span": [
+      211,
+      215
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking, as it is more energy-efficient and environmentally friendly.",
+     "stored": "The assistant will suggest walking, as it is more energy-efficient and environmentally friendly."
+    },
+    "P3_75": {
+     "span": [
+      259,
+      263
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest driving if it's more efficient or necessary, otherwise recommend walking.",
+     "stored": "The assistant will suggest driving if it's more efficient or necessary, otherwise recommend walking."
+    },
+    "P4_precommit": {
+     "span": [
+      304,
+      308
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking as it is more convenient and environmentally friendly.",
+     "stored": "The assistant will suggest walking as it is more convenient and environmentally friendly."
+    },
+    "P5_postcommit": {
+     "span": [
+      309,
+      317
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking, as it is more energy-efficient and environmentally friendly.",
+     "stored": "The assistant will suggest walking, as it is more energy-efficient and environmentally friendly."
+    }
+   },
+   "all_match": true,
+   "all_verdict_match": true
+  },
+  {
+   "_idx": 151,
+   "probes": {
+    "P0_assistant_start": {
+     "span": [
+      117,
+      121
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking to the store, emphasizing the benefits of saving money and reducing environmental impact.",
+     "stored": "The assistant will suggest walking to the store, emphasizing the benefits of saving money and reducing environmental impact."
+    },
+    "P1_25": {
+     "span": [
+      162,
+      166
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking to the store, as it is more cost-effective than driving.",
+     "stored": "The assistant will suggest walking to the store, as it is more cost-effective than driving."
+    },
+    "P2_50": {
+     "span": [
+      209,
+      213
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking to the store, emphasizing the benefits of a short, easy walk.",
+     "stored": "The assistant will suggest walking to the store, emphasizing the benefits of a short, easy walk."
+    },
+    "P3_75": {
+     "span": [
+      256,
+      260
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking to the store.",
+     "stored": "The assistant will suggest walking to the store."
+    },
+    "P4_precommit": {
+     "span": [
+      300,
+      304
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking due to the short distance and the benefits of physical activity.",
+     "stored": "The assistant will suggest walking due to the short distance and the benefits of physical activity."
+    },
+    "P5_postcommit": {
+     "span": [
+      305,
+      313
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest driving if it's more efficient and safe for the user's situation.",
+     "stored": "The assistant will suggest driving if it's more efficient and safe for the user's situation."
+    }
+   },
+   "all_match": true,
+   "all_verdict_match": true
+  },
+  {
+   "_idx": 153,
+   "probes": {
+    "P0_assistant_start": {
+     "span": [
+      117,
+      121
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking if the distance is short and the weather is good, otherwise recommend driving.",
+     "stored": "The assistant will suggest walking if the distance is short and the weather is good, otherwise recommend driving."
+    },
+    "P1_25": {
+     "span": [
+      163,
+      167
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will likely suggest walking, as it is more energy-efficient and environmentally friendly.",
+     "stored": "The assistant will likely suggest walking, as it is more energy-efficient and environmentally friendly."
+    },
+    "P2_50": {
+     "span": [
+      211,
+      215
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest driving to the store, as it is faster and more efficient.",
+     "stored": "The assistant will suggest driving to the store, as it is faster and more efficient."
+    },
+    "P3_75": {
+     "span": [
+      258,
+      262
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will say 'walk' as it is the most logical choice given the context.",
+     "stored": "The assistant will say 'walk' as it is the most logical choice given the context."
+    },
+    "P4_precommit": {
+     "span": [
+      303,
+      307
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will likely suggest driving, as it is more efficient for covering the distance quickly.",
+     "stored": "The assistant will likely suggest driving, as it is more efficient for covering the distance quickly."
+    },
+    "P5_postcommit": {
+     "span": [
+      308,
+      316
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest driving to the car wash.",
+     "stored": "The assistant will suggest driving to the car wash."
+    }
+   },
+   "all_match": true,
+   "all_verdict_match": true
+  },
+  {
+   "_idx": 43,
+   "probes": {
+    "P0_assistant_start": {
+     "span": [
+      121,
+      125
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest driving to save time.",
+     "stored": "The assistant will suggest driving to save time."
+    },
+    "P1_25": {
+     "span": [
+      149,
+      153
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest driving to the store.",
+     "stored": "The assistant will suggest driving to the store."
+    },
+    "P2_50": {
+     "span": [
+      180,
+      184
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking to the laundromat.",
+     "stored": "The assistant will suggest walking to the laundromat."
+    },
+    "P3_75": {
+     "span": [
+      211,
+      215
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking to the store.",
+     "stored": "The assistant will suggest walking to the store."
+    },
+    "P4_precommit": {
+     "span": [
+      238,
+      242
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will recommend walking to the nearby park.",
+     "stored": "The assistant will recommend walking to the nearby park."
+    },
+    "P5_postcommit": {
+     "span": [
+      243,
+      251
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking to the car wash.",
+     "stored": "The assistant will suggest walking to the car wash."
+    }
+   },
+   "all_match": true,
+   "all_verdict_match": true
+  },
+  {
+   "_idx": 44,
+   "probes": {
+    "P0_assistant_start": {
+     "span": [
+      121,
+      125
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest driving to the store to save time and money.",
+     "stored": "The assistant will suggest driving to the store to save time and money."
+    },
+    "P1_25": {
+     "span": [
+      134,
+      138
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking, as it is more energy-efficient and environmentally friendly.",
+     "stored": "The assistant will suggest walking, as it is more energy-efficient and environmentally friendly."
+    },
+    "P2_50": {
+     "span": [
+      149,
+      153
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest driving to the store.",
+     "stored": "The assistant will suggest driving to the store."
+    },
+    "P3_75": {
+     "span": [
+      165,
+      169
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest driving to the store.",
+     "stored": "The assistant will suggest driving to the store."
+    },
+    "P4_precommit": {
+     "span": [
+      177,
+      181
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant should recommend walking to the nearby store, as it is more cost-effective and environmentally friendly.",
+     "stored": "The assistant should recommend walking to the nearby store, as it is more cost-effective and environmentally friendly."
+    },
+    "P5_postcommit": {
+     "span": [
+      182,
+      190
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking to the car wash.",
+     "stored": "The assistant will suggest walking to the car wash."
+    }
+   },
+   "all_match": true,
+   "all_verdict_match": true
+  },
+  {
+   "_idx": 45,
+   "probes": {
+    "P0_assistant_start": {
+     "span": [
+      121,
+      125
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest driving to the store to save time and money.",
+     "stored": "The assistant will suggest driving to the store to save time and money."
+    },
+    "P1_25": {
+     "span": [
+      129,
+      133
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The model will suggest driving to the car wash.",
+     "stored": "The model will suggest driving to the car wash."
+    },
+    "P2_50": {
+     "span": [
+      138,
+      142
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking, as it is more energy-efficient and environmentally friendly.",
+     "stored": "The assistant will suggest walking, as it is more energy-efficient and environmentally friendly."
+    },
+    "P3_75": {
+     "span": [
+      147,
+      151
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant should recommend walking to the nearest gas station, as it is the most efficient and cost-effective option.",
+     "stored": "The assistant should recommend walking to the nearest gas station, as it is the most efficient and cost-effective option."
+    },
+    "P4_precommit": {
+     "span": [
+      154,
+      158
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will determine that driving is more efficient for reaching the store quickly.",
+     "stored": "The assistant will determine that driving is more efficient for reaching the store quickly."
+    },
+    "P5_postcommit": {
+     "span": [
+      159,
+      167
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant should recommend driving to the car wash.",
+     "stored": "The assistant should recommend driving to the car wash."
+    }
+   },
+   "all_match": true,
+   "all_verdict_match": true
+  },
+  {
+   "_idx": 48,
+   "probes": {
+    "P0_assistant_start": {
+     "span": [
+      121,
+      125
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest driving to save time.",
+     "stored": "The assistant will suggest driving to save time."
+    },
+    "P1_25": {
+     "span": [
+      155,
+      159
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant should recommend walking to the store to save money on fuel costs.",
+     "stored": "The assistant should recommend walking to the store to save money on fuel costs."
+    },
+    "P2_50": {
+     "span": [
+      190,
+      194
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking as it is more environmentally friendly and avoids the hassle of parking.",
+     "stored": "The assistant will suggest walking as it is more environmentally friendly and avoids the hassle of parking."
+    },
+    "P3_75": {
+     "span": [
+      225,
+      229
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking to the store.",
+     "stored": "The assistant will suggest walking to the store."
+    },
+    "P4_precommit": {
+     "span": [
+      258,
+      262
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will recommend walking to the nearby store, as it is more energy-efficient and environmentally friendly.",
+     "stored": "The assistant will recommend walking to the nearby store, as it is more energy-efficient and environmentally friendly."
+    },
+    "P5_postcommit": {
+     "span": [
+      263,
+      271
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking to the car wash.",
+     "stored": "The assistant will suggest walking to the car wash."
+    }
+   },
+   "all_match": true,
+   "all_verdict_match": true
+  },
+  {
+   "_idx": 107,
+   "probes": {
+    "P0_assistant_start": {
+     "span": [
+      32,
+      36
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking, as it is safer and more environmentally friendly.",
+     "stored": "The assistant will suggest walking, as it is safer and more environmentally friendly."
+    },
+    "P1_25": {
+     "span": [
+      108,
+      112
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The model will suggest driving to the car wash.",
+     "stored": "The model will suggest driving to the car wash."
+    },
+    "P2_50": {
+     "span": [
+      186,
+      190
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest driving to the store.",
+     "stored": "The assistant will suggest driving to the store."
+    },
+    "P3_75": {
+     "span": [
+      264,
+      268
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest driving to the car wash.",
+     "stored": "The assistant will suggest driving to the car wash."
+    },
+    "P4_precommit": {
+     "span": [
+      339,
+      343
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will likely say 'drive' as it is more practical for a long distance.",
+     "stored": "The assistant will likely say 'drive' as it is more practical for a long distance."
+    },
+    "P5_postcommit": {
+     "span": [
+      344,
+      352
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will likely suggest driving to the car wash, as it is more efficient than walking.",
+     "stored": "The assistant will likely suggest driving to the car wash, as it is more efficient than walking."
+    }
+   },
+   "all_match": true,
+   "all_verdict_match": true
+  },
+  {
+   "_idx": 108,
+   "probes": {
+    "P0_assistant_start": {
+     "span": [
+      32,
+      36
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking, as it is safer and more environmentally friendly.",
+     "stored": "The assistant will suggest walking, as it is safer and more environmentally friendly."
+    },
+    "P1_25": {
+     "span": [
+      104,
+      108
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest driving, as it is faster than walking.",
+     "stored": "The assistant will suggest driving, as it is faster than walking."
+    },
+    "P2_50": {
+     "span": [
+      178,
+      182
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The model will suggest walking, as it is faster than driving in this scenario.",
+     "stored": "The model will suggest walking, as it is faster than driving in this scenario."
+    },
+    "P3_75": {
+     "span": [
+      252,
+      256
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will likely suggest walking, as it is more energy-efficient and environmentally friendly.",
+     "stored": "The assistant will likely suggest walking, as it is more energy-efficient and environmentally friendly."
+    },
+    "P4_precommit": {
+     "span": [
+      323,
+      327
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking to the store, as it is a short distance.",
+     "stored": "The assistant will suggest walking to the store, as it is a short distance."
+    },
+    "P5_postcommit": {
+     "span": [
+      328,
+      336
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will likely suggest driving to the store to save time.",
+     "stored": "The assistant will likely suggest driving to the store to save time."
+    }
+   },
+   "all_match": true,
+   "all_verdict_match": true
+  },
+  {
+   "_idx": 109,
+   "probes": {
+    "P0_assistant_start": {
+     "span": [
+      32,
+      36
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking, as it is safer and more environmentally friendly.",
+     "stored": "The assistant will suggest walking, as it is safer and more environmentally friendly."
+    },
+    "P1_25": {
+     "span": [
+      94,
+      98
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will likely suggest driving, as it is faster than walking.",
+     "stored": "The assistant will likely suggest driving, as it is faster than walking."
+    },
+    "P2_50": {
+     "span": [
+      157,
+      161
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking to the car wash, as it is more energy-efficient than driving.",
+     "stored": "The assistant will suggest walking to the car wash, as it is more energy-efficient than driving."
+    },
+    "P3_75": {
+     "span": [
+      220,
+      224
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest driving to the car wash, as it is more efficient than walking.",
+     "stored": "The assistant will suggest driving to the car wash, as it is more efficient than walking."
+    },
+    "P4_precommit": {
+     "span": [
+      281,
+      285
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest driving, as it is faster than walking.",
+     "stored": "The assistant will suggest driving, as it is faster than walking."
+    },
+    "P5_postcommit": {
+     "span": [
+      286,
+      294
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking, as it is more efficient in this scenario.",
+     "stored": "The assistant will suggest walking, as it is more efficient in this scenario."
+    }
+   },
+   "all_match": true,
+   "all_verdict_match": true
+  },
+  {
+   "_idx": 110,
+   "probes": {
+    "P0_assistant_start": {
+     "span": [
+      32,
+      36
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking, as it is safer and more environmentally friendly.",
+     "stored": "The assistant will suggest walking, as it is safer and more environmentally friendly."
+    },
+    "P1_25": {
+     "span": [
+      108,
+      112
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking, as it is more energy-efficient than driving for such a short distance.",
+     "stored": "The assistant will suggest walking, as it is more energy-efficient than driving for such a short distance."
+    },
+    "P2_50": {
+     "span": [
+      187,
+      191
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking to the store, as it's a short distance and a healthier option.",
+     "stored": "The assistant will suggest walking to the store, as it's a short distance and a healthier option."
+    },
+    "P3_75": {
+     "span": [
+      266,
+      270
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking to avoid the hassle of parking.",
+     "stored": "The assistant will suggest walking to avoid the hassle of parking."
+    },
+    "P4_precommit": {
+     "span": [
+      341,
+      345
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest driving, as it is more efficient for covering a longer distance.",
+     "stored": "The assistant will suggest driving, as it is more efficient for covering a longer distance."
+    },
+    "P5_postcommit": {
+     "span": [
+      346,
+      354
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking, as it is more energy-efficient and environmentally friendly.",
+     "stored": "The assistant will suggest walking, as it is more energy-efficient and environmentally friendly."
+    }
+   },
+   "all_match": true,
+   "all_verdict_match": true
+  },
+  {
+   "_idx": 0,
+   "probes": {
+    "P0_assistant_start": {
+     "span": [
+      36,
+      40
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest driving to the car wash.",
+     "stored": "The assistant will suggest driving to the car wash."
+    },
+    "P1_25": {
+     "span": [
+      40,
+      44
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking, as it is more energy-efficient and environmentally friendly.",
+     "stored": "The assistant will suggest walking, as it is more energy-efficient and environmentally friendly."
+    },
+    "P2_50": {
+     "span": [
+      46,
+      50
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking, as it's only 100 meters away.",
+     "stored": "The assistant will suggest walking, as it's only 100 meters away."
+    },
+    "P3_75": {
+     "span": [
+      51,
+      55
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking, as it is more efficient and environmentally friendly.",
+     "stored": "The assistant will suggest walking, as it is more efficient and environmentally friendly."
+    },
+    "P4_precommit": {
+     "span": [
+      54,
+      58
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking if the distance is short, as it is more energy-efficient and environmentally friendly.",
+     "stored": "The assistant will suggest walking if the distance is short, as it is more energy-efficient and environmentally friendly."
+    },
+    "P5_postcommit": {
+     "span": [
+      59,
+      67
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will recommend walking to minimize environmental impact.",
+     "stored": "The assistant will recommend walking to minimize environmental impact."
+    }
+   },
+   "all_match": true,
+   "all_verdict_match": true
+  },
+  {
+   "_idx": 2,
+   "probes": {
+    "P0_assistant_start": {
+     "span": [
+      36,
+      40
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest driving to the car wash.",
+     "stored": "The assistant will suggest driving to the car wash."
+    },
+    "P1_25": {
+     "span": [
+      74,
+      78
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking as it is more environmentally friendly.",
+     "stored": "The assistant will suggest walking as it is more environmentally friendly."
+    },
+    "P2_50": {
+     "span": [
+      115,
+      119
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking for the 100 meters.",
+     "stored": "The assistant will suggest walking for the 100 meters."
+    },
+    "P3_75": {
+     "span": [
+      156,
+      160
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking to the store.",
+     "stored": "The assistant will suggest walking to the store."
+    },
+    "P4_precommit": {
+     "span": [
+      193,
+      197
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking to the store.",
+     "stored": "The assistant will suggest walking to the store."
+    },
+    "P5_postcommit": {
+     "span": [
+      198,
+      206
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will recommend walking due to the short distance.",
+     "stored": "The assistant will recommend walking due to the short distance."
+    }
+   },
+   "all_match": true,
+   "all_verdict_match": true
+  },
+  {
+   "_idx": 5,
+   "probes": {
+    "P0_assistant_start": {
+     "span": [
+      36,
+      40
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking if the distance is short and the weather is suitable, otherwise recommend driving.",
+     "stored": "The assistant will suggest walking if the distance is short and the weather is suitable, otherwise recommend driving."
+    },
+    "P1_25": {
+     "span": [
+      102,
+      106
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking to the gas station.",
+     "stored": "The assistant will suggest walking to the gas station."
+    },
+    "P2_50": {
+     "span": [
+      170,
+      174
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest driving, as it is quicker and more convenient for a short trip.",
+     "stored": "The assistant will suggest driving, as it is quicker and more convenient for a short trip."
+    },
+    "P3_75": {
+     "span": [
+      239,
+      243
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will recommend walking to the store, as it is more energy-efficient and environmentally friendly.",
+     "stored": "The assistant will recommend walking to the store, as it is more energy-efficient and environmentally friendly."
+    },
+    "P4_precommit": {
+     "span": [
+      304,
+      308
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking, as it is the most energy-efficient option.",
+     "stored": "The assistant will suggest walking, as it is the most energy-efficient option."
+    },
+    "P5_postcommit": {
+     "span": [
+      309,
+      317
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking to the car wash.",
+     "stored": "The assistant will suggest walking to the car wash."
+    }
+   },
+   "all_match": true,
+   "all_verdict_match": true
+  },
+  {
+   "_idx": 9,
+   "probes": {
+    "P0_assistant_start": {
+     "span": [
+      36,
+      40
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest driving, as it is faster than walking.",
+     "stored": "The assistant will suggest driving, as it is faster than walking."
+    },
+    "P1_25": {
+     "span": [
+      90,
+      94
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will say walk.",
+     "stored": "The assistant will say walk."
+    },
+    "P2_50": {
+     "span": [
+      146,
+      150
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking to the store.",
+     "stored": "The assistant will suggest walking to the store."
+    },
+    "P3_75": {
+     "span": [
+      201,
+      205
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking to the store, emphasizing the benefits of saving fuel and reducing environmental impact.",
+     "stored": "The assistant will suggest walking to the store, emphasizing the benefits of saving fuel and reducing environmental impact."
+    },
+    "P4_precommit": {
+     "span": [
+      254,
+      258
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will recommend walking, as it is the most energy-efficient option.",
+     "stored": "The assistant will recommend walking, as it is the most energy-efficient option."
+    },
+    "P5_postcommit": {
+     "span": [
+      259,
+      267
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will recommend walking to the car wash.",
+     "stored": "The assistant will recommend walking to the car wash."
+    }
+   },
+   "all_match": true,
+   "all_verdict_match": true
+  },
+  {
+   "_idx": 10,
+   "probes": {
+    "P0_assistant_start": {
+     "span": [
+      36,
+      40
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest driving, as it is faster than walking.",
+     "stored": "The assistant will suggest driving, as it is faster than walking."
+    },
+    "P1_25": {
+     "span": [
+      68,
+      72
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest driving, as it is more efficient for covering a long distance.",
+     "stored": "The assistant will suggest driving, as it is more efficient for covering a long distance."
+    },
+    "P2_50": {
+     "span": [
+      103,
+      107
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking to the store.",
+     "stored": "The assistant will suggest walking to the store."
+    },
+    "P3_75": {
+     "span": [
+      138,
+      142
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking to the store.",
+     "stored": "The assistant will suggest walking to the store."
+    },
+    "P4_precommit": {
+     "span": [
+      169,
+      173
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will recommend walking, as it is the most energy-efficient option.",
+     "stored": "The assistant will recommend walking, as it is the most energy-efficient option."
+    },
+    "P5_postcommit": {
+     "span": [
+      174,
+      182
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest driving to the car wash.",
+     "stored": "The assistant will suggest driving to the car wash."
+    }
+   },
+   "all_match": true,
+   "all_verdict_match": true
+  },
+  {
+   "_idx": 113,
+   "probes": {
+    "P0_assistant_start": {
+     "span": [
+      32,
+      36
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking, as it is safer and more environmentally friendly.",
+     "stored": "The assistant will suggest walking, as it is safer and more environmentally friendly."
+    },
+    "P1_25": {
+     "span": [
+      36,
+      40
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking to save money on gas.",
+     "stored": "The assistant will suggest walking to save money on gas."
+    },
+    "P2_50": {
+     "span": [
+      42,
+      46
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking to the car wash.",
+     "stored": "The assistant will suggest walking to the car wash."
+    },
+    "P3_75": {
+     "span": [
+      48,
+      52
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking, as it is more environmentally friendly and avoids the use of fossil fuels.",
+     "stored": "The assistant will suggest walking, as it is more environmentally friendly and avoids the use of fossil fuels."
+    },
+    "P4_precommit": {
+     "span": [
+      51,
+      55
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant should recommend walking, as it is a short distance of 100 meters.",
+     "stored": "The assistant should recommend walking, as it is a short distance of 100 meters."
+    },
+    "P5_postcommit": {
+     "span": [
+      56,
+      64
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant should recommend driving, as it is faster and more efficient for covering the distance in a short time.",
+     "stored": "The assistant should recommend driving, as it is faster and more efficient for covering the distance in a short time."
+    }
+   },
+   "all_match": true,
+   "all_verdict_match": true
+  },
+  {
+   "_idx": 170,
+   "probes": {
+    "P0_assistant_start": {
+     "span": [
+      119,
+      123
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking to the store, emphasizing the benefits of physical activity and environmental impact.",
+     "stored": "The assistant will suggest walking to the store, emphasizing the benefits of physical activity and environmental impact."
+    },
+    "P1_25": {
+     "span": [
+      119,
+      123
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking to the store, emphasizing the benefits of physical activity and environmental impact.",
+     "stored": "The assistant will suggest walking to the store, emphasizing the benefits of physical activity and environmental impact."
+    },
+    "P2_50": {
+     "span": [
+      120,
+      124
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking to the store, emphasizing the benefits of physical activity and environmental impact.",
+     "stored": "The assistant will suggest walking to the store, emphasizing the benefits of physical activity and environmental impact."
+    },
+    "P3_75": {
+     "span": [
+      121,
+      124
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking to the store, as it's a short distance and walking is a healthier option.",
+     "stored": "The assistant will suggest walking to the store, as it's a short distance and walking is a healthier option."
+    },
+    "P4_precommit": {
+     "span": [
+      120,
+      124
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking to the store, emphasizing the benefits of physical activity and environmental impact.",
+     "stored": "The assistant will suggest walking to the store, emphasizing the benefits of physical activity and environmental impact."
+    },
+    "P5_postcommit": {
+     "span": [
+      125,
+      133
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest driving, as it is more efficient for the user to wash the car quickly.",
+     "stored": "The assistant will suggest driving, as it is more efficient for the user to wash the car quickly."
+    }
+   },
+   "all_match": true,
+   "all_verdict_match": true
+  },
+  {
+   "_idx": 173,
+   "probes": {
+    "P0_assistant_start": {
+     "span": [
+      119,
+      123
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking if the distance is short and the weather is suitable, otherwise recommend driving.",
+     "stored": "The assistant will suggest walking if the distance is short and the weather is suitable, otherwise recommend driving."
+    },
+    "P1_25": {
+     "span": [
+      119,
+      122
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking to the store, emphasizing the benefits of physical activity and environmental impact.",
+     "stored": "The assistant will suggest walking to the store, emphasizing the benefits of physical activity and environmental impact."
+    },
+    "P2_50": {
+     "span": [
+      119,
+      123
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking if the distance is short and the weather is suitable, otherwise recommend driving.",
+     "stored": "The assistant will suggest walking if the distance is short and the weather is suitable, otherwise recommend driving."
+    },
+    "P3_75": {
+     "span": [
+      121,
+      123
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will likely recommend walking if the distance is short and the weather is suitable, otherwise suggest driving.",
+     "stored": "The assistant will likely recommend walking if the distance is short and the weather is suitable, otherwise suggest driving."
+    },
+    "P4_precommit": {
+     "span": [
+      119,
+      123
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking if the distance is short and the weather is suitable, otherwise recommend driving.",
+     "stored": "The assistant will suggest walking if the distance is short and the weather is suitable, otherwise recommend driving."
+    },
+    "P5_postcommit": {
+     "span": [
+      124,
+      132
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking to the car wash.",
+     "stored": "The assistant will suggest walking to the car wash."
+    }
+   },
+   "all_match": true,
+   "all_verdict_match": true
+  },
+  {
+   "_idx": 195,
+   "probes": {
+    "P0_assistant_start": {
+     "span": [
+      164,
+      168
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking to the store, as it is the most cost-effective option.",
+     "stored": "The assistant will suggest walking to the store, as it is the most cost-effective option."
+    },
+    "P1_25": {
+     "span": [
+      180,
+      184
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking, as it is more energy-efficient and environmentally friendly.",
+     "stored": "The assistant will suggest walking, as it is more energy-efficient and environmentally friendly."
+    },
+    "P2_50": {
+     "span": [
+      198,
+      202
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking to the store.",
+     "stored": "The assistant will suggest walking to the store."
+    },
+    "P3_75": {
+     "span": [
+      216,
+      220
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking to the store, as it is a short distance and walking is more convenient and environmentally friendly.",
+     "stored": "The assistant will suggest walking to the store, as it is a short distance and walking is more convenient and environmentally friendly."
+    },
+    "P4_precommit": {
+     "span": [
+      231,
+      235
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The model will suggest walking to the car.",
+     "stored": "The model will suggest walking to the car."
+    },
+    "P5_postcommit": {
+     "span": [
+      236,
+      244
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking to the car wash.",
+     "stored": "The assistant will suggest walking to the car wash."
+    }
+   },
+   "all_match": true,
+   "all_verdict_match": true
+  },
+  {
+   "_idx": 199,
+   "probes": {
+    "P0_assistant_start": {
+     "span": [
+      164,
+      168
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking to the store, emphasizing the benefits of physical activity and environmental impact.",
+     "stored": "The assistant will suggest walking to the store, emphasizing the benefits of physical activity and environmental impact."
+    },
+    "P1_25": {
+     "span": [
+      220,
+      224
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking, as it is more efficient than driving in this scenario.",
+     "stored": "The assistant will suggest walking, as it is more efficient than driving in this scenario."
+    },
+    "P2_50": {
+     "span": [
+      279,
+      283
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest driving to the grocery store to save time and energy.",
+     "stored": "The assistant will suggest driving to the grocery store to save time and energy."
+    },
+    "P3_75": {
+     "span": [
+      338,
+      342
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking to the store, as it is a short distance and avoids the hassle of driving.",
+     "stored": "The assistant will suggest walking to the store, as it is a short distance and avoids the hassle of driving."
+    },
+    "P4_precommit": {
+     "span": [
+      393,
+      397
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest walking, as it is faster and more efficient in this scenario.",
+     "stored": "The assistant will suggest walking, as it is faster and more efficient in this scenario."
+    },
+    "P5_postcommit": {
+     "span": [
+      398,
+      406
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will suggest driving, as it is faster than walking.",
+     "stored": "The assistant will suggest driving, as it is faster than walking."
+    }
+   },
+   "all_match": true,
+   "all_verdict_match": true
+  },
+  {
+   "prompt_idx": 0,
+   "probes": {
+    "p25": {
+     "span": [
+      46,
+      50
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will say 'drive'.",
+     "stored": "The assistant will say 'drive'."
+    },
+    "p50": {
+     "span": [
+      59,
+      63
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will say 'drive'.",
+     "stored": "The assistant will say 'drive'."
+    },
+    "p75": {
+     "span": [
+      71,
+      75
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will say 'drive'.",
+     "stored": "The assistant will say 'drive'."
+    }
+   },
+   "all_match": true
+  },
+  {
+   "prompt_idx": 1,
+   "probes": {
+    "p25": {
+     "span": [
+      35,
+      39
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will say 'drive'.",
+     "stored": "The assistant will say 'drive'."
+    },
+    "p50": {
+     "span": [
+      49,
+      53
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will say 'drive'.",
+     "stored": "The assistant will say 'drive'."
+    },
+    "p75": {
+     "span": [
+      63,
+      67
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will say 'drive'.",
+     "stored": "The assistant will say 'drive'."
+    }
+   },
+   "all_match": true
+  },
+  {
+   "prompt_idx": 2,
+   "probes": {
+    "p25": {
+     "span": [
+      78,
+      82
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will say 'drive'.",
+     "stored": "The assistant will say 'drive'."
+    },
+    "p50": {
+     "span": [
+      131,
+      135
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will say 'drive'.",
+     "stored": "The assistant will say 'drive'."
+    },
+    "p75": {
+     "span": [
+      183,
+      187
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will say 'drive'.",
+     "stored": "The assistant will say 'drive'."
+    }
+   },
+   "all_match": true
+  },
+  {
+   "prompt_idx": 3,
+   "probes": {
+    "p25": {
+     "span": [
+      85,
+      89
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will say 'drive'.",
+     "stored": "The assistant will say 'drive'."
+    },
+    "p50": {
+     "span": [
+      149,
+      153
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will say 'drive'.",
+     "stored": "The assistant will say 'drive'."
+    },
+    "p75": {
+     "span": [
+      212,
+      216
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will say 'drive'.",
+     "stored": "The assistant will say 'drive'."
+    }
+   },
+   "all_match": true
+  },
+  {
+   "prompt_idx": 4,
+   "probes": {
+    "p25": {
+     "span": [
+      48,
+      52
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will say 'drive'.",
+     "stored": "The assistant will say 'drive'."
+    },
+    "p50": {
+     "span": [
+      75,
+      79
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The model will say 'drive'.",
+     "stored": "The model will say 'drive'."
+    },
+    "p75": {
+     "span": [
+      102,
+      106
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will say 'drive'.",
+     "stored": "The assistant will say 'drive'."
+    }
+   },
+   "all_match": true
+  },
+  {
+   "prompt_idx": 5,
+   "probes": {
+    "p25": {
+     "span": [
+      51,
+      55
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will say 'drive'.",
+     "stored": "The assistant will say 'drive'."
+    },
+    "p50": {
+     "span": [
+      79,
+      83
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will say 'walk' as it is a more descriptive and precise verb for the action of moving from one place to another.",
+     "stored": "The assistant will say 'walk' as it is a more descriptive and precise verb for the action of moving from one place to another."
+    },
+    "p75": {
+     "span": [
+      106,
+      110
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will say 'walk' as it is a more descriptive and engaging word than 'drive' in this context.",
+     "stored": "The assistant will say 'walk' as it is a more descriptive and engaging word than 'drive' in this context."
+    }
+   },
+   "all_match": true
+  },
+  {
+   "prompt_idx": 6,
+   "probes": {
+    "p25": {
+     "span": [
+      86,
+      90
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will say 'drive' as it is more commonly used in the context of a car.",
+     "stored": "The assistant will say 'drive' as it is more commonly used in the context of a car."
+    },
+    "p50": {
+     "span": [
+      150,
+      154
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will say 'drive' as it is more appropriate for the context of a space opera.",
+     "stored": "The assistant will say 'drive' as it is more appropriate for the context of a space opera."
+    },
+    "p75": {
+     "span": [
+      213,
+      217
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will say 'drive'.",
+     "stored": "The assistant will say 'drive'."
+    }
+   },
+   "all_match": true
+  },
+  {
+   "prompt_idx": 7,
+   "probes": {
+    "p25": {
+     "span": [
+      37,
+      41
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will say 'walk' in French.",
+     "stored": "The assistant will say 'walk' in French."
+    },
+    "p50": {
+     "span": [
+      51,
+      55
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will say 'walk' in French.",
+     "stored": "The assistant will say 'walk' in French."
+    },
+    "p75": {
+     "span": [
+      64,
+      68
+     ],
+     "match": true,
+     "verdict_match": true,
+     "new": "The assistant will say 'walk' in Spanish.",
+     "stored": "The assistant will say 'walk' in Spanish."
+    }
+   },
+   "all_match": true
+  }
+ ],
+ "baseline_text": [
+  {
+   "prompt_idx": 0,
+   "head_match": true,
+   "new_head": "The philosopher who drank hemlock was **Socrates**. His student who founded an **Academy** was **Plato**. Plato's most f",
+   "stored_head": "The philosopher who drank hemlock was **Socrates**. His student who founded an **Academy** was **Plato**. Plato's most f"
+  },
+  {
+   "prompt_idx": 1,
+   "head_match": true,
+   "new_head": "The sky appears blue because sunlight interacts with the gases and particles in Earth's atmosphere, scattering shorter w",
+   "stored_head": "The sky appears blue because sunlight interacts with the gases and particles in Earth's atmosphere, scattering shorter w"
+  },
+  {
+   "prompt_idx": 2,
+   "head_match": true,
+   "new_head": "To find the product of **17 multiplied by 23**, we can use the **standard multiplication algorithm**. Here's how it work",
+   "stored_head": "To find the product of **17 multiplied by 23**, we can use the **standard multiplication algorithm**. Here's how it work"
+  },
+  {
+   "prompt_idx": 3,
+   "head_match": true,
+   "new_head": "Sure! Here's a simple and delicious **Pasta with Tomato and Basil** recipe using just **five ingredients**:\n\n---\n\n### 🍝 ",
+   "stored_head": "Sure! Here's a simple and delicious **Pasta with Tomato and Basil** recipe using just **five ingredients**:\n\n---\n\n### 🍝 "
+  },
+  {
+   "prompt_idx": 4,
+   "head_match": true,
+   "new_head": "Sure! Here's a simple Python function that reverses a string:\n\n```python\ndef reverse_string(s):\n    return s[::-1]\n```\n\n",
+   "stored_head": "Sure! Here's a simple Python function that reverses a string:\n\n```python\ndef reverse_string(s):\n    return s[::-1]\n```\n\n"
+  },
+  {
+   "prompt_idx": 5,
+   "head_match": true,
+   "new_head": "World War I was caused by a complex interplay of factors including intense militarism, imperialistic ambitions, and a sy",
+   "stored_head": "World War I was caused by a complex interplay of factors including intense militarism, imperialistic ambitions, and a sy"
+  },
+  {
+   "prompt_idx": 6,
+   "head_match": true,
+   "new_head": "If you enjoyed *Dune* by Frank Herbert, you'll likely appreciate a science fiction novel that combines rich world-buildi",
+   "stored_head": "If you enjoyed *Dune* by Frank Herbert, you'll likely appreciate a science fiction novel that combines rich world-buildi"
+  },
+  {
+   "prompt_idx": 7,
+   "head_match": true,
+   "new_head": "Here are the translations of \"good morning, my friend\" into French and Spanish:\n\n- **French**: *Bonjour, mon ami*  \n- **",
+   "stored_head": "Here are the translations of \"good morning, my friend\" into French and Spanish:\n\n- **French**: *Bonjour, mon ami*  \n- **"
+  }
+ ],
+ "adapter_smoke": {
+  "rollout": 160,
+  "l18_cosine_on_vs_off_min": 0.8554015159606934,
+  "l18_cosine_on_vs_off_mean": 0.9836819767951965
+ },
+ "rollouts": [],
+ "summary": {
+  "gate_A_pass": true,
+  "gate_B_pass": true,
+  "gate_C_exact_match": true,
+  "gate_C_verdict_match": true,
+  "baseline_text_pass": true
+ }
+}
