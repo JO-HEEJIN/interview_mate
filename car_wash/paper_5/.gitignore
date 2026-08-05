@@ -1,0 +1,6 @@
+logs/
+results/
+results_phone_dead/
+results_tire_air/
+__pycache__/
+*.safetensors

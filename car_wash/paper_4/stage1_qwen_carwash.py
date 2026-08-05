@@ -247,6 +247,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", default="Qwen/Qwen3-8B")
     ap.add_argument("--n", type=int, default=20, help="sampled rollouts per condition")
+    ap.add_argument("--seed-offset", type=int, default=0,
+                    help="first sampled seed (default 0; paper_5 scale-up uses 1000)")
     ap.add_argument("--temperature", type=float, default=0.7)
     ap.add_argument("--max-new-tokens", type=int, default=1024)
     ap.add_argument("--load-4bit", action="store_true", help="bitsandbytes nf4 (Colab T4)")
@@ -344,7 +346,8 @@ def main():
             system = CONDITIONS[cond]
             for thinking in thinking_modes:
                 mode = "on" if thinking else "off"
-                plans = [("greedy", None)] + [("sampled", i) for i in range(args.n)]
+                plans = [("greedy", None)] + [
+                    ("sampled", args.seed_offset + i) for i in range(args.n)]
                 for kind, seed in plans:
                     if (cond, mode, kind, seed) in done:
                         continue
