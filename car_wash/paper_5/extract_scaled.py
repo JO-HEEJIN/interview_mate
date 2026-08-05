@@ -70,6 +70,9 @@ def main():
                     help="task's intuitive-but-wrong option (metadata only)")
     ap.add_argument("--constraint-type", default="implicit",
                     help="implicit | stated (metadata only)")
+    ap.add_argument("--all-rollouts", action="store_true",
+                    help="new-task mode: vectors for every rollout incl. "
+                         "greedy; anchorless rows get every-5th positions")
     args = ap.parse_args()
 
     outdir = os.path.join(ARCHIVE, args.subset)
@@ -106,9 +109,19 @@ def main():
     with open(texts_path, "a", encoding="utf-8") as tf:
         # all texts (including non-eligible) go to texts.jsonl once
         for r in rows:
-            if r["kind"] != "sampled":
+            if r["kind"] != "sampled" and not args.all_rollouts:
                 continue
-            rid = f"s{r['seed']}_{r['condition']}_{r['thinking_mode']}"
+            if r["kind"] == "greedy":
+                rid = f"greedy_{r['condition']}_{r['thinking_mode']}"
+            else:
+                rid = f"s{r['seed']}_{r['condition']}_{r['thinking_mode']}"
+            anchored = r.get("commit_char_pos", -1) >= 0
+            if args.all_rollouts:
+                wants_vectors = True
+                vector_mode = "anchored" if anchored else "every5"
+            else:
+                wants_vectors = r in eligible
+                vector_mode = "anchored" if wants_vectors else None
             prefix = tokenizer.apply_chat_template(
                 build_messages(CONDITIONS[r["condition"]],
                                [{"role": "user", "content": args.question}]),
@@ -127,31 +140,37 @@ def main():
                     "judge_final_answer": r.get("judge_final_answer"),
                     "judge_regex_agree": r.get("judge_regex_agree"),
                     "commit_char_pos": r.get("commit_char_pos"),
-                    "eligible_for_vectors": r in eligible,
+                    "vector_mode": vector_mode,
+                    "anchor_trusted": bool(anchored and r.get("judge_regex_agree")),
                     "prefix": prefix, "primary_text": r["primary_text"],
                 }, ensure_ascii=False) + "\n")
                 tf.flush()
 
-            if r not in eligible:
+            if not wants_vectors:
                 continue
             vec_path = os.path.join(outdir, f"rollout_{rid}.safetensors")
             if os.path.exists(vec_path):
                 continue
             target = prefix + r["primary_text"]
-            commit_abs = len(prefix) + r["commit_char_pos"]
             enc = tokenizer(target, return_offsets_mapping=True,
                             add_special_tokens=False)
             offsets = enc["offset_mapping"]
             n_tok = len(offsets)
             a_start = next(i for i, (s, e) in enumerate(offsets)
                            if s >= len(prefix))
-            commit_tok = next((i for i, (s, e) in enumerate(offsets)
-                               if e > commit_abs), n_tok - 1)
-            spans = grid_spans(a_start, commit_tok, n_tok)
-            positions = sorted(
-                {t for _, lo, hi in spans for t in range(lo, hi + 1)}
-                | set(range(max(commit_tok - 20, 0),
-                            min(commit_tok + 20, n_tok - 1) + 1)))
+            if vector_mode == "anchored":
+                commit_abs = len(prefix) + r["commit_char_pos"]
+                commit_tok = next((i for i, (s, e) in enumerate(offsets)
+                                   if e > commit_abs), n_tok - 1)
+                spans = grid_spans(a_start, commit_tok, n_tok)
+                positions = sorted(
+                    {t for _, lo, hi in spans for t in range(lo, hi + 1)}
+                    | set(range(max(commit_tok - 20, 0),
+                                min(commit_tok + 20, n_tok - 1) + 1)))
+            else:  # every5: no commit anchor, uniform grid from token 0
+                commit_tok = None
+                spans = []
+                positions = list(range(0, n_tok, 5))
 
             acts1 = collect_all_layers(model, tokenizer, device, target)
             acts2 = collect_all_layers(model, tokenizer, device, target)
@@ -173,8 +192,11 @@ def main():
                 vec_path, metadata={"rollout_id": rid})
             index.append({
                 "rollout_id": rid, "condition": r["condition"],
-                "thinking_mode": r["thinking_mode"], "seed": r["seed"],
+                "thinking_mode": r["thinking_mode"], "kind": r["kind"],
+                "seed": r["seed"],
                 "judge_committed_answer": r["judge_committed_answer"],
+                "vector_mode": vector_mode,
+                "anchor_trusted": bool(anchored and r.get("judge_regex_agree")),
                 "a_start_tok": a_start, "commit_tok": commit_tok,
                 "n_tok": n_tok, "n_positions": len(positions),
                 "grid_spans": {l: [lo, hi] for l, lo, hi in spans},
@@ -191,7 +213,16 @@ def main():
         index = json.load(open(idx_path)) + index
     with open(idx_path, "w") as f:
         json.dump(index, f, indent=1)
-    with open(os.path.join(outdir, "gate_report.json"), "w") as f:
+    gr_path = os.path.join(outdir, "gate_report.json")
+    if os.path.exists(gr_path):  # merge across runs, latest entry per rollout
+        old = json.load(open(gr_path))
+        new_ids = {g["rollout_id"] for g in report["gate_B"]}
+        report["gate_B"] = ([g for g in old.get("gate_B", [])
+                             if g["rollout_id"] not in new_ids]
+                            + report["gate_B"])
+        report["skipped"] = sorted(set(old.get("skipped", []))
+                                   | set(report["skipped"]))
+    with open(gr_path, "w") as f:
         json.dump(report, f, indent=1, ensure_ascii=False)
     n_ok = sum(1 for g in report["gate_B"] if g["pass"])
     print(f"[extract] done. vectors={n_ok} gateB_fail={len(report['skipped'])}",
