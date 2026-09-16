@@ -13,7 +13,7 @@ When answering any question, use the STAR method:
 
 Provide clear, actionable recommendations.`;
 
-const BACKGROUND_PROMPT_TEMPLATE = `I'm using InterviewMate — a real-time interview assistant. It has a "Background Summary" field where I describe my key achievements, projects, and experiences. The AI references this during live interviews to generate personalized answers.
+const BACKGROUND_PROMPT_TEMPLATE = `I'm using InterviewMate — a real-time interview preparation assistant. It has a "Background Summary" field where I describe my key achievements, projects, and experiences. The AI references this during practice sessions to generate personalized responses.
 
 Write a Background Summary for my profile. Here's my info:
 
@@ -70,7 +70,7 @@ export default function GuidePage() {
       number: 3,
       title: 'Q&A Pairs',
       description:
-        'Review and refine the generated pairs so the AI gives precise, personalized answers during your interviews.',
+        'Review and refine the generated pairs so the AI gives precise, personalized answers during practice sessions.',
       href: '/profile/qa-pairs',
       linkText: 'Go to Q&A Pairs',
     },
@@ -85,8 +85,12 @@ export default function GuidePage() {
             How to Get 100% Out of InterviewMate
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg text-zinc-600 dark:text-zinc-400">
-            Follow these three steps to set up your account, then jump into any
-            live interview with full AI support.
+            Follow these three steps to set up your account, then run realistic
+            interview rehearsals with AI support.
+          </p>
+          <p className="mx-auto mt-4 max-w-2xl text-sm leading-6 text-zinc-500 dark:text-zinc-500">
+            Use InterviewMate for preparation and mock sessions. For any formal assessment,
+            follow the organizer&apos;s rules and disclose AI assistance when required.
           </p>
         </div>
       </section>
@@ -98,7 +102,7 @@ export default function GuidePage() {
             How InterviewMate Works
           </h2>
           <p className="text-base text-zinc-600 dark:text-zinc-400 mb-10 text-center max-w-2xl mx-auto">
-            Three simple steps to ace your next interview
+            Three simple steps to build confident, natural responses
           </p>
           <div className="grid gap-6 text-left md:grid-cols-3">
             <div className="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900 shadow-sm">
@@ -130,11 +134,11 @@ export default function GuidePage() {
                 3
               </div>
               <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
-                Use During Real Interviews
+                Practice Realistic Interview Sessions
               </h3>
               <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                Deepgram transcribes questions in real-time. Claude AI
-                generates personalized answers in under 2 seconds.
+                Deepgram transcribes practice questions in real-time. The AI
+                generates personalized responses from your prepared context.
               </p>
             </div>
           </div>
@@ -306,7 +310,7 @@ export default function GuidePage() {
                 <Link href="/interview" className="text-blue-600 underline dark:text-blue-400">
                   Interview page
                 </Link>{' '}
-                to confirm STAR structure is showing up in the answers — then go live.
+                to confirm STAR structure is showing up in the answers — then repeat until your answers feel natural.
               </p>
             </div>
           </div>
@@ -317,18 +321,18 @@ export default function GuidePage() {
       <section className="bg-zinc-50 px-6 py-20 dark:bg-zinc-950">
         <div className="mx-auto max-w-4xl">
           <h2 className="text-3xl font-bold text-zinc-900 dark:text-zinc-100 text-center">
-            See It In Action: Car Wash Research Paper
+            See It In Practice: Car Wash Research Paper
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-center text-zinc-600 dark:text-zinc-400">
             We uploaded context from a real research paper about car wash systems,
-            and the AI answered domain-specific questions perfectly — proving that
-            InterviewMate works for any topic when you provide the right context.
+            and the AI answered domain-specific questions with grounded context —
+            showing how preparation improves responses on unfamiliar topics.
           </p>
 
           <div className="mt-10 overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800">
             <Image
               src="/guide-carwash-demo.png"
-              alt="Car wash research paper demo — AI answering domain-specific questions"
+              alt="Car wash research paper practice demo — AI answering domain-specific questions with grounded context"
               width={1200}
               height={800}
               className="w-full"
