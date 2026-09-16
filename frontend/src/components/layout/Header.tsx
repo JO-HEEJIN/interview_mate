@@ -49,7 +49,7 @@ export function Header() {
     }
 
     const navLinks = [
-        { name: 'Interview', href: '/interview' },
+        { name: 'Practice Session', href: '/interview' },
         { name: 'AI Generate', href: '/profile/context-upload' },
         { name: 'Q&A Pairs', href: '/profile/qa-pairs' },
         { name: 'Sessions', href: '/profile/sessions' },

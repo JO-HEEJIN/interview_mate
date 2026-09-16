@@ -77,7 +77,7 @@ export default function Home() {
               href="/interview"
               className="flex h-14 w-full items-center justify-center gap-2 rounded-full bg-zinc-900 px-10 text-lg text-white transition-colors hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200 sm:w-auto"
             >
-              Start Interview
+              Start Practice Session
             </Link>
             <Link
               href="/pricing"
@@ -110,7 +110,7 @@ export default function Home() {
                   <li>
                     Before a speech practice session, open the{' '}
                     <Link href="/interview" className="font-medium underline">
-                      Interview page
+                      Practice Session page
                     </Link>{' '}
                     first and make sure <strong>&ldquo;Capture system audio&rdquo;</strong> is
                     toggled ON.
@@ -267,7 +267,7 @@ export default function Home() {
                   <svg className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  30 interview sessions
+                  30 practice sessions
                 </li>
                 <li className="flex items-start gap-3 text-zinc-700 dark:text-zinc-300">
                   <svg className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -299,7 +299,7 @@ export default function Home() {
                   <svg className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  Real-time transcription, &lt; 2s answers
+                  Real-time transcription and response suggestions
                 </li>
                 <li className="flex items-start gap-3 text-zinc-700 dark:text-zinc-300">
                   <svg className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

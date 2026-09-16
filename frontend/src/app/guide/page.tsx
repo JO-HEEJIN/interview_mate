@@ -13,13 +13,13 @@ When answering any question, use the STAR method:
 
 Provide clear, actionable recommendations.`;
 
-const BACKGROUND_PROMPT_TEMPLATE = `I'm using InterviewMate — a real-time interview preparation assistant. It has a "Background Summary" field where I describe my key achievements, projects, and experiences. The AI references this during practice sessions to generate personalized responses.
+const BACKGROUND_PROMPT_TEMPLATE = `I'm using InterviewMate — a real-time interview preparation assistant. It has a "Background Summary" field where I describe my key achievements, projects, and experiences. The AI references this during practice sessions to generate personalized coaching and response suggestions.
 
 Write a Background Summary for my profile. Here's my info:
 
 - Name: [Your name]
 - Position I'm applying for: [e.g., Software Engineer, PhD Candidate, MBA Applicant]
-- Target company/school: [e.g., Google, MIT, US Embassy]
+- Target company/role: [e.g., Google, a graduate program, a product management role]
 - Years of experience: [e.g., 3 years, fresh graduate]
 
 Also attached:
@@ -70,7 +70,7 @@ export default function GuidePage() {
       number: 3,
       title: 'Q&A Pairs',
       description:
-        'Review and refine the generated pairs so the AI gives precise, personalized answers during practice sessions.',
+        'Review and refine the generated pairs so you can practice precise, personalized responses before your interview.',
       href: '/profile/qa-pairs',
       linkText: 'Go to Q&A Pairs',
     },
@@ -82,7 +82,7 @@ export default function GuidePage() {
       <section className="flex flex-col items-center justify-center px-6 py-20">
         <div className="w-full max-w-4xl text-center">
           <h1 className="text-4xl font-bold tracking-tight text-black dark:text-zinc-50 sm:text-5xl">
-            How to Get 100% Out of InterviewMate
+            How to Get the Most Out of InterviewMate
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg text-zinc-600 dark:text-zinc-400">
             Follow these three steps to set up your account, then run realistic
@@ -122,11 +122,11 @@ export default function GuidePage() {
                 2
               </div>
               <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
-                AI Generates Q&amp;A Pairs
+                AI Generates Practice Q&amp;A
               </h3>
               <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                Claude AI creates 30+ personalized interview Q&amp;A pairs
-                tailored to your experience and the target role.
+                AI creates personalized practice questions and suggested answer
+                frameworks based on your background and target role.
               </p>
             </div>
             <div className="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900 shadow-sm">
@@ -134,11 +134,11 @@ export default function GuidePage() {
                 3
               </div>
               <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
-                Practice Realistic Interview Sessions
+                Practice in Real Time
               </h3>
               <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                Deepgram transcribes practice questions in real-time. The AI
-                generates personalized responses from your prepared context.
+                Deepgram transcribes questions during practice sessions, and the AI
+                generates context-aware response suggestions so you can rehearse under realistic time pressure.
               </p>
             </div>
           </div>
@@ -308,7 +308,7 @@ export default function GuidePage() {
               <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
                 Run practice questions on the{' '}
                 <Link href="/interview" className="text-blue-600 underline dark:text-blue-400">
-                  Interview page
+                  Practice Session page
                 </Link>{' '}
                 to confirm STAR structure is showing up in the answers — then repeat until your answers feel natural.
               </p>
@@ -324,9 +324,9 @@ export default function GuidePage() {
             See It In Practice: Car Wash Research Paper
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-center text-zinc-600 dark:text-zinc-400">
-            We uploaded context from a real research paper about car wash systems,
-            and the AI answered domain-specific questions with grounded context —
-            showing how preparation improves responses on unfamiliar topics.
+            We uploaded context from a research paper and tested whether the system could use that
+            material to answer domain-specific practice questions. The example shows how supplying
+            relevant context can substantially improve the specificity of generated responses.
           </p>
 
           <div className="mt-10 overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800">
@@ -367,13 +367,13 @@ export default function GuidePage() {
             Then you&apos;re ready!
           </h2>
           <p className="mt-2 text-zinc-300 dark:text-zinc-600">
-            Start your interview and get real-time AI answers as questions come in.
+            Start a realistic practice session and rehearse responses under time pressure.
           </p>
           <Link
             href="/interview"
             className="mt-6 inline-flex items-center justify-center rounded-full bg-white px-8 py-3 text-sm font-semibold text-zinc-900 transition-colors hover:bg-zinc-200 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
           >
-            Go to Interview
+            Go to Practice Session
           </Link>
         </div>
       </section>

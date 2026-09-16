@@ -529,7 +529,7 @@ export default function PracticePage() {
                             </div>
                         )}
                         <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
-                            Live Interview
+                            Practice Session
                         </h1>
                         <div className="mt-1 flex flex-wrap items-center gap-3">
                             {scenario && (
@@ -547,9 +547,9 @@ export default function PracticePage() {
                             <a
                                 href="/profile/sessions"
                                 className="text-xs text-zinc-500 hover:text-zinc-900 hover:underline dark:text-zinc-400 dark:hover:text-zinc-100"
-                                title="Every interview is saved — extract them any time"
+                                title="Every practice session is saved — extract them any time"
                             >
-                                📋 Past sessions →
+                                📋 Past practice sessions →
                             </a>
                         </div>
                     </div>
@@ -688,7 +688,7 @@ export default function PracticePage() {
                         <li><strong>Speak your question</strong> - Audio will be transcribed in real-time</li>
                         <li><strong>Pause</strong> when finished speaking - This enables answer generation</li>
                         <li><strong>Click "Generate Answer"</strong> - Get AI-powered feedback</li>
-                        <li><strong>Resume</strong> to continue the interview</li>
+                        <li><strong>Resume</strong> to continue the practice session</li>
                         <li><strong>Clear</strong> to reset everything</li>
                     </ol>
                     <div className="mt-3 rounded bg-blue-100 dark:bg-blue-900 p-2 text-xs text-blue-700 dark:text-blue-300">
