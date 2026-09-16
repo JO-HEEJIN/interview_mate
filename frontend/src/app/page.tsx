@@ -43,30 +43,32 @@ export default function Home() {
             </svg>
           </Link>
 
-          {/*
-            Tagline cut from one long run-on sentence to two short lines:
-            users don't read paragraphs (diary_v2 hypothesis). First line
-            = positioning. Second line = what you get.
-          */}
+          {/* Positioning: preparation and communication, not answer substitution. */}
           <div className="max-w-2xl text-center">
             <p className="text-xl font-medium leading-8 text-zinc-700 dark:text-zinc-300">
-              Real-time cheating for any interview
+              <strong>Real-time AI for interview preparation and communication</strong>
             </p>
             <p className="mt-1 text-lg leading-7 text-zinc-500 dark:text-zinc-400">
-              AI-powered answers while you&apos;re being interviewed
+              Prepare context, practice responses, and get structured AI assistance with low-latency speech and retrieval.
             </p>
           </div>
 
-          {/* Main Value Proposition — stripped to one big claim + one supporting sentence */}
-          <div className="w-full max-w-2xl rounded-xl border-2 border-blue-500 bg-blue-50 p-8 dark:bg-blue-950 dark:border-blue-400">
-            <h2 className="mb-4 flex items-center justify-center gap-3 text-3xl font-extrabold text-blue-900 dark:text-blue-100 sm:text-4xl">
-              <span aria-hidden="true">⚠️</span>
-              <span>Not a Practice Platform!!</span>
+          {/* Main Value Proposition */}
+          <div className="w-full max-w-2xl rounded-2xl border border-blue-200 bg-blue-50 p-8 dark:border-blue-800 dark:bg-blue-950/50">
+            <h2 className="mb-4 text-3xl font-extrabold text-blue-900 dark:text-blue-100 sm:text-4xl">
+              Built for interview preparation and high-pressure communication
             </h2>
-            <p className="text-base text-blue-800 dark:text-blue-200">
-              Unlike interview practice platforms, InterviewMate.tech assists you DURING actual live interviews.
-              Whether it&apos;s a job interview, PhD defense, visa interview, or school admission.
+            <p className="text-base leading-7 text-blue-800 dark:text-blue-200">
+              Turn your resume, notes, and experience into useful context. Rehearse clear answers,
+              organize your thinking, and explore the engineering behind InterviewMate&apos;s
+              low-latency speech and retrieval pipeline.
             </p>
+            <Link
+              href="/engineering"
+              className="mt-5 inline-flex items-center font-semibold text-blue-900 underline decoration-blue-400 underline-offset-4 hover:text-blue-700 dark:text-blue-100 dark:hover:text-white"
+            >
+              Read the engineering case study <span className="ml-2" aria-hidden="true">→</span>
+            </Link>
           </div>
 
           {/* CTA Buttons */}
@@ -94,12 +96,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/*
-        Two amber warnings moved from the guide page — these are time-sensitive
-        ('do this BEFORE your interview') so they belong on the landing flow,
-        not buried in /guide. Replaces what used to be 'How InterviewMate Works'
-        in this position.
-      */}
+      {/* Preparation notes */}
       <section className="flex flex-col items-center justify-center bg-zinc-50 px-6 py-20 dark:bg-zinc-950">
         <div className="mx-auto w-full max-w-4xl space-y-6">
           <div className="rounded-xl border-2 border-amber-400 bg-amber-50 p-6 dark:border-amber-500 dark:bg-amber-950/40">
@@ -107,11 +104,11 @@ export default function Home() {
               <span className="mt-0.5 text-2xl leading-none" aria-hidden="true">⚠️</span>
               <div>
                 <h3 className="text-lg font-semibold text-amber-900 dark:text-amber-200">
-                  Important: Enable Audio Capture Before Your Call
+                  Prepare Your Audio Setup Before a Practice Session
                 </h3>
                 <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-amber-800 dark:text-amber-300">
                   <li>
-                    Before joining Zoom, Google Meet, or Teams, open the{' '}
+                    Before a speech practice session, open the{' '}
                     <Link href="/interview" className="font-medium underline">
                       Interview page
                     </Link>{' '}
@@ -119,8 +116,7 @@ export default function Home() {
                     toggled ON.
                   </li>
                   <li>
-                    You must enable all audio capture toggles <strong>before</strong> entering the
-                    video call — if you do it after, the browser may not pick up system audio.
+                    Enable audio capture before you begin so the browser can process the session consistently.
                   </li>
                 </ul>
               </div>
@@ -132,16 +128,16 @@ export default function Home() {
               <span className="mt-0.5 text-2xl leading-none" aria-hidden="true">⚠️</span>
               <div>
                 <h3 className="text-lg font-semibold text-amber-900 dark:text-amber-200">
-                  Always Test Before Your Real Interview
+                  Test With Your Own Questions
                 </h3>
                 <p className="mt-2 text-sm text-amber-800 dark:text-amber-300">
                   If your system prompt gets too long, the AI&apos;s answer quality can actually
                   get <strong>worse</strong> — not better. After filling in your Background Summary
-                  and Custom Instructions, run a few practice questions on the{' '}
+                  and Custom Instructions, run a few questions on the{' '}
                   <Link href="/interview" className="font-medium underline">
-                    Interview page
+                    practice page
                   </Link>{' '}
-                  to make sure the answers are accurate and relevant before your real interview.
+                  to make sure the results are accurate and relevant.
                 </p>
               </div>
             </div>
@@ -149,46 +145,27 @@ export default function Home() {
         </div>
       </section>
 
-      {/*
-        Zoom / Google Meet setup demo — short screen-recording of the
-        actual flow (Start Recording → Entire Screen → "Also share system
-        audio" → Share). Replaces the previous 3-screenshot card grid
-        because a 33-second demo conveys the click sequence more
-        truthfully than static stills.
-
-        <video> attribute notes:
-          - autoPlay + muted + playsInline = required combo for Chrome /
-            Safari autoplay policy (muted because browser blocks audible
-            autoplay unconditionally).
-          - loop = repeats forever, GIF-style.
-          - controls = visible so users can unmute / scrub / fullscreen
-            (audio is intentionally preserved in the file per request).
-          - preload="metadata" = first byte loads on page paint but full
-            video streams when it actually scrolls into view (smaller
-            initial cost).
-      */}
+      {/* Preparation workflow */}
       <section className="flex flex-col items-center justify-center px-6 py-20">
-        <div className="mx-auto w-full max-w-6xl">
+        <div className="mx-auto w-full max-w-5xl">
           <h2 className="mb-3 text-center text-3xl font-bold text-zinc-900 dark:text-zinc-100 sm:text-4xl">
-            How to use InterviewMate.tech with Zoom or Google Meet?
+            A focused preparation workflow
           </h2>
           <p className="mx-auto mb-10 max-w-2xl text-center text-base text-zinc-600 dark:text-zinc-400">
-            Steps to capture the call&apos;s audio so the AI can hear your interviewer.
+            Build useful context, rehearse under pressure, and refine your communication with evidence from your own experience.
           </p>
-
-          <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-black shadow-2xl dark:border-zinc-800">
-            <video
-              autoPlay
-              muted
-              loop
-              playsInline
-              controls
-              preload="metadata"
-              className="block h-auto w-full"
-            >
-              <source src="/zoom-guide/zoom-setup.mp4" type="video/mp4" />
-              Your browser does not support inline video. <a href="/zoom-guide/zoom-setup.mp4" className="underline">Download the demo</a>.
-            </video>
+          <div className="grid gap-6 text-left md:grid-cols-3">
+            {[
+              ['01', 'Prepare context', 'Add your resume, role details, projects, and the stories you want to recall clearly.'],
+              ['02', 'Practice responses', 'Work through behavioral, technical, and open-ended questions in a low-friction loop.'],
+              ['03', 'Communicate clearly', 'Use structured prompts and relevant examples to make your thinking easier to follow.'],
+            ].map(([number, title, description]) => (
+              <div key={number} className="rounded-2xl border border-zinc-200 bg-zinc-50 p-7 dark:border-zinc-800 dark:bg-zinc-950">
+                <span className="text-sm font-bold tracking-[0.2em] text-blue-600 dark:text-blue-400">{number}</span>
+                <h3 className="mt-4 text-xl font-semibold text-zinc-900 dark:text-zinc-100">{title}</h3>
+                <p className="mt-2 text-sm leading-6 text-zinc-600 dark:text-zinc-400">{description}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -197,10 +174,10 @@ export default function Home() {
       <section className="flex min-h-screen flex-col items-center justify-center bg-zinc-50 px-6 py-20 dark:bg-zinc-950">
         <div className="w-full max-w-5xl">
           <h2 className="text-4xl font-bold text-zinc-900 dark:text-zinc-100 mb-4 text-center">
-            Works For Any Interview
+            Built for the moments that demand clarity
           </h2>
           <p className="text-lg text-zinc-600 dark:text-zinc-400 mb-16 text-center max-w-2xl mx-auto">
-            Job interviews, academic defenses, visa interviews, admissions - we&apos;ve got you covered
+            Prepare for conversations where your experience, reasoning, and communication all matter.
           </p>
           <div className="grid gap-6 text-left sm:grid-cols-2 lg:grid-cols-4">
             <div className="rounded-2xl bg-white p-8 dark:bg-zinc-900 shadow-sm border border-zinc-200 dark:border-zinc-800">
@@ -209,8 +186,8 @@ export default function Home() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                 </svg>
               </div>
-              <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-2">Job Interviews</h3>
-              <p className="text-sm text-zinc-600 dark:text-zinc-400">Tech, consulting, finance, and more</p>
+              <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-2">Job preparation</h3>
+              <p className="text-sm text-zinc-600 dark:text-zinc-400">Behavioral, technical, and case-style questions</p>
             </div>
             <div className="rounded-2xl bg-white p-8 dark:bg-zinc-900 shadow-sm border border-zinc-200 dark:border-zinc-800">
               <div className="mb-4 h-12 w-12 rounded-lg bg-green-100 dark:bg-green-900 flex items-center justify-center">
@@ -219,8 +196,8 @@ export default function Home() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5zm0 7l9-5-9-5-9 5 9 5z" />
                 </svg>
               </div>
-              <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-2">PhD & Academic</h3>
-              <p className="text-sm text-zinc-600 dark:text-zinc-400">Thesis defense, committee meetings</p>
+              <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-2">Academic communication</h3>
+              <p className="text-sm text-zinc-600 dark:text-zinc-400">Explain research, methods, and trade-offs clearly</p>
             </div>
             <div className="rounded-2xl bg-white p-8 dark:bg-zinc-900 shadow-sm border border-zinc-200 dark:border-zinc-800">
               <div className="mb-4 h-12 w-12 rounded-lg bg-purple-100 dark:bg-purple-900 flex items-center justify-center">
@@ -228,8 +205,8 @@ export default function Home() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
                 </svg>
               </div>
-              <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-2">Visa & Immigration</h3>
-              <p className="text-sm text-zinc-600 dark:text-zinc-400">Embassy interviews, immigration cases</p>
+              <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-2">High-pressure conversations</h3>
+              <p className="text-sm text-zinc-600 dark:text-zinc-400">Practice concise answers when the stakes feel high</p>
             </div>
             <div className="rounded-2xl bg-white p-8 dark:bg-zinc-900 shadow-sm border border-zinc-200 dark:border-zinc-800">
               <div className="mb-4 h-12 w-12 rounded-lg bg-orange-100 dark:bg-orange-900 flex items-center justify-center">
@@ -237,23 +214,17 @@ export default function Home() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                 </svg>
               </div>
-              <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-2">School Admissions</h3>
-              <p className="text-sm text-zinc-600 dark:text-zinc-400">MBA, graduate, undergraduate</p>
+              <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-2">Admissions preparation</h3>
+              <p className="text-sm text-zinc-600 dark:text-zinc-400">Tell a coherent story about your goals and experience</p>
             </div>
           </div>
 
-          {/* Platform Compatibility */}
-          <div className="mt-20 text-center">
-            <h3 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 mb-6">
-              Works With All Major Video Platforms
-            </h3>
-            <div className="flex flex-wrap justify-center gap-6 text-lg text-zinc-600 dark:text-zinc-400">
-              <span className="px-4 py-2 rounded-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">Zoom</span>
-              <span className="px-4 py-2 rounded-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">Google Meet</span>
-              <span className="px-4 py-2 rounded-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">Microsoft Teams</span>
-              <span className="px-4 py-2 rounded-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">Webex</span>
-            </div>
-          </div>
+          <p className="mx-auto mt-16 max-w-2xl text-center text-sm leading-6 text-zinc-500 dark:text-zinc-400">
+            For the current live-session architecture, performance trade-offs, and reliability lessons, see the{' '}
+            <Link href="/engineering" className="font-semibold text-zinc-900 underline dark:text-zinc-100">
+              engineering case study
+            </Link>.
+          </p>
         </div>
       </section>
 
@@ -334,7 +305,7 @@ export default function Home() {
                   <svg className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  Works on Zoom, Teams, Google Meet
+                  Audio-assisted practice sessions
                 </li>
               </ul>
             </div>

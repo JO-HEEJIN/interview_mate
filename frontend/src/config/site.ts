@@ -10,9 +10,9 @@ export const siteConfig = {
 
   // Site metadata
   name: process.env.NEXT_PUBLIC_SITE_NAME || 'InterviewMate',
-  title: 'InterviewMate - Real-Time AI for Any Interview | Job, PhD, Visa, Admissions',
-  description: 'Real-time cheating for any interview. Job interviews, PhD defenses, visa interviews, school admissions - get AI-powered answers in under 2 seconds. 30 free sessions to start, then $0.17/session. Works on Zoom, Teams, Google Meet.',
-  keywords: 'real-time interview assistant, AI interview help, PhD defense assistant, visa interview prep, job interview AI, school admission interview, academic interview help, Zoom interview tool, Google Meet interview, Claude AI, Deepgram transcription, interview copilot, live interview support, video call interview helper, cheap interview assistant, affordable interview AI',
+  title: 'InterviewMate - Real-Time AI for Interview Preparation',
+  description: 'Prepare context, practice responses, and get structured AI assistance for high-pressure communication with low-latency speech and retrieval.',
+  keywords: 'interview preparation, AI interview practice, interview communication, structured interview responses, speech pipeline, semantic retrieval, interview engineering',
 
   // API
   apiUrl: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',

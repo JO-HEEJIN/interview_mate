@@ -25,7 +25,7 @@ const jsonLd = {
   "name": "InterviewMate",
   "applicationCategory": "BusinessApplication",
   "operatingSystem": "Web Browser",
-  "description": "Real-time cheating for any interview. Job interviews, PhD defenses, visa interviews, school admissions - get AI-powered answers in under 2 seconds. Works on Zoom, Teams, Google Meet. 30 free sessions to start, then $0.17/session.",
+  "description": "Prepare context, practice responses, and get structured AI assistance for high-pressure communication with low-latency speech and retrieval.",
   "url": "https://interviewmate.tech",
   "offers": {
     "@type": "Offer",
@@ -41,13 +41,13 @@ const jsonLd = {
   },
   "featureList": [
     "Real-time speech-to-text transcription powered by Deepgram",
-    "AI-generated answer suggestions powered by Claude AI",
-    "Works during live video calls on Zoom, Google Meet, Microsoft Teams",
+    "Structured AI assistance for practice and communication",
+    "Low-latency speech processing and semantic retrieval",
     "Personalized responses based on your uploaded context",
-    "2-second response time for instant assistance",
-    "Works for job interviews, PhD defenses, visa interviews, school admissions"
+    "Low-latency response streaming for practice sessions",
+    "Supports job, academic, and admissions preparation"
   ],
-  "keywords": "real-time interview assistant, AI interview help, PhD defense, visa interview, job interview AI, school admission interview, Zoom interview tool",
+  "keywords": "interview preparation, AI interview practice, interview communication, speech pipeline, semantic retrieval",
   "creator": {
     "@type": "Organization",
     "name": "InterviewMate",

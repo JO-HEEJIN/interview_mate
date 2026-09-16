@@ -35,6 +35,7 @@ const pages = [
   { path: '/profile/interview-settings', priority: '0.7', changefreq: 'monthly' },
   { path: '/profile/stories', priority: '0.7', changefreq: 'monthly' },
   { path: '/pricing', priority: '0.9', changefreq: 'weekly' },
+  { path: '/engineering', priority: '0.8', changefreq: 'monthly' },
 ];
 
 // Generate sitemap.xml

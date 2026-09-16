@@ -56,6 +56,7 @@ export function Header() {
         { name: 'Pricing', href: '/pricing' },
         { name: 'Profiles', href: '/profile/interview-settings' },
         { name: 'Guide', href: '/guide' },
+        { name: 'Engineering', href: '/engineering' },
     ];
 
     const isActive = (href: string) => pathname === href;

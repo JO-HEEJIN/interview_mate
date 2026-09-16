@@ -13,13 +13,13 @@
     "availability": "https://schema.org/InStock",
     "description": "30 free sessions on signup. Popular pack: 60 sessions for $10 ($0.17/session). AI Q&A Generator and Q&A Management free on first profile."
   },
-  "description": "Real-time cheating for any interview. Job interviews, PhD defenses, visa interviews, school admissions - get AI-powered answers in under 2 seconds. Works on Zoom, Teams, Google Meet.",
+  "description": "Prepare context, practice responses, and get structured AI assistance for high-pressure communication with low-latency speech and retrieval.",
   "features": [
     "Real-time speech-to-text with Deepgram Flux (<500ms latency)",
-    "AI-powered answer generation with Claude 3.5 Sonnet",
+    "AI-generated response support with model routing",
     "Personalized responses based on your uploaded context",
-    "Works during live video calls on Zoom, Teams, Google Meet",
-    "Supports job interviews, PhD defenses, visa interviews, school admissions",
+    "Structured AI assistance for interview preparation and communication",
+    "Supports job, academic, and admissions preparation",
     "No recording stored - privacy-first design",
     "Credit-based pricing - no subscriptions",
     "RAG (Retrieval Augmented Generation) for personalized answers"
@@ -37,8 +37,8 @@
     "url": "https://interviewmate.tech"
   },
   "softwareVersion": "1.0.0",
-  "releaseNotes": "Real-time interview coaching with sub-second latency. Deepgram Flux integration for faster transcription. Async architecture eliminates timeout issues.",
-  "keywords": "interview assistant, real-time AI, job interview help, PhD defense assistant, visa interview prep, school admission interview, Zoom interview tool, video interview assistant, live interview help",
+  "releaseNotes": "Interview preparation and communication support with Deepgram Flux speech processing, semantic retrieval, and async fallback architecture.",
+  "keywords": "interview preparation, AI interview practice, interview communication, speech pipeline, semantic retrieval",
   "inLanguage": "en",
   "copyrightYear": "2025",
   "datePublished": "2025-01-15",
