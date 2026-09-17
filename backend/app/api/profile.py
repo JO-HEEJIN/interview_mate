@@ -125,8 +125,12 @@ async def create_star_story(
 
 
 @router.put("/star-stories/{story_id}")
-async def update_star_story(story_id: str, story: StarStoryUpdate):
-    """Update a STAR story"""
+async def update_star_story(
+    story_id: str,
+    story: StarStoryUpdate,
+    current_user_id: str = Depends(get_current_user_id),
+):
+    """Update a STAR story owned by the authenticated user"""
     supabase = get_supabase()
 
     update_data = {k: v for k, v in story.model_dump().items() if v is not None}
@@ -134,7 +138,8 @@ async def update_star_story(story_id: str, story: StarStoryUpdate):
     if not update_data:
         raise HTTPException(status_code=400, detail="No fields to update")
 
-    response = supabase.table("star_stories").update(update_data).eq("id", story_id).execute()
+    response = supabase.table("star_stories").update(update_data) \
+        .eq("id", story_id).eq("user_id", current_user_id).execute()
 
     if not response.data:
         raise HTTPException(status_code=404, detail="Story not found")
@@ -143,11 +148,18 @@ async def update_star_story(story_id: str, story: StarStoryUpdate):
 
 
 @router.delete("/star-stories/{story_id}")
-async def delete_star_story(story_id: str):
-    """Delete a STAR story"""
+async def delete_star_story(
+    story_id: str,
+    current_user_id: str = Depends(get_current_user_id),
+):
+    """Delete a STAR story owned by the authenticated user"""
     supabase = get_supabase()
 
-    response = supabase.table("star_stories").delete().eq("id", story_id).execute()
+    response = supabase.table("star_stories").delete() \
+        .eq("id", story_id).eq("user_id", current_user_id).execute()
+
+    if not response.data:
+        raise HTTPException(status_code=404, detail="Story not found")
 
     return {"message": "Story deleted successfully"}
 
@@ -200,8 +212,12 @@ async def create_talking_point(
 
 
 @router.put("/talking-points/{point_id}")
-async def update_talking_point(point_id: str, point: TalkingPointUpdate):
-    """Update a talking point"""
+async def update_talking_point(
+    point_id: str,
+    point: TalkingPointUpdate,
+    current_user_id: str = Depends(get_current_user_id),
+):
+    """Update a talking point owned by the authenticated user"""
     supabase = get_supabase()
 
     update_data = {k: v for k, v in point.model_dump().items() if v is not None}
@@ -209,7 +225,8 @@ async def update_talking_point(point_id: str, point: TalkingPointUpdate):
     if not update_data:
         raise HTTPException(status_code=400, detail="No fields to update")
 
-    response = supabase.table("talking_points").update(update_data).eq("id", point_id).execute()
+    response = supabase.table("talking_points").update(update_data) \
+        .eq("id", point_id).eq("user_id", current_user_id).execute()
 
     if not response.data:
         raise HTTPException(status_code=404, detail="Talking point not found")
@@ -218,11 +235,18 @@ async def update_talking_point(point_id: str, point: TalkingPointUpdate):
 
 
 @router.delete("/talking-points/{point_id}")
-async def delete_talking_point(point_id: str):
-    """Delete a talking point"""
+async def delete_talking_point(
+    point_id: str,
+    current_user_id: str = Depends(get_current_user_id),
+):
+    """Delete a talking point owned by the authenticated user"""
     supabase = get_supabase()
 
-    response = supabase.table("talking_points").delete().eq("id", point_id).execute()
+    response = supabase.table("talking_points").delete() \
+        .eq("id", point_id).eq("user_id", current_user_id).execute()
+
+    if not response.data:
+        raise HTTPException(status_code=404, detail="Talking point not found")
 
     return {"message": "Talking point deleted successfully"}
 

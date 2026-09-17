@@ -278,7 +278,8 @@ async def update_qa_pair(
     qa_pair_id: str,
     updates: QAPairUpdate,
     background_tasks: BackgroundTasks,
-    supabase: Client = Depends(get_supabase_client)
+    supabase: Client = Depends(get_supabase_client),
+    current_user_id: str = Depends(get_current_user_id),
 ):
     """
     Update a Q&A pair.
@@ -291,7 +292,8 @@ async def update_qa_pair(
         if not data:
             raise HTTPException(status_code=400, detail="No update fields provided")
 
-        result = supabase.table("qa_pairs").update(data).eq("id", qa_pair_id).execute()
+        result = supabase.table("qa_pairs").update(data) \
+            .eq("id", qa_pair_id).eq("user_id", current_user_id).execute()
 
         if not result.data:
             raise HTTPException(status_code=404, detail="Q&A pair not found")
@@ -313,20 +315,22 @@ async def update_qa_pair(
 async def delete_qa_pair(
     qa_pair_id: str,
     background_tasks: BackgroundTasks,
-    supabase: Client = Depends(get_supabase_client)
+    supabase: Client = Depends(get_supabase_client),
+    current_user_id: str = Depends(get_current_user_id),
 ):
     """
-    Delete a Q&A pair.
+    Delete a Q&A pair owned by the authenticated user.
     Automatically removes from Qdrant.
     """
     try:
-        result = supabase.table("qa_pairs").delete().eq("id", qa_pair_id).execute()
-
-        # Delete from Qdrant in background
-        background_tasks.add_task(delete_qa_pair_from_qdrant, qa_pair_id)
+        result = supabase.table("qa_pairs").delete() \
+            .eq("id", qa_pair_id).eq("user_id", current_user_id).execute()
 
         if not result.data:
             raise HTTPException(status_code=404, detail="Q&A pair not found")
+
+        # Delete from Qdrant in background (only after ownership is confirmed)
+        background_tasks.add_task(delete_qa_pair_from_qdrant, qa_pair_id)
 
         return {"message": "Q&A pair deleted successfully"}
     except HTTPException:
@@ -448,14 +452,16 @@ async def export_qa_pairs_csv(
 @router.post("/{qa_pair_id}/increment-usage")
 async def increment_usage(
     qa_pair_id: str,
-    supabase: Client = Depends(get_supabase_client)
+    supabase: Client = Depends(get_supabase_client),
+    current_user_id: str = Depends(get_current_user_id),
 ):
     """
     Increment usage count and update last_used_at when a Q&A pair is used.
     """
     try:
         # Fetch current usage count
-        current = supabase.table("qa_pairs").select("usage_count").eq("id", qa_pair_id).execute()
+        current = supabase.table("qa_pairs").select("usage_count") \
+            .eq("id", qa_pair_id).eq("user_id", current_user_id).execute()
 
         if not current.data:
             raise HTTPException(status_code=404, detail="Q&A pair not found")
@@ -466,7 +472,7 @@ async def increment_usage(
         result = supabase.table("qa_pairs").update({
             "usage_count": new_count,
             "last_used_at": "now()"
-        }).eq("id", qa_pair_id).execute()
+        }).eq("id", qa_pair_id).eq("user_id", current_user_id).execute()
 
         return {"usage_count": new_count}
     except HTTPException:

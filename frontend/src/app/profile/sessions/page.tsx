@@ -11,7 +11,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { authFetch } from '@/lib/authFetch';
+import { authFetch, authDownload } from '@/lib/authFetch';
 
 interface SessionRow {
     id: string;
@@ -86,15 +86,11 @@ export default function SessionsListPage() {
         })();
     }, [userId]);
 
-    // Download via anchor click so the server-set filename is honored
-    const triggerDownload = (sessionId: string, format: 'anki-csv' | 'text') => {
+    // Export requires auth, so fetch with the token; the server-set filename is honored
+    const triggerDownload = async (sessionId: string, format: 'anki-csv' | 'text') => {
         const url = `${API_URL}/api/interview-sessions/${sessionId}/export?format=${format}`;
-        const a = document.createElement('a');
-        a.href = url;
-        a.rel = 'noopener';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+        const ok = await authDownload(url, `session-${sessionId.slice(0, 8)}.${format === 'text' ? 'txt' : 'csv'}`);
+        if (!ok) alert('Export failed. Please try again.');
     };
 
     const handleDelete = async (sessionId: string) => {
@@ -123,10 +119,10 @@ export default function SessionsListPage() {
                     <div className="flex items-center justify-between">
                         <div>
                             <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
-                                Interview Sessions
+                                Practice Sessions
                             </h1>
                             <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-                                Every interview is saved automatically. Export to Anki or plain text any time.
+                                Every practice session is saved automatically. Export to Anki or plain text any time.
                             </p>
                         </div>
                         <Link
@@ -150,13 +146,13 @@ export default function SessionsListPage() {
                 {sessions.length === 0 ? (
                     <div className="rounded-lg border border-zinc-200 bg-white p-12 text-center dark:border-zinc-800 dark:bg-zinc-950">
                         <p className="text-zinc-600 dark:text-zinc-400">
-                            No interview sessions yet.
+                            No practice sessions yet.
                         </p>
                         <Link
                             href="/interview"
                             className="mt-4 inline-block rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
                         >
-                            Start your first interview
+                            Start your first practice session
                         </Link>
                     </div>
                 ) : (

@@ -10,7 +10,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { authFetch } from '@/lib/authFetch';
+import { authFetch, authDownload } from '@/lib/authFetch';
 
 interface SessionMeta {
     id: string;
@@ -88,13 +88,13 @@ export default function SessionDetailPage() {
         })();
     }, [authChecked, sessionId]);
 
-    const triggerDownload = (format: 'anki-csv' | 'text' | 'markdown') => {
-        const a = document.createElement('a');
-        a.href = `${API_URL}/api/interview-sessions/${sessionId}/export?format=${format}`;
-        a.rel = 'noopener';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+    const triggerDownload = async (format: 'anki-csv' | 'text' | 'markdown') => {
+        const ext = format === 'anki-csv' ? 'csv' : format === 'markdown' ? 'md' : 'txt';
+        const ok = await authDownload(
+            `${API_URL}/api/interview-sessions/${sessionId}/export?format=${format}`,
+            `session-${sessionId.slice(0, 8)}.${ext}`,
+        );
+        if (!ok) alert('Export failed. Please try again.');
     };
 
     if (!authChecked || isLoading) {
@@ -136,7 +136,7 @@ export default function SessionDetailPage() {
                     <div className="mt-3 flex flex-wrap items-start justify-between gap-3">
                         <div>
                             <h1 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">
-                                {data.session.title || 'Interview Session'}
+                                {data.session.title || 'Practice Session'}
                             </h1>
                             <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
                                 {formatDate(data.session.started_at)} · {data.session.question_count} {data.session.question_count === 1 ? 'turn' : 'turns'}

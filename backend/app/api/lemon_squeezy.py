@@ -3,7 +3,7 @@ Lemon Squeezy Payment Integration API
 Handles credit purchases and feature unlocks via Lemon Squeezy
 """
 
-from fastapi import APIRouter, HTTPException, Request, Header
+from fastapi import APIRouter, Depends, HTTPException, Request, Header
 from pydantic import BaseModel
 from typing import Optional
 import hmac
@@ -14,6 +14,7 @@ from datetime import datetime
 from app.core.config import settings
 from app.core.supabase import get_supabase_client
 from app.core.rate_limit import limiter
+from app.core.auth import get_current_user_id, require_user_match
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/lemon-squeezy", tags=["lemon-squeezy"])
@@ -41,10 +42,18 @@ class CheckoutSessionResponse(BaseModel):
 
 @router.post("/create-checkout-session", response_model=CheckoutSessionResponse)
 @limiter.limit("10/minute")
-async def create_checkout_session(request: Request, body: CreateCheckoutRequest):
+async def create_checkout_session(
+    request: Request,
+    body: CreateCheckoutRequest,
+    current_user_id: str = Depends(get_current_user_id),
+):
     """
     Create a Lemon Squeezy checkout session for purchasing credits or features.
+
+    body.user_id is written into the checkout's custom data and the webhook
+    grants credits to it, so it must match the authenticated user.
     """
+    require_user_match(body.user_id, current_user_id)
     try:
         # Verify API configuration
         if not settings.LEMON_SQUEEZY_API_KEY:
@@ -412,7 +421,10 @@ def get_plan_code_for_variant(variant_id) -> Optional[str]:
 
 
 @router.post("/reconcile/{user_id}")
-async def reconcile_user_purchases(user_id: str):
+async def reconcile_user_purchases(
+    user_id: str,
+    current_user_id: str = Depends(get_current_user_id),
+):
     """
     Reclaim Lemon Squeezy purchases made before the user signed up.
 
@@ -423,6 +435,7 @@ async def reconcile_user_purchases(user_id: str):
     Safe to call repeatedly — idempotent. Frontend calls this once per
     user (gated by localStorage flag) right after first session load.
     """
+    require_user_match(user_id, current_user_id)
     try:
         if not settings.LEMON_SQUEEZY_API_KEY:
             raise HTTPException(status_code=500, detail="LS API not configured")

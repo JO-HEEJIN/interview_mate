@@ -32,3 +32,29 @@ export async function authFetch(
     }
     return fetch(input, { ...init, headers });
 }
+
+/**
+ * authDownload — download a file from an authenticated endpoint.
+ *
+ * A plain <a href> click can't carry the Authorization header, so fetch
+ * the body with authFetch, then save it through an object URL. The
+ * filename comes from the server's Content-Disposition header.
+ */
+export async function authDownload(url: string, fallbackFilename: string): Promise<boolean> {
+    const res = await authFetch(url);
+    if (!res.ok) return false;
+
+    const disposition = res.headers.get('Content-Disposition') || '';
+    const match = disposition.match(/filename="?([^";]+)"?/);
+    const filename = match ? match[1] : fallbackFilename;
+
+    const objectUrl = URL.createObjectURL(await res.blob());
+    const a = document.createElement('a');
+    a.href = objectUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(objectUrl);
+    return true;
+}

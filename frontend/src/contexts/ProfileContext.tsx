@@ -142,7 +142,7 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
             // the next session.
             const reconcileKey = `ls_reconciled_${sessionUserId}`;
             if (typeof window !== 'undefined' && !localStorage.getItem(reconcileKey)) {
-                fetch(`${API_URL}/api/lemon-squeezy/reconcile/${sessionUserId}`, { method: 'POST' })
+                authFetch(`${API_URL}/api/lemon-squeezy/reconcile/${sessionUserId}`, { method: 'POST' })
                     .then(res => (res.ok ? res.json() : null))
                     .then(data => {
                         if (data?.granted?.length) {

@@ -772,10 +772,15 @@ async def websocket_transcribe(websocket: WebSocket):
                                     })
                                     continue
                             else:
-                                # Fallback for backward compatibility during deployment transition
-                                received_user_id = data.get("user_id")
-                                if received_user_id:
-                                    logger.warning(f"[{connection_id}] No JWT token provided, using client user_id (DEPRECATED)")
+                                # A client-supplied user_id is never trusted: it would let
+                                # any caller load another user's profile and spend their credits.
+                                logger.warning(f"[{connection_id}] Context without access_token rejected")
+                                await manager.send_json(websocket, {
+                                    "type": "error",
+                                    "message": "Authentication required. Please log in again.",
+                                    "code": "auth_failed"
+                                })
+                                continue
 
                             logger.info(f"[{connection_id}] Context received: user_id={received_user_id}, profile_id={received_profile_id}")
 
@@ -910,7 +915,7 @@ async def websocket_transcribe(websocket: WebSocket):
                                     logger.warning(f"Failed to consume credit for user {user_id}")
                                     await manager.send_json(websocket, {
                                         "type": "no_credits",
-                                        "message": "No interview credits available"
+                                        "message": "No practice session credits available"
                                     })
                             else:
                                 logger.warning("start_recording received but no user_id set after 2s wait")

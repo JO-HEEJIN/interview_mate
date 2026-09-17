@@ -3,11 +3,12 @@
 Compare latency: GLM vs Claude
 """
 import asyncio
+import os
 import time
 from zhipuai import ZhipuAI
 from anthropic import Anthropic
 
-GLM_KEY = "6a6233acc6c04b5892f64a5719d88b64.oPrVA8iHBbP0KMQ3"
+GLM_KEY = os.getenv("ZHIPUAI_API_KEY")
 # CLAUDE_KEY from env
 
 question = "Tell me about yourself in 3 bullets"

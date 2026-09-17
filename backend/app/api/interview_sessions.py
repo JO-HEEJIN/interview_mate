@@ -79,6 +79,21 @@ class SessionHistoryResponse(BaseModel):
     examples_used: List[str]  # All unique examples used in this session
 
 
+def require_session_owner(supabase: Client, session_id: str, current_user_id: str) -> None:
+    """
+    Raise 404 if the session doesn't exist, 403 if it belongs to another user.
+
+    The service-role client bypasses RLS, so every endpoint keyed by
+    session_id must call this before reading or writing.
+    """
+    result = supabase.table("interview_sessions").select("user_id").eq(
+        "id", session_id
+    ).limit(1).execute()
+    if not result.data:
+        raise HTTPException(status_code=404, detail="Session not found")
+    require_user_match(result.data[0]["user_id"], current_user_id)
+
+
 @router.post("/{user_id}/start", response_model=SessionResponse)
 async def start_session(
     user_id: str,
@@ -116,12 +131,14 @@ async def start_session(
 @router.post("/{session_id}/end", response_model=SessionResponse)
 async def end_session(
     session_id: str,
-    supabase: Client = Depends(get_supabase_client)
+    supabase: Client = Depends(get_supabase_client),
+    current_user_id: str = Depends(get_current_user_id),
 ):
     """
     End an interview session.
     Updates status to 'completed', sets ended_at, and calculates statistics.
     """
+    require_session_owner(supabase, session_id, current_user_id)
     try:
         # Use the database function to end session and update stats
         result = supabase.rpc("end_interview_session", {
@@ -143,11 +160,13 @@ async def end_session(
 async def update_session(
     session_id: str,
     updates: SessionUpdate,
-    supabase: Client = Depends(get_supabase_client)
+    supabase: Client = Depends(get_supabase_client),
+    current_user_id: str = Depends(get_current_user_id),
 ):
     """
     Update session metadata (title, notes, status).
     """
+    require_session_owner(supabase, session_id, current_user_id)
     try:
         data = {k: v for k, v in updates.dict().items() if v is not None}
         data["updated_at"] = datetime.utcnow().isoformat()
@@ -175,12 +194,14 @@ async def update_session(
 async def add_message(
     session_id: str,
     message: MessageCreate,
-    supabase: Client = Depends(get_supabase_client)
+    supabase: Client = Depends(get_supabase_client),
+    current_user_id: str = Depends(get_current_user_id),
 ):
     """
     Add a message (question or answer) to the session.
     Tracks examples used to avoid repetition.
     """
+    require_session_owner(supabase, session_id, current_user_id)
     try:
         # Get current message count for sequence number
         count_result = supabase.table("session_messages").select(
@@ -218,7 +239,8 @@ async def add_message(
 @router.get("/{session_id}", response_model=SessionHistoryResponse)
 async def get_session_history(
     session_id: str,
-    supabase: Client = Depends(get_supabase_client)
+    supabase: Client = Depends(get_supabase_client),
+    current_user_id: str = Depends(get_current_user_id),
 ):
     """
     Get full session history including all messages and examples used.
@@ -227,6 +249,12 @@ async def get_session_history(
     - Displaying session replay
     - Export preparation
     """
+    require_session_owner(supabase, session_id, current_user_id)
+    return await _load_session_history(session_id, supabase)
+
+
+async def _load_session_history(session_id: str, supabase: Client) -> dict:
+    """Load a session with its messages. Callers must check ownership first."""
     try:
         # Get session details
         session_result = supabase.table("interview_sessions").select("*").eq(
@@ -292,12 +320,14 @@ async def list_user_sessions(
 @router.delete("/{session_id}")
 async def delete_session(
     session_id: str,
-    supabase: Client = Depends(get_supabase_client)
+    supabase: Client = Depends(get_supabase_client),
+    current_user_id: str = Depends(get_current_user_id),
 ):
     """
     Delete an interview session and all its messages.
     (Cascade delete via foreign key)
     """
+    require_session_owner(supabase, session_id, current_user_id)
     try:
         result = supabase.table("interview_sessions").delete().eq(
             "id", session_id
@@ -359,7 +389,8 @@ def _download_response(body: Union[str, bytes], filename: str, media_type: str) 
 async def export_session(
     session_id: str,
     format: str = "json",  # json, markdown, text, anki-csv
-    supabase: Client = Depends(get_supabase_client)
+    supabase: Client = Depends(get_supabase_client),
+    current_user_id: str = Depends(get_current_user_id),
 ):
     """
     Export session for review/sharing.
@@ -370,9 +401,10 @@ async def export_session(
       - text       → .txt file download
       - anki-csv   → .csv file download, Front/Back/Tags (Anki-compatible)
     """
+    require_session_owner(supabase, session_id, current_user_id)
     try:
         # Get full session history
-        history = await get_session_history(session_id, supabase)
+        history = await _load_session_history(session_id, supabase)
 
         # Build a short, human-readable filename stem
         started_at = (history['session'].get('started_at') or "").replace(":", "").replace("-", "")[:8]

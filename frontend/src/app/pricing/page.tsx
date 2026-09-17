@@ -82,7 +82,7 @@ export default function PricingPage() {
     setProcessingPlan(planCode);
 
     try {
-      const response = await fetch(`${API_URL}/api/lemon-squeezy/create-checkout-session`, {
+      const response = await authFetch(`${API_URL}/api/lemon-squeezy/create-checkout-session`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -166,10 +166,10 @@ export default function PricingPage() {
         {/* Interview Credit Packs */}
         <div className="mb-16">
           <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
-            Interview Credits
+            Practice Session Credits
           </h2>
           <p className="text-center text-gray-600 mb-8">
-            Credits for real-time AI assistance during live video interviews
+            One credit per practice session with real-time transcription and response suggestions
           </p>
 
           <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
@@ -327,10 +327,10 @@ export default function PricingPage() {
 
           <div className="space-y-6">
             <div>
-              <h3 className="font-semibold text-gray-900 mb-2">What are interview credits?</h3>
+              <h3 className="font-semibold text-gray-900 mb-2">What are practice session credits?</h3>
               <p className="text-gray-600">
-                Each credit allows you to use our AI assistant during one live video interview
-                session. Credits never expire.
+                Each credit covers one practice session with real-time transcription and
+                response suggestions. Credits never expire.
               </p>
             </div>
 

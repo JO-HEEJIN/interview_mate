@@ -2,10 +2,11 @@
 REST API endpoints for interview assistance
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Optional
 from app.services.claude import get_claude_service
+from app.core.auth import get_current_user_id
 
 router = APIRouter(prefix="/api/interview", tags=["interview"])
 
@@ -34,7 +35,10 @@ class DetectQuestionResponse(BaseModel):
 
 
 @router.post("/generate-answer", response_model=GenerateAnswerResponse)
-async def generate_answer(request: GenerateAnswerRequest):
+async def generate_answer(
+    request: GenerateAnswerRequest,
+    current_user_id: str = Depends(get_current_user_id),
+):
     """
     Generate an interview answer based on the question and user context.
     """
@@ -56,7 +60,10 @@ async def generate_answer(request: GenerateAnswerRequest):
 
 
 @router.post("/detect-question", response_model=DetectQuestionResponse)
-async def detect_question(request: DetectQuestionRequest):
+async def detect_question(
+    request: DetectQuestionRequest,
+    current_user_id: str = Depends(get_current_user_id),
+):
     """
     Detect if a transcription contains an interview question.
     """
