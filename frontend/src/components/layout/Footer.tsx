@@ -15,6 +15,11 @@ export function Footer() {
         <footer className="border-t border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
             <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
                 <div className="flex flex-col items-center gap-2 text-center text-sm text-zinc-600 dark:text-zinc-400">
+                    <p className="max-w-2xl text-xs leading-5 text-zinc-500 dark:text-zinc-500">
+                        InterviewMate is built for interview preparation and mock sessions. For formal
+                        interviews, exams, and admissions processes, follow the organizer&apos;s rules and
+                        disclose AI assistance when required.
+                    </p>
                     <p>
                         Questions or issues? Contact us at{' '}
                         <a
@@ -25,6 +30,13 @@ export function Footer() {
                         </a>
                     </p>
                     <p>
+                        <Link
+                            href="/faq"
+                            className="text-zinc-900 underline hover:text-zinc-700 dark:text-zinc-200 dark:hover:text-zinc-300"
+                        >
+                            FAQ
+                        </Link>
+                        {' · '}
                         <Link
                             href="/refund"
                             className="text-zinc-900 underline hover:text-zinc-700 dark:text-zinc-200 dark:hover:text-zinc-300"

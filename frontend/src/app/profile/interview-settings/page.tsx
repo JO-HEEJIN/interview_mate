@@ -433,7 +433,7 @@ export default function InterviewSettingsPage() {
                                         type="text"
                                         value={formData.target_role}
                                         onChange={(e) => setFormData({ ...formData, target_role: e.target.value })}
-                                        placeholder="e.g., Software Engineer, PhD Candidate, F1 Visa, MBA Applicant"
+                                        placeholder="e.g., Software Engineer, PhD Candidate, Product Manager, MBA Applicant"
                                         className="w-full rounded-lg border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
                                     />
                                 </div>
@@ -445,7 +445,7 @@ export default function InterviewSettingsPage() {
                                         type="text"
                                         value={formData.target_company}
                                         onChange={(e) => setFormData({ ...formData, target_company: e.target.value })}
-                                        placeholder="e.g., Google, MIT, US Embassy, Stanford MBA"
+                                        placeholder="e.g., Google, MIT, McKinsey, Stanford MBA"
                                         className="w-full rounded-lg border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
                                     />
                                 </div>
@@ -538,16 +538,16 @@ export default function InterviewSettingsPage() {
                                         </summary>
                                         <div className="px-3 pb-2 text-xs text-zinc-500 dark:text-zinc-400 font-mono whitespace-pre-line">
 {`Job Interviews:
-- Built real-time inventory system serving 100K+ daily users
+- Built an inventory system that replaced manual daily stock counts
 - Led team of 3 engineers
 
-PhD Defense:
+Research / PhD Interviews:
 - Research on neural network optimization
 - Published 3 papers in top-tier conferences
 
-Visa Interview:
-- Accepted to Stanford CS PhD program
-- Research funding secured for 4 years
+Consulting Case Interviews:
+- Led pricing analysis for a regional retail client
+- Presented recommendations to a VP-level audience
 
 School Admissions:
 - Founded startup with $50K revenue
@@ -581,13 +581,13 @@ School Admissions:
                                 What are Custom Instructions?
                             </h3>
                             <p className="text-sm text-blue-800 dark:text-blue-200">
-                                Add specific rules for how AI should generate answers for YOUR interviews.
+                                Add specific rules for how AI should generate response suggestions for YOUR practice sessions.
                                 This makes the system work for any role, not just generic advice.
                             </p>
                             <ul className="mt-2 space-y-1 text-sm text-blue-800 dark:text-blue-200">
                                 <li>- Answer style (e.g., &quot;Be concise and confident, avoid filler words&quot;)</li>
-                                <li>- Domain context (e.g., &quot;For PhD defense, emphasize methodology rigor&quot;)</li>
-                                <li>- Cultural notes (e.g., &quot;For visa interview, keep answers brief and factual&quot;)</li>
+                                <li>- Domain context (e.g., &quot;For research questions, emphasize methodology rigor&quot;)</li>
+                                <li>- Round format (e.g., &quot;For case interviews, state a hypothesis before the analysis&quot;)</li>
                                 <li>- Personal preferences (e.g., &quot;Always mention my leadership experience&quot;)</li>
                             </ul>
                         </div>
@@ -615,13 +615,13 @@ School Admissions:
 - Use STAR format for behavioral questions
 - Emphasize quantifiable results
 
-PhD Defense:
-- Be prepared to defend methodology choices
+Research / PhD Interviews:
+- Be prepared to justify methodology choices
 - Reference specific papers when relevant
 
-Visa Interviews:
-- Keep answers short (1-2 sentences)
-- Focus on ties to home country
+Consulting Case Interviews:
+- State a hypothesis first, then structure the analysis
+- Summarize with a clear recommendation
 
 School Admissions:
 - Show genuine interest in the program

@@ -43,25 +43,26 @@ export default function Home() {
             </svg>
           </Link>
 
-          {/* Positioning: preparation and communication, not answer substitution. */}
+          {/* Positioning: preparation and mock sessions, not answer substitution. */}
           <div className="max-w-2xl text-center">
             <p className="text-xl font-medium leading-8 text-zinc-700 dark:text-zinc-300">
-              <strong>Real-time AI for interview preparation and communication</strong>
+              <strong>AI interview preparation and realistic mock sessions</strong>
             </p>
             <p className="mt-1 text-lg leading-7 text-zinc-500 dark:text-zinc-400">
-              Prepare context, practice responses, and get structured AI assistance with low-latency speech and retrieval.
+              Generate practice questions from your real background, rehearse timed sessions with
+              real-time transcription, and refine response suggestions grounded in your own experience.
             </p>
           </div>
 
           {/* Main Value Proposition */}
           <div className="w-full max-w-2xl rounded-2xl border border-blue-200 bg-blue-50 p-8 dark:border-blue-800 dark:bg-blue-950/50">
             <h2 className="mb-4 text-3xl font-extrabold text-blue-900 dark:text-blue-100 sm:text-4xl">
-              Built for interview preparation and high-pressure communication
+              Rehearse with your own experience, not generic scripts
             </h2>
             <p className="text-base leading-7 text-blue-800 dark:text-blue-200">
-              Turn your resume, notes, and experience into useful context. Rehearse clear answers,
-              organize your thinking, and explore the engineering behind InterviewMate&apos;s
-              low-latency speech and retrieval pipeline.
+              Turn your resume, notes, and target-role details into prepared context. Practice
+              answering out loud, compare your answers with personalized response suggestions, and
+              explore the engineering behind InterviewMate&apos;s low-latency speech and retrieval pipeline.
             </p>
             <Link
               href="/engineering"
@@ -108,15 +109,15 @@ export default function Home() {
                 </h3>
                 <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-amber-800 dark:text-amber-300">
                   <li>
-                    Before a speech practice session, open the{' '}
+                    Asking yourself the questions? The microphone is all you need on the{' '}
                     <Link href="/interview" className="font-medium underline">
                       Practice Session page
-                    </Link>{' '}
-                    first and make sure <strong>&ldquo;Capture system audio&rdquo;</strong> is
-                    toggled ON.
+                    </Link>.
                   </li>
                   <li>
-                    Enable audio capture before you begin so the browser can process the session consistently.
+                    Practicing with a partner on a video call, or playing recorded questions in another tab?
+                    Turn on <strong>&ldquo;Capture audio from another tab or app&rdquo;</strong> before you
+                    start so their questions are transcribed too.
                   </li>
                 </ul>
               </div>
@@ -219,8 +220,13 @@ export default function Home() {
             </div>
           </div>
 
-          <p className="mx-auto mt-16 max-w-2xl text-center text-sm leading-6 text-zinc-500 dark:text-zinc-400">
-            For the current live-session architecture, performance trade-offs, and reliability lessons, see the{' '}
+          <p className="mx-auto mt-16 max-w-2xl text-center text-sm leading-6 text-zinc-600 dark:text-zinc-300">
+            InterviewMate is for preparation, rehearsal, and settings where AI assistance is permitted.
+            For a formal interview, exam, or admissions process, follow the organizer&apos;s rules and
+            disclose AI assistance when required.
+          </p>
+          <p className="mx-auto mt-4 max-w-2xl text-center text-sm leading-6 text-zinc-500 dark:text-zinc-400">
+            For the real-time session architecture, performance trade-offs, and reliability lessons, see the{' '}
             <Link href="/engineering" className="font-semibold text-zinc-900 underline dark:text-zinc-100">
               engineering case study
             </Link>.
@@ -231,13 +237,8 @@ export default function Home() {
       {/* Pricing CTA Section */}
       <section className="flex min-h-screen flex-col items-center justify-center px-6 py-20">
         <div className="w-full max-w-3xl text-center">
-          <div className="mb-8">
-            <span className="inline-block px-4 py-2 rounded-full bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 text-sm font-semibold mb-6">
-              Most Affordable on the Market
-            </span>
-          </div>
           <h2 className="text-4xl font-bold text-zinc-900 dark:text-zinc-100 mb-6 sm:text-5xl">
-            Start with 30 Free Sessions
+            Start with 30 Free Practice Sessions
           </h2>
           <p className="text-xl text-zinc-600 dark:text-zinc-400 mb-8 max-w-2xl mx-auto">
             Plus free AI Q&amp;A Generator and Q&amp;A Management on your first profile.
@@ -299,13 +300,13 @@ export default function Home() {
                   <svg className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  Real-time transcription and response suggestions
+                  Real-time transcription and personalized response suggestions
                 </li>
                 <li className="flex items-start gap-3 text-zinc-700 dark:text-zinc-300">
                   <svg className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  Audio-assisted practice sessions
+                  Timed, audio-based mock interview sessions
                 </li>
               </ul>
             </div>

@@ -1,5 +1,5 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
-import Image from 'next/image';
 import { CopyButton } from '@/components/CopyButton';
 
 // Kept in sync with backend/app/api/interview_profile.py:DEFAULT_STAR_PROMPT.
@@ -28,7 +28,7 @@ Also attached:
 
 Based on all of this, generate a Background Summary I can paste directly into InterviewMate's Settings. It should:
 1. Use STAR format (Situation → Task → Action → Result) for each achievement
-2. List key achievements with specific metrics (e.g., "Built system serving 100K+ daily users")
+2. List key achievements with specific metrics I actually have evidence for (e.g., "Cut weekly report preparation from two days to half a day") — never invent or inflate numbers
 3. Highlight 3-5 most relevant projects or experiences for the target role
 4. Include technical details the AI can reference when answering domain-specific questions
 5. Keep each bullet point concise (1-2 sentences max)
@@ -48,13 +48,20 @@ SKILLS & EXPERTISE:
 KEY STRENGTHS:
 [comma-separated list]`;
 
+export const metadata: Metadata = {
+  title: 'Guide | InterviewMate',
+  description:
+    'Set up your practice profile, generate personalized practice Q&A, and run realistic mock interview sessions with InterviewMate.',
+  alternates: { canonical: '/guide' },
+};
+
 export default function GuidePage() {
   const steps = [
     {
       number: 1,
       title: 'Settings',
       description:
-        'Configure your interview profile and preferences — language, role, and how you want AI answers formatted.',
+        'Configure your practice profile — target role, background, and how you want response suggestions formatted.',
       href: '/profile/interview-settings',
       linkText: 'Go to Settings',
     },
@@ -70,7 +77,7 @@ export default function GuidePage() {
       number: 3,
       title: 'Q&A Pairs',
       description:
-        'Review and refine the generated pairs so you can practice precise, personalized responses before your interview.',
+        'Review and refine the generated pairs so they reflect your real experience, then practice answering them in your own words.',
       href: '/profile/qa-pairs',
       linkText: 'Go to Q&A Pairs',
     },
@@ -138,7 +145,7 @@ export default function GuidePage() {
               </h3>
               <p className="text-sm text-zinc-600 dark:text-zinc-400">
                 Deepgram transcribes questions during practice sessions, and the AI
-                generates context-aware response suggestions so you can rehearse under realistic time pressure.
+                generates personalized response suggestions from your prepared context so you can rehearse under realistic time pressure.
               </p>
             </div>
           </div>
@@ -256,7 +263,7 @@ export default function GuidePage() {
               Custom Instructions
             </Link>{' '}
             field. It forces the AI to structure every answer through Situation → Task → Action → Result —
-            the single biggest lever for interview-grade responses. Try it as-is, then tune.
+            the scaffold that performed best in our own small controlled tests (see below). Try it as-is, then tune.
           </p>
 
           <div className="mt-8 rounded-xl border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950">
@@ -310,34 +317,38 @@ export default function GuidePage() {
                 <Link href="/interview" className="text-blue-600 underline dark:text-blue-400">
                   Practice Session page
                 </Link>{' '}
-                to confirm STAR structure is showing up in the answers — then repeat until your answers feel natural.
+                to confirm STAR structure is showing up in the response suggestions — then repeat until your own answers feel natural.
               </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Real-World Example */}
+      {/* Research note */}
       <section className="bg-zinc-50 px-6 py-20 dark:bg-zinc-950">
         <div className="mx-auto max-w-4xl">
           <h2 className="text-3xl font-bold text-zinc-900 dark:text-zinc-100 text-center">
-            See It In Practice: Car Wash Research Paper
+            Why the Default Is a Short STAR Prompt: The Car Wash Tests
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-center text-zinc-600 dark:text-zinc-400">
-            We uploaded context from a research paper and tested whether the system could use that
-            material to answer domain-specific practice questions. The example shows how supplying
-            relevant context can substantially improve the specificity of generated responses.
+            We used a widely discussed reasoning question (&ldquo;The car wash is 50 meters away.
+            Should I walk or drive?&rdquo;) to test which prompt layers help a model notice an unstated
+            constraint. In small controlled runs (20 per condition, one model family), a short STAR
+            reasoning scaffold helped far more than profile context alone, and adding it to our longer
+            production prompt diluted the effect.
           </p>
-
-          <div className="mt-10 overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800">
-            <Image
-              src="/guide-carwash-demo.png"
-              alt="Car wash research paper practice demo — AI answering domain-specific questions with grounded context"
-              width={1200}
-              height={800}
-              className="w-full"
-            />
-          </div>
+          <ul className="mx-auto mt-8 max-w-2xl space-y-3 text-sm leading-6 text-zinc-600 dark:text-zinc-400">
+            <li>
+              <strong className="text-zinc-900 dark:text-zinc-100">What it suggests:</strong> keep
+              Custom Instructions short and reasoning-first. Long lists of style rules can override
+              the structure you want.
+            </li>
+            <li>
+              <strong className="text-zinc-900 dark:text-zinc-100">What it does not show:</strong> that
+              any prompt makes answers correct for every topic. These are pilot-scale experiments on a
+              single question, not a general benchmark.
+            </li>
+          </ul>
 
           <div className="mt-8 text-center">
             <a
@@ -346,7 +357,7 @@ export default function GuidePage() {
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
             >
-              View the full car wash example on GitHub
+              Read the experiment design, raw results, and limitations on GitHub
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path
                   strokeLinecap="round"

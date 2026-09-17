@@ -1,6 +1,18 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Retired pages that described live-interview use. Permanent redirects
+  // replace them in search indexes and keep old inbound links working.
+  async redirects() {
+    return [
+      { source: "/comparison", destination: "/faq", permanent: true },
+      {
+        source: "/faq/:lang(ar|es|hi|id|ja|ko|pt|ru|th|tl|vi|zh)",
+        destination: "/faq",
+        permanent: true,
+      },
+    ];
+  },
   async headers() {
     return [
       {

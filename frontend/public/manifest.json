@@ -1,7 +1,7 @@
 {
-  "name": "InterviewMate - AI Interview Preparation",
+  "name": "InterviewMate - AI Interview Preparation and Mock Sessions",
   "short_name": "InterviewMate",
-  "description": "Prepare context, practice responses, and build clearer communication with structured AI assistance.",
+  "description": "Prepare for interviews with personalized practice questions, timed mock sessions, and response suggestions grounded in your own background.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

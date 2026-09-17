@@ -4,7 +4,7 @@ import Link from 'next/link';
 export const metadata: Metadata = {
   title: 'Engineering Case Study | InterviewMate',
   description:
-    'How InterviewMate built a low-latency speech, retrieval, caching, and model-routing pipeline for high-pressure communication.',
+    'How InterviewMate built a real-time speech, retrieval, caching, and model-routing pipeline for interview practice sessions, and how a reasoning failure became a controlled experiment.',
   alternates: {
     canonical: '/engineering',
   },
@@ -14,40 +14,39 @@ const pipeline = [
   {
     step: '01',
     title: 'Capture',
-    detail: 'The browser captures short WebM/Opus chunks from the microphone or system audio.',
-    tech: 'MediaRecorder · 16 kHz mono',
+    detail: 'The browser records the microphone, optionally mixed with audio shared from another tab or app, as WebM/Opus chunks.',
+    tech: 'MediaRecorder · 1 s chunks',
   },
   {
     step: '02',
     title: 'Transcribe',
-    detail: 'An async FastAPI service converts chunks to linear PCM and streams them to Deepgram.',
-    tech: 'FFmpeg · WebSocket · Deepgram Flux',
+    detail: 'An async FastAPI WebSocket pipes chunks through an FFmpeg subprocess to 16 kHz linear PCM and streams them to Deepgram.',
+    tech: 'FFmpeg · WebSocket · Deepgram flux-general-en',
   },
   {
     step: '03',
     title: 'Detect',
-    detail: 'Fast lexical checks identify likely question boundaries before invoking slower reasoning.',
-    tech: 'Heuristics · end-of-turn signals',
+    detail: 'Deepgram end-of-turn events and lexical checks mark likely questions; low-confidence short utterances are verified by a model call.',
+    tech: 'EOT threshold 0.7 · 800 ms EOT timeout',
   },
   {
     step: '04',
     title: 'Retrieve',
-    detail: 'Search is constrained to the user’s own prepared Q&A pairs and relevant profile context.',
-    tech: 'Qdrant · text-embedding-3-small',
+    detail: 'Compound questions are split into up to three sub-queries; each searches only the user’s own prepared Q&A pairs.',
+    tech: 'Qdrant user_id filter · 5 s per-search timeout',
   },
   {
     step: '05',
     title: 'Respond',
-    detail: 'A cached answer or streamed model response is sent back over the persistent socket.',
-    tech: 'In-memory cache · GLM → Claude fallback',
+    detail: 'A closely matching prepared answer, or a streamed model response, is sent back over the same socket.',
+    tech: 'Prepared-answer match · Claude streaming · prompt caching',
   },
 ];
 
 const latencyRows = [
-  ['Audio chunking', '~100 ms', 'Client-side chunk interval'],
-  ['Transcription', '300–500 ms', 'Documented Deepgram Flux path'],
-  ['First token', '400–600 ms', 'With prompt caching; provider and network vary'],
-  ['Complete answer', '~2.4 s', 'Documented end-to-end example, not a universal SLO'],
+  ['Client chunk interval', '1,000 ms', 'Set in the practice page recorder; trades socket chatter for turn latency'],
+  ['End-of-turn timeout', '800 ms', 'Deepgram EOT timeout; server-side end-of-turn events decide when a question is complete'],
+  ['Retrieval bound', '5 s per sub-query', 'Up to three parallel searches; a timeout yields partial context, not a stalled turn'],
 ];
 
 const incidentRows = [
@@ -58,8 +57,8 @@ const incidentRows = [
   },
   {
     issue: 'Long questions could hang during decomposition',
-    change: 'Added a 10-second decomposition timeout, heuristic splitting, and 5-second search timeouts.',
-    lesson: 'A useful partial result is better than an unbounded wait in a live interaction.',
+    change: 'Replaced a model round-trip for decomposition with heuristic splitting (max three sub-queries) and added 5-second per-search timeouts.',
+    lesson: 'A useful partial result is better than an unbounded wait in a real-time turn.',
   },
   {
     issue: 'RAG was silently bypassed',
@@ -89,12 +88,12 @@ export default function EngineeringPage() {
               Engineering case study
             </p>
             <h1 className="mt-5 text-4xl font-bold tracking-tight sm:text-6xl">
-              Real-time speech pipeline for high-pressure communication
+              A real-time speech and retrieval pipeline for interview practice
             </h1>
             <p className="mt-7 max-w-3xl text-xl leading-8 text-zinc-600 dark:text-zinc-400">
-              InterviewMate began as a live-session assistant. This page documents the production
-              path honestly: what the system does, where latency goes, which safeguards matter, and
-              which numbers are design targets rather than promises.
+              InterviewMate turns spoken practice questions into personalized response suggestions
+              in real time. This page documents the production path: what the system does, where
+              latency budget goes, which safeguards matter, and what has and has not been measured.
             </p>
           </div>
           <div className="mt-10 flex flex-wrap gap-3 text-sm">
@@ -108,8 +107,10 @@ export default function EngineeringPage() {
             ))}
           </div>
           <p className="mt-8 max-w-3xl text-sm leading-6 text-zinc-500 dark:text-zinc-500">
-            The current product can process live audio sessions and generate suggestions. Use it
-            only for preparation or in settings where AI assistance is explicitly allowed.
+            InterviewMate was first marketed for use during live interviews; it is now positioned
+            for preparation and mock sessions. The pipeline can process any live audio it is given,
+            so the product states the boundary plainly: use it for rehearsal or where AI assistance
+            is explicitly allowed, and disclose it when an organizer requires.
           </p>
         </div>
       </section>
@@ -148,9 +149,9 @@ export default function EngineeringPage() {
             <p className="text-sm font-bold uppercase tracking-[0.2em] text-zinc-500">02 / Latency</p>
             <h2 className="mt-3 text-3xl font-bold sm:text-4xl">Latency is a budget, not a slogan</h2>
             <p className="mt-4 leading-7 text-zinc-600 dark:text-zinc-400">
-              The early transcription and first-token paths are faster than a complete response.
-              Keeping that distinction visible prevents a fast demo metric from becoming a false
-              end-to-end promise.
+              These are the configured bounds in the code, not measured end-to-end numbers. Turn
+              detection alone spends most of a second by design, so first-token and complete-response
+              latency need separate measurement rather than one headline figure.
             </p>
           </div>
           <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
@@ -158,8 +159,8 @@ export default function EngineeringPage() {
               <thead className="border-b border-zinc-200 text-xs uppercase tracking-wider text-zinc-500 dark:border-zinc-800">
                 <tr>
                   <th className="px-5 py-4 font-semibold">Stage</th>
-                  <th className="px-5 py-4 font-semibold">Time</th>
-                  <th className="px-5 py-4 font-semibold">Context</th>
+                  <th className="px-5 py-4 font-semibold">Bound</th>
+                  <th className="px-5 py-4 font-semibold">Why</th>
                 </tr>
               </thead>
               <tbody>
@@ -183,23 +184,23 @@ export default function EngineeringPage() {
               <p className="text-sm font-bold uppercase tracking-[0.2em] text-zinc-500">03 / Retrieval</p>
               <h2 className="mt-3 text-3xl font-bold sm:text-4xl">User-specific retrieval keeps context useful and isolated</h2>
               <p className="mt-4 leading-7 text-zinc-600 dark:text-zinc-400">
-                Prepared Q&A pairs are embedded and searched semantically. Every retrieval path is
-                scoped by user identity, so a faster answer is not allowed to come at the cost of
-                another user&apos;s context.
+                Prepared Q&A pairs are embedded and searched semantically. Vector searches are
+                filtered by the authenticated user ID, so a faster answer is not allowed to come at
+                the cost of another user&apos;s context.
               </p>
               <ul className="mt-7 space-y-4 text-sm leading-6 text-zinc-700 dark:text-zinc-300">
-                <li><span className="font-semibold">Direct match:</span> a similarity threshold can return a prepared answer without a new generation call.</li>
-                <li><span className="font-semibold">Compound question:</span> retrieve several relevant pairs, then synthesize one response while tracking examples already used.</li>
-                <li><span className="font-semibold">Graceful degradation:</span> Qdrant failure falls back to a slower but bounded path rather than silently mixing identities.</li>
+                <li><span className="font-semibold">Direct match:</span> a prepared answer at ≥0.85 similarity is returned without a generation call. The threshold was raised from 0.70 after a wrong prepared answer surfaced in production.</li>
+                <li><span className="font-semibold">Compound question:</span> retrieve several relevant pairs, then synthesize one response while tracking examples already used in the session.</li>
+                <li><span className="font-semibold">Graceful degradation:</span> if Qdrant is unavailable, the model is given the user&apos;s own prepared Q&amp;A pairs directly; a search timeout returns partial context rather than blocking the turn.</li>
               </ul>
             </div>
             <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-7 dark:border-zinc-800 dark:bg-zinc-950">
               <p className="text-sm font-semibold text-zinc-500">Cache layers</p>
               <div className="mt-6 space-y-5">
                 {[
-                  ['Exact / normalized lookup', 'Cheap hash-based matching handles repeated prepared questions before semantic search.'],
-                  ['Semantic retrieval', 'Qdrant finds paraphrases and related examples inside the current user scope.'],
-                  ['Prompt caching', 'Stable profile context can be reused so repeated requests spend less time rebuilding the prompt.'],
+                  ['Prepared-answer match', 'Exact and lexical similarity (max of substring, token Jaccard, and sequence ratio) against the user&apos;s own prepared Q&A. At 0.85 or above the prepared answer is returned without a generation call.'],
+                  ['Semantic retrieval', 'Qdrant finds paraphrases and related prepared answers inside the current user scope.'],
+                  ['Prompt caching', 'The stable system prompt is marked for Anthropic prompt caching so repeated turns avoid re-processing it.'],
                 ].map(([title, detail], index) => (
                   <div key={title} className="flex gap-4">
                     <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-100 text-sm font-bold text-blue-700 dark:bg-blue-950 dark:text-blue-300">
@@ -224,8 +225,8 @@ export default function EngineeringPage() {
           <div className="mt-10 grid gap-5 md:grid-cols-3">
             {[
               ['Question detection', 'Fast pattern checks handle obvious turns. Low-confidence cases can fall back to model verification instead of blocking every turn.'],
-              ['Model routing', 'The current hybrid strategy tries a lower-cost primary model first and falls back to Claude when the primary path fails.'],
-              ['Operational bounds', 'Timeouts, partial retrieval, connection cleanup, and user-scoped filters keep failure local and observable.'],
+              ['Model choice', 'A lower-cost GLM-first hybrid was tried and turned off in February 2026 because it ignored the user profile, prepared Q&A, and session context. Claude is the only answer model.'],
+              ['Operational bounds', 'Timeouts, partial retrieval, connection cleanup, and user-scoped filters keep a failed search from stalling the turn.'],
             ].map(([title, detail]) => (
               <article key={title} className="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
                 <h3 className="text-lg font-semibold">{title}</h3>
@@ -242,19 +243,18 @@ export default function EngineeringPage() {
             <p className="text-sm font-bold uppercase tracking-[0.2em] text-zinc-500">05 / Evaluation</p>
             <h2 className="mt-3 text-3xl font-bold sm:text-4xl">Evaluation methodology: measure quality and failure, not just speed</h2>
             <p className="mt-4 leading-7 text-zinc-600 dark:text-zinc-400">
-              The useful unit is a question-to-response turn. Tests should replay representative
-              questions, compare cached and generated paths, inspect retrieval scope, and record
-              first-token plus complete-response latency. Quality review covers relevance,
-              structure, factual grounding, and whether the response actually addresses the
-              question.
+              The useful unit is a question-to-response turn. The repository contains benchmark
+              scripts for question detection, Q&amp;A cache lookup, and model latency, plus
+              reproducible prompt experiments with raw outputs and summaries. What it does not yet
+              have is an automated regression suite or committed production latency data.
             </p>
           </div>
           <div className="mt-10 grid gap-5 md:grid-cols-4">
             {[
-              ['Deterministic', 'Unit-test normalization, question detection, cache hits, timeout behavior, and user filters.'],
-              ['Replay-based', 'Run a fixed question set through cached, retrieved, and fallback paths so changes are comparable.'],
-              ['Human review', 'Check relevance, clarity, grounding in the user context, and answer completeness.'],
-              ['Known gap', 'The repository documents component benchmarks, but not a public production cohort or independently audited SLO.'],
+              ['Component benchmarks', 'Scripts time regex question detection, cache lookup, and GLM vs Claude responses. They print results; they do not assert thresholds.'],
+              ['Controlled prompt runs', 'Fixed question, fixed model and temperature, 20–100 runs per condition, automatic pass/fail scoring with ambiguous cases kept separate.'],
+              ['Production A/B signal', 'Each user is assigned a prompt variant through Statsig; thumbs up/down on suggestions is logged against that variant. Session transcripts can be exported for review.'],
+              ['Known gap', 'No automated regression suite, committed production latency data, or independently audited SLO yet.'],
             ].map(([title, detail]) => (
               <article key={title} className="rounded-2xl border border-zinc-200 p-5 dark:border-zinc-800">
                 <h3 className="font-semibold">{title}</h3>
@@ -262,6 +262,47 @@ export default function EngineeringPage() {
               </article>
             ))}
           </div>
+        </div>
+      </section>
+
+      <section className="bg-zinc-50 px-6 py-20 dark:bg-zinc-950">
+        <div className="mx-auto max-w-5xl">
+          <div className="max-w-3xl">
+            <p className="text-sm font-bold uppercase tracking-[0.2em] text-zinc-500">06 / Research</p>
+            <h2 className="mt-3 text-3xl font-bold sm:text-4xl">A lucky answer became a controlled experiment</h2>
+            <p className="mt-4 leading-7 text-zinc-600 dark:text-zinc-400">
+              A widely shared prompt (&ldquo;The car wash is 50 meters away. Should I walk or
+              drive?&rdquo;) trips many models because the car must be at the car wash. In one practice
+              session InterviewMate answered &ldquo;drive&rdquo;. We did not know which prompt layer
+              caused it, so we isolated them.
+            </p>
+          </div>
+          <ol className="mt-10 grid gap-5 md:grid-cols-3">
+            {[
+              ['Ablation', 'Six prompt conditions, 20 runs each, claude-sonnet-4-5 at temperature 0.7. A short role + STAR scaffold passed 17/20; role + profile context passed 6/20; bare and role-only passed 0/20.'],
+              ['Reproduction on production', 'The same STAR scaffold inside the full production prompt passed 0/20 and 6/20 depending on profile. Standalone it passed 20/20, then 100/100 on claude-sonnet-4-6. The earlier production “drive” used distance-based reasoning. It was right for the wrong reason.'],
+              ['What changed', 'The investigation also found a similarity bug that returned 0.95 for unrelated equal-length strings and a too-loose 0.70 retrieval threshold. Both were fixed. New profiles now default to the short STAR prompt, and session scenario hints are added to the user turn instead of the system prompt.'],
+            ].map(([title, detail]) => (
+              <li key={title} className="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+                <h3 className="text-lg font-semibold">{title}</h3>
+                <p className="mt-3 text-sm leading-6 text-zinc-600 dark:text-zinc-400">{detail}</p>
+              </li>
+            ))}
+          </ol>
+          <p className="mt-8 max-w-3xl text-sm leading-6 text-zinc-500 dark:text-zinc-400">
+            Limits: one question, small samples, Anthropic models only in these runs. The result
+            supports a narrow claim, that instruction ordering in a long prompt can suppress a
+            reasoning scaffold. It does not show that any prompt works for every topic.{' '}
+            <a
+              href="https://github.com/JO-HEEJIN/interview_mate/tree/main/car_wash"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-semibold text-zinc-900 underline dark:text-zinc-100"
+            >
+              Code, raw outputs, and summaries
+            </a>
+            .
+          </p>
         </div>
       </section>
 
@@ -294,7 +335,7 @@ export default function EngineeringPage() {
           </div>
           <div className="mt-12 flex flex-col gap-4 sm:flex-row">
             <Link href="/auth/register" className="inline-flex h-12 items-center justify-center rounded-full bg-white px-7 font-semibold text-[#0f1530] hover:bg-blue-50">
-              Start preparing
+              Start practicing
             </Link>
             <Link href="/" className="inline-flex h-12 items-center justify-center rounded-full border border-white/30 px-7 font-semibold text-white hover:bg-white/10">
               Return home

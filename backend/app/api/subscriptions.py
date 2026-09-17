@@ -224,7 +224,7 @@ async def consume_credit(
                 status_code=403,
                 detail={
                     "error": "insufficient_credits",
-                    "message": "No interview credits available. Please purchase more credits.",
+                    "message": "No practice session credits available. Please purchase more credits.",
                     "upgrade_url": "/pricing"
                 }
             )

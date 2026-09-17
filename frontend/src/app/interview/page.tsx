@@ -198,7 +198,7 @@ export default function PracticePage() {
             console.log('Credit consumed, remaining:', remainingCredits);
         },
         onNoCredits: () => {
-            setError('No interview credits available. Please purchase more credits.');
+            setError('No practice session credits available. Please purchase more credits.');
             stopRecording();
             router.push('/pricing');
         },
@@ -216,7 +216,7 @@ export default function PracticePage() {
     }, []);
 
     const handleSystemAudioStopped = useCallback(() => {
-        setSystemAudioError('System audio sharing stopped. Continuing with microphone only.');
+        setSystemAudioError('Audio sharing stopped. Continuing with microphone only.');
         setTimeout(() => setSystemAudioError(null), 5000);
     }, []);
 
@@ -685,9 +685,9 @@ export default function PracticePage() {
                     </h3>
                     <ol className="list-inside list-decimal space-y-2 text-sm text-blue-800 dark:text-blue-200">
                         <li><strong>Start Recording</strong> - Begin recording session</li>
-                        <li><strong>Speak your question</strong> - Audio will be transcribed in real-time</li>
+                        <li><strong>Ask a practice question</strong> - Say it yourself or have a practice partner ask it; audio is transcribed in real time</li>
                         <li><strong>Pause</strong> when finished speaking - This enables answer generation</li>
-                        <li><strong>Click "Generate Answer"</strong> - Get AI-powered feedback</li>
+                        <li><strong>Click &quot;Generate Answer&quot;</strong> - Get a response suggestion to compare with your own answer</li>
                         <li><strong>Resume</strong> to continue the practice session</li>
                         <li><strong>Clear</strong> to reset everything</li>
                     </ol>

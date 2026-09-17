@@ -426,7 +426,7 @@ export default function ContextUploadPage() {
             AI-Powered Q&A Generation
           </h1>
           <p className="mt-2 text-zinc-600 dark:text-zinc-400">
-            Upload your background documents to auto-generate 30 personalized Q&A pairs for any interview
+            Upload your background documents to auto-generate 30 personalized practice Q&A pairs for your target interview
           </p>
         </div>
 

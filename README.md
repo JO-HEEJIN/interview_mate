@@ -1,76 +1,63 @@
 # InterviewMate
 
-**Real-Time AI Interview Coach for Live Video Calls**
+**AI interview preparation and realistic mock sessions**
 
-[Website](https://interviewmate.tech) | [FAQ](https://interviewmate.tech/faq) | [Comparison](https://interviewmate.tech/comparison) | [Pricing](https://interviewmate.tech/pricing)
+[Website](https://interviewmate.tech) | [Guide](https://interviewmate.tech/guide) | [Engineering case study](https://interviewmate.tech/engineering) | [FAQ](https://interviewmate.tech/faq) | [Pricing](https://interviewmate.tech/pricing)
 
-## NOT a Practice Platform - Works During REAL Interviews
+InterviewMate helps people prepare for interviews using their real background. You upload your resume and target-role context, generate personalized practice questions, and rehearse timed sessions. During a session your spoken questions are transcribed in real time, and the AI streams response suggestions grounded in your prepared context. You compare them with your own answers and refine how you explain real experience.
 
-InterviewMate is a real-time AI assistant that helps you **DURING actual live video interviews** with recruiters on Zoom, Teams, or Google Meet. Unlike practice platforms, it provides instant personalized answer suggestions in 2 seconds while you're interviewing.
+**Responsible use:** InterviewMate is for preparation, rehearsal, and settings where AI assistance is permitted. For formal interviews, assessments, exams, admissions or immigration processes, follow the organizer's rules and disclose AI assistance when required.
 
-### Key Differentiation
-- **Works during REAL interviews** with actual recruiters (not mock/practice)
-- **Ultra-low latency**: 2-second response time using Deepgram Flux + Claude 3.5 Sonnet
-- **Personalized to YOUR experience**: Upload resume, get answers based on your background
-- **STAR method optimized**: Designed for behavioral interviews at Google, Amazon, Microsoft
+## Features
 
-## Key Features
+- **Personalized practice Q&A**: generated from your resume, organization info, and role details, then editable and exportable (Anki CSV)
+- **Timed practice sessions**: real-time speech-to-text with Deepgram, from your microphone or audio shared from another tab (for example, a practice partner on a video call)
+- **Response suggestions**: prepared answers are matched first; otherwise Claude streams a suggestion that references your context
+- **Session history**: transcribed questions and suggestions are saved for review and export, and can be deleted
+- **Custom instructions**: new profiles start from a short STAR reasoning prompt
 
-- **Real-time speech-to-text**: Deepgram Flux with <1 second latency
-- **AI answer generation**: Claude 3.5 Sonnet with 2-second response time
-- **Works on live video calls**: Zoom, Teams, Google Meet integration
-- **Personalized answers**: Based on your resume, projects, and experience
-- **STAR method optimization**: Structured behavioral interview responses
-- **Privacy-first**: No recordings stored, real-time processing only
-- **Vector search**: Qdrant for fast context retrieval
+## Architecture
 
-## Use Cases
+```
+Browser mic / shared audio ──WebSocket──▶ FastAPI ──FFmpeg──▶ Deepgram (streaming STT, end-of-turn)
+                                             │
+                                             ├─ question detection (heuristics + model verification when unsure)
+                                             ├─ retrieval: Qdrant, filtered by user_id, up to 3 parallel sub-queries
+                                             ├─ prepared-answer match (≥0.85 returns the user's own answer)
+                                             └─ Claude streaming (prompt caching)
+```
 
-### Perfect For:
-- Interviewing at Google, Amazon, Microsoft, Meta, Netflix
-- Non-native English speakers needing structured answer suggestions
-- Behavioral interview rounds (Leadership Principles, culture fit)
-- Real-time assistance during actual recruiter calls
-
-### NOT For:
-- Practice/mock interviews (use practice platforms instead)
-- Coding interviews (use coding assessment tools)
-- Async video interviews (works only on live calls)
+See the [engineering case study](https://interviewmate.tech/engineering) for configured latency bounds, reliability incidents, evaluation methodology, and known gaps. Prompt experiments with raw outputs are in [`car_wash/`](car_wash/).
 
 ## Project Structure
 
 ```
 interview_mate/
-├── frontend/         # Next.js 14 web application
-├── backend/          # FastAPI Python backend
-├── docs/             # Project documentation
-└── tasks/            # Development task tracking
+├── frontend/         # Next.js web application
+├── backend/          # FastAPI backend (WebSocket pipeline, retrieval, payments)
+├── car_wash/         # Controlled prompt-architecture experiments
+├── overlay/          # Experimental macOS wrapper app
+└── docs/             # Early project documentation
 ```
 
 ## Tech Stack
 
-### Frontend
-- Next.js 14 (App Router)
-- TypeScript
-- Tailwind CSS
-- NextAuth.js
-
-### Backend
-- FastAPI (Python)
-- PostgreSQL (Supabase)
-- Deepgram Flux (Speech-to-Text)
-- Anthropic Claude 3.5 Sonnet (Answer Generation)
-- Qdrant (Vector Database)
-- Stripe (Payments)
+- **Frontend:** Next.js (App Router), React, TypeScript, Tailwind CSS
+- **Backend:** FastAPI, WebSockets, asyncio
+- **Data & auth:** Supabase (PostgreSQL, Auth)
+- **Speech:** Deepgram streaming STT
+- **Retrieval:** Qdrant with OpenAI `text-embedding-3-small`
+- **Generation:** Anthropic Claude (streaming, prompt caching)
+- **Experimentation:** Statsig prompt variants with in-session thumbs up/down
+- **Payments:** Lemon Squeezy
 
 ## Getting Started
 
 ### Prerequisites
 - Node.js 18+
 - Python 3.11+
-- npm or yarn
 
-### Frontend Setup
+### Frontend
 
 ```bash
 cd frontend
@@ -80,7 +67,7 @@ cp .env.example .env.local
 npm run dev
 ```
 
-### Backend Setup
+### Backend
 
 ```bash
 cd backend
@@ -92,46 +79,8 @@ cp .env.example .env
 uvicorn app.main:app --reload
 ```
 
-## Development
-
-- Frontend runs on: http://localhost:3000
-- Backend runs on: http://localhost:8000
-- API docs: http://localhost:8000/docs
-
-## Technical Performance
-
-### Latency Breakdown
-- **Transcription**: <1 second (Deepgram Flux)
-- **Answer Generation**: 1-2 seconds (Claude 3.5 Sonnet with prompt caching)
-- **Total Response Time**: 2-3 seconds from question to answer
-
-### Recent Optimizations
-- Migrated from OpenAI Whisper to Deepgram Flux for sub-second transcription
-- Implemented async I/O to fix timeout issues
-- Added RAG synthesis with Qdrant for personalized context
-- Optimized answer generation speed from 10+ seconds to 2 seconds
-- Fixed race condition bugs in credit checking system
-
-### Architecture Highlights
-- WebSocket-based real-time audio streaming
-- Async/await pattern for concurrent processing
-- Vector similarity search for context retrieval
-- Streaming responses for faster perceived latency
-
-## Documentation
-
-See the `/docs` directory for detailed documentation:
-- Business Requirements (BRD)
-- Software Requirements (SRS)
-- System Design (SDP)
-- User Flow diagrams
-- UML diagrams
-- Test Cases
-
-See `/tasks/todo.md` for:
-- Development progress
-- Implementation details
-- Optimization review
+- Frontend: http://localhost:3000
+- Backend: http://localhost:8000 (API docs at `/docs`)
 
 ## License
 

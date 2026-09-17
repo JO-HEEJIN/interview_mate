@@ -22,7 +22,7 @@ export default function RefundPage() {
                             </p>
                             <p className="mt-2">This applies to all purchases:</p>
                             <ul className="list-disc pl-6 mt-2 space-y-1">
-                                <li>Interview credits (Starter, Popular, Pro packs)</li>
+                                <li>Practice session credits (Starter, Popular, Pro packs)</li>
                                 <li>One-time features (AI Generator, Q&amp;A Management)</li>
                             </ul>
                         </div>
@@ -68,7 +68,7 @@ export default function RefundPage() {
                         <div>
                             <h2 className="text-2xl font-bold text-gray-900 mb-3">Free Trial</h2>
                             <p>
-                                Every new account receives <strong>30 free interview credits</strong> to try
+                                Every new account receives <strong>30 free practice session credits</strong> to try
                                 InterviewMate. Use them to evaluate the product before any paid purchase — that&apos;s
                                 why we offer the free trial.
                             </p>

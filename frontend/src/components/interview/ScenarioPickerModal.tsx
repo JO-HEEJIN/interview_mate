@@ -9,8 +9,8 @@
  * system prompt is never touched (car_wash dilution avoidance).
  *
  * Free text input + a few domain-neutral suggestion chips. Domain-
- * neutral on purpose: InterviewMate users span SWE, PhD admission, F1
- * visa, marketing, etc. We don't want SWE-flavored defaults to bias
+ * neutral on purpose: users practice for SWE, academic, consulting,
+ * marketing rounds, etc. We don't want SWE-flavored defaults to bias
  * away non-SWE users.
  */
 
@@ -30,8 +30,8 @@ const SUGGESTIONS = [
     'System design',
     'Case interview',
     'Coding round',
-    'PhD admission',
-    'Visa interview',
+    'Research presentation',
+    'Panel interview',
 ];
 
 export function ScenarioPickerModal({
@@ -86,11 +86,11 @@ export function ScenarioPickerModal({
                         id="scenario-picker-title"
                         className="text-xl font-bold text-zinc-900 dark:text-zinc-100"
                     >
-                        {isFirstVisit ? '오늘 어떤 인터뷰인가요?' : 'Change scenario'}
+                        {isFirstVisit ? 'What are you practicing today?' : 'Change scenario'}
                     </h2>
                     <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
                         {isFirstVisit
-                            ? '한 줄로 알려주시면 답변을 그 라운드에 맞춰드려요. 비워두고 시작해도 됩니다.'
+                            ? 'Describe the round in a few words and response suggestions will be tailored to it. You can also skip this.'
                             : 'New value will apply to the next question.'}
                     </p>
                 </div>
@@ -109,7 +109,7 @@ export function ScenarioPickerModal({
                             type="text"
                             value={value}
                             onChange={(e) => setValue(e.target.value)}
-                            placeholder="e.g. system design, PhD admission, F1 visa…"
+                            placeholder="e.g. system design, case interview, research presentation…"
                             maxLength={80}
                             className="mt-2 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
                         />

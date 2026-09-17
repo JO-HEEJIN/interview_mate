@@ -1,48 +1,54 @@
-'use client';
-
+import type { Metadata } from 'next';
 import Link from 'next/link';
+
+export const metadata: Metadata = {
+    title: 'FAQ | InterviewMate',
+    description:
+        'How InterviewMate practice sessions work, responsible use in formal assessments, pricing, and what data is stored.',
+    alternates: { canonical: '/faq' },
+};
 
 export default function FAQPage() {
     const faqs = [
         {
-            category: "Real-time Interview Assistance",
+            category: "Using InterviewMate",
             questions: [
                 {
-                    q: "Is there a tool that helps me during a live video interview?",
-                    a: "Yes, InterviewMate provides real-time AI coaching during your actual interview. It listens to the interviewer's questions and instantly suggests personalized answers while you're on Zoom, Teams, or Google Meet."
+                    q: "What is InterviewMate for?",
+                    a: "Interview preparation and mock sessions. You add your real background and target role, generate personalized practice questions, and rehearse timed sessions where your spoken questions are transcribed in real time and the AI offers response suggestions grounded in your prepared context."
                 },
                 {
-                    q: "How fast does InterviewMate respond during an interview?",
-                    a: "InterviewMate achieves <1 second latency for transcription using Deepgram Flux, with complete AI-generated answers appearing within 2-3 seconds of the interviewer finishing their question."
+                    q: "Can I use InterviewMate during a real interview, exam, or admissions process?",
+                    a: "Use InterviewMate for preparation, rehearsal, and settings where AI assistance is permitted. For any formal interview, assessment, examination, admissions or immigration process, follow the organizer's rules and disclose AI assistance when required. Do not use it to present AI-generated content as your own where that is not allowed."
                 },
                 {
-                    q: "Can I use this during a Zoom interview without the interviewer knowing?",
-                    a: "InterviewMate runs in a separate browser window/tab and doesn't interfere with your video call. The AI suggestions appear on your screen only. However, users are responsible for following their company's interview policies."
+                    q: "How does a practice session work?",
+                    a: "Start a session, then ask yourself a question out loud, have a practice partner ask it, or play recorded questions. InterviewMate transcribes the question, looks for a matching answer in your prepared Q&A pairs, and otherwise streams a response suggestion. Compare it with your own answer, refine your Q&A pairs, and repeat."
+                },
+                {
+                    q: "What does \"Capture audio from another tab or app\" do?",
+                    a: "It lets the browser share audio from another tab or application, for example a practice partner on a video call or a recorded question set, so those questions are transcribed along with your microphone. The browser always asks for your permission first."
                 },
                 {
                     q: "Does InterviewMate work on mobile phones?",
-                    a: "Currently InterviewMate is optimized for desktop browsers (Chrome, Edge, Safari). Mobile support is planned for future releases."
+                    a: "InterviewMate is designed for desktop browsers. Mobile browsers are not currently supported."
                 }
             ]
         },
         {
-            category: "Technology & Performance",
+            category: "Technology",
             questions: [
                 {
-                    q: "What AI technology does InterviewMate use?",
-                    a: "InterviewMate uses Deepgram Flux for real-time speech-to-text (<500ms latency) and Claude 3.5 Sonnet for intelligent answer generation. This combination delivers the fastest and highest quality responses."
+                    q: "What technology does InterviewMate use?",
+                    a: "Deepgram for streaming speech-to-text, OpenAI embeddings with a Qdrant vector database for searching your prepared Q&A pairs, and Anthropic Claude for streamed response suggestions. The engineering case study describes the pipeline, its latency budget, and its known gaps."
                 },
                 {
-                    q: "How does InterviewMate personalize answers to my background?",
-                    a: "InterviewMate uses RAG (Retrieval Augmented Generation) with Qdrant vector database. You can add your resume, STAR stories, and prepared Q&A pairs. When answering questions, the AI semantically searches your background and incorporates specific details from your experience."
+                    q: "How does InterviewMate personalize response suggestions?",
+                    a: "It searches only your own prepared Q&A pairs and profile context. A close match returns your prepared answer directly; otherwise the model generates a suggestion that references your background."
                 },
                 {
-                    q: "What happens if I don't have any background information added?",
-                    a: "The AI will generate answers with placeholders like [your specific project] or [company name] that you can fill in with your own details. You'll see a tip suggesting the AI Q&A Generator feature for fully personalized answers."
-                },
-                {
-                    q: "Why is InterviewMate faster than other interview tools?",
-                    a: "We eliminated threading bottlenecks by using fully async I/O architecture. Previous systems used background threads with 5-second timeouts. Our async implementation uses direct await calls, removing timeout issues entirely."
+                    q: "What happens if I haven't added my background yet?",
+                    a: "Suggestions will contain placeholders like [your specific project] for you to fill in with your own details. Adding real context through AI Generate or Q&A Pairs makes suggestions specific to you."
                 }
             ]
         },
@@ -51,74 +57,32 @@ export default function FAQPage() {
             questions: [
                 {
                     q: "How does the credit system work?",
-                    a: "Each interview session consumes 1 credit when you press 'Start Recording'. Credits never expire and you can use them whenever you have an interview. No subscriptions - pay only for what you use."
+                    a: "Each practice session uses 1 credit when you press 'Start Recording'. Credits never expire. There are no subscriptions."
                 },
                 {
-                    q: "Can I get a refund if I don't like the service?",
-                    a: "Yes. We offer a 7-day money-back guarantee on all purchases — credits and one-time features. Email info@birth2death.com within 7 days of purchase with your transaction ID and we'll process the refund within 5–10 business days. See the full Refund Policy for details."
+                    q: "Can I get a refund?",
+                    a: "Yes. We offer a 7-day money-back guarantee on all purchases, both credits and one-time features. Email info@birth2death.com within 7 days of purchase with your transaction ID. See the Refund Policy for details."
                 },
                 {
                     q: "What's the difference between credits and one-time features?",
-                    a: "Interview credits are consumed per session (1 credit = 1 interview). One-time features like AI Q&A Generator are purchased once and available forever."
-                },
-                {
-                    q: "Do credits expire?",
-                    a: "No, credits never expire. Buy them now and use them whenever you have interviews - next week, next month, or next year."
+                    a: "Session credits are used one per practice session. One-time features like the AI Q&A Generator are purchased once."
                 }
             ]
         },
         {
-            category: "Privacy & Security",
+            category: "Privacy & Data",
             questions: [
                 {
-                    q: "Does InterviewMate record or store my interview audio?",
-                    a: "No. All audio is processed in real-time and immediately discarded. We use streaming transcription - audio never touches our servers or gets stored anywhere."
+                    q: "Does InterviewMate record my audio?",
+                    a: "Audio is streamed through our server to Deepgram for transcription while a session is running. InterviewMate does not save audio recordings. The resulting transcripts are saved, as described below."
                 },
                 {
-                    q: "Is my personal data safe?",
-                    a: "Yes. We use strict user_id filtering in our vector database (Qdrant) to ensure complete data isolation. Your resume, STAR stories, and Q&A pairs are never shared with other users."
+                    q: "What data does InterviewMate store?",
+                    a: "Your account information; the background, documents, STAR stories, and Q&A pairs you add; and practice session history, including transcribed questions and response suggestions, so you can review and export it. You can delete a session and its messages from the Sessions page."
                 },
                 {
-                    q: "What data does InterviewMate collect?",
-                    a: "We store: (1) Your account information (email, name), (2) Your uploaded background (resume, STAR stories, Q&A pairs), (3) Interview session metadata (timestamp, credits used). We do NOT store audio recordings or transcripts."
-                }
-            ]
-        },
-        {
-            category: "Use Cases",
-            questions: [
-                {
-                    q: "What types of interviews does InterviewMate work for?",
-                    a: "InterviewMate works for any interview type: job interviews (tech, consulting, finance), PhD defenses and academic committee meetings, visa and immigration interviews, school admissions (MBA, graduate, undergraduate). Any video call where you need real-time AI assistance."
-                },
-                {
-                    q: "Can InterviewMate help with PhD defenses?",
-                    a: "Yes! Upload your thesis, research papers, and key findings. InterviewMate helps you articulate your research methodology, defend your conclusions, and answer committee questions in real-time."
-                },
-                {
-                    q: "Does InterviewMate work for visa interviews?",
-                    a: "Absolutely. Upload your application documents and background information. InterviewMate helps you answer questions about your purpose of visit, ties to home country, financial situation, and other common visa interview topics."
-                },
-                {
-                    q: "I'm a non-native English speaker - can InterviewMate help?",
-                    a: "Yes! InterviewMate helps you phrase answers clearly and professionally. The AI suggests well-structured responses you can read and adapt to your speaking style."
-                }
-            ]
-        },
-        {
-            category: "Comparison",
-            questions: [
-                {
-                    q: "How is InterviewMate different from mock interview platforms?",
-                    a: "Mock interviews help you practice before the interview. InterviewMate helps you DURING the actual interview when it matters most. It's real-time coaching, not practice."
-                },
-                {
-                    q: "Why not just prepare answers beforehand?",
-                    a: "You can't predict every question. Even if you prepare 50 questions, the interviewer might ask the 51st. InterviewMate handles unexpected questions in real-time."
-                },
-                {
-                    q: "What about ChatGPT - can I just use that during interviews?",
-                    a: "ChatGPT requires you to type questions manually, which takes too long during live interviews. InterviewMate automatically transcribes the interviewer's speech and generates answers instantly (<2 seconds)."
+                    q: "Is my data kept separate from other users?",
+                    a: "Yes. Vector searches are filtered by your user ID, and the API only returns or changes profiles, Q&A pairs, and sessions that belong to your signed-in account."
                 }
             ]
         }
@@ -170,7 +134,7 @@ export default function FAQPage() {
                         <a href="mailto:info@birth2death.com" className="text-blue-600 hover:text-blue-700 underline">
                             info@birth2death.com
                         </a>{' '}
-                        or try InterviewMate for free
+                        or start practicing for free
                     </p>
                     <Link
                         href="/auth/register"

@@ -36,6 +36,8 @@ const pages = [
   { path: '/profile/stories', priority: '0.7', changefreq: 'monthly' },
   { path: '/pricing', priority: '0.9', changefreq: 'weekly' },
   { path: '/engineering', priority: '0.8', changefreq: 'monthly' },
+  { path: '/guide', priority: '0.8', changefreq: 'monthly' },
+  { path: '/faq', priority: '0.7', changefreq: 'monthly' },
 ];
 
 // Generate sitemap.xml

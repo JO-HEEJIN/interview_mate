@@ -140,7 +140,7 @@ export default function ProfileManagePage() {
                         Manage Profiles
                     </h1>
                     <p className="mt-2 text-zinc-600 dark:text-zinc-400">
-                        Create and manage interview profiles for different applications (e.g., Google SWE, MIT PhD, F1 Visa)
+                        Create and manage interview profiles for different applications (e.g., Google SWE, MIT PhD, McKinsey Case)
                     </p>
                 </div>
 

@@ -86,7 +86,7 @@ export function RecordingControls({
             {!isRecording && (
                 <div className="flex justify-center w-full">
                     <p className="text-xs text-amber-600 dark:text-amber-500 font-medium animate-pulse">
-                        Pressing 'Start Recording' will consume 1 interview credit per session
+                        Pressing &apos;Start Recording&apos; uses 1 practice session credit
                     </p>
                 </div>
             )}
@@ -111,13 +111,13 @@ export function RecordingControls({
                     </button>
                     <ScreenShareIcon className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
                     <span className="text-xs text-zinc-600 dark:text-zinc-400">
-                        Capture system audio (Zoom/Meet)
+                        Capture audio from another tab or app
                     </span>
                 </div>
             )}
             {!isRecording && captureSystemAudio && onCaptureSystemAudioChange && (
                 <p className="px-1 text-xs text-amber-600 dark:text-amber-400">
-                    When the browser dialog appears, make sure to check &quot;Also share system audio&quot; to capture the interviewer&apos;s voice.
+                    For practicing with a partner on a video call or with recorded questions. When the browser dialog appears, check &quot;Also share system audio&quot; so their questions are transcribed.
                 </p>
             )}
 
@@ -129,7 +129,7 @@ export function RecordingControls({
                         <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-blue-500" />
                     </span>
                     <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
-                        Capturing system audio
+                        Capturing shared audio
                     </span>
                 </div>
             )}

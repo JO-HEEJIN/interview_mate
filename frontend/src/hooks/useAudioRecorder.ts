@@ -1,7 +1,7 @@
 /**
  * Custom hook for audio recording with Web Audio API
  * Enhanced with better audio processing, error handling, and performance monitoring
- * Supports system audio capture via getDisplayMedia for Zoom/Meet interviews
+ * Supports shared tab/app audio via getDisplayMedia (e.g. a practice partner on a video call)
  */
 
 import { useState, useRef, useCallback, useEffect } from 'react';
@@ -109,15 +109,15 @@ export function useAudioRecorder(options: UseAudioRecorderOptions = {}): UseAudi
                         box.style.cssText = 'background:white;border-radius:16px;padding:32px;text-align:center;max-width:360px;box-shadow:0 8px 32px rgba(0,0,0,0.3);';
 
                         const title = document.createElement('div');
-                        title.textContent = 'System Audio Capture';
+                        title.textContent = 'Share Audio'
                         title.style.cssText = 'font-size:18px;font-weight:700;margin-bottom:8px;color:#1a1a1a;';
 
                         const desc = document.createElement('div');
-                        desc.textContent = 'Click the button below to share your screen audio for interview capture.';
+                        desc.textContent = 'Click the button below to share audio from another tab or app so practice questions can be transcribed.';
                         desc.style.cssText = 'font-size:14px;color:#666;margin-bottom:20px;line-height:1.5;';
 
                         const btn = document.createElement('button');
-                        btn.textContent = 'Enable Screen Sharing';
+                        btn.textContent = 'Share Audio';
                         btn.style.cssText = 'padding:12px 28px;font-size:16px;font-weight:600;border-radius:10px;border:none;background:#4F46E5;color:white;cursor:pointer;';
                         btn.onmouseenter = () => { btn.style.background = '#4338CA'; };
                         btn.onmouseleave = () => { btn.style.background = '#4F46E5'; };

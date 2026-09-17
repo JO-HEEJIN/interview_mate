@@ -10,9 +10,9 @@ export const siteConfig = {
 
   // Site metadata
   name: process.env.NEXT_PUBLIC_SITE_NAME || 'InterviewMate',
-  title: 'InterviewMate - Real-Time AI for Interview Preparation',
-  description: 'Prepare context, practice responses, and get structured AI assistance for high-pressure communication with low-latency speech and retrieval.',
-  keywords: 'interview preparation, AI interview practice, interview communication, structured interview responses, speech pipeline, semantic retrieval, interview engineering',
+  title: 'InterviewMate - AI Interview Preparation and Mock Sessions',
+  description: 'Prepare for interviews with personalized practice questions, timed mock sessions, real-time transcription, and response suggestions grounded in your own background.',
+  keywords: 'interview preparation, mock interview, AI interview practice, practice questions, response suggestions, real-time transcription',
 
   // API
   apiUrl: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',

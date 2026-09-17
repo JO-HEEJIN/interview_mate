@@ -90,7 +90,7 @@ export function TranscriptionDisplay({
                             </svg>
                         </div>
                         <p className="text-zinc-400 dark:text-zinc-600 max-w-md">
-                            Start recording to see real-time transcription of the interview questions.
+                            Start recording to see real-time transcription of your practice questions.
                         </p>
                     </div>
                 )}

@@ -384,7 +384,7 @@ export default function QAPairsPage() {
                             Q&A Pairs
                         </h1>
                         <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                            Upload expected questions for instant answers during practice
+                            Upload expected questions and your prepared answers to rehearse in practice sessions
                         </p>
                     </div>
                     <div className="flex gap-2">
@@ -392,7 +392,7 @@ export default function QAPairsPage() {
                             href="/interview"
                             className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
                         >
-                            Interview
+                            Practice Session
                         </a>
                         {!isCreating && !showBulkUpload && (
                             <>
@@ -676,7 +676,7 @@ A: I excel at problem-solving and teamwork...`}
                 {qaPairs.length === 0 ? (
                     <div className="rounded-lg border border-zinc-200 bg-white p-8 text-center dark:border-zinc-800 dark:bg-zinc-950">
                         <p className="text-zinc-500 dark:text-zinc-400">
-                            No Q&A pairs yet. Upload your expected interview questions for instant answers during practice.
+                            No Q&A pairs yet. Upload expected interview questions and your prepared answers to rehearse them in practice sessions.
                         </p>
                     </div>
                 ) : (

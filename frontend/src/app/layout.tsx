@@ -4,6 +4,7 @@ import { Providers } from "@/components/providers";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { defaultMetadata } from "@/config/metadata";
+import { siteConfig } from "@/config/site";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -23,31 +24,25 @@ const jsonLd = {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
   "name": "InterviewMate",
-  "applicationCategory": "BusinessApplication",
+  "applicationCategory": "EducationalApplication",
   "operatingSystem": "Web Browser",
-  "description": "Prepare context, practice responses, and get structured AI assistance for high-pressure communication with low-latency speech and retrieval.",
+  "description": siteConfig.description,
   "url": "https://interviewmate.tech",
   "offers": {
     "@type": "Offer",
     "price": "10.00",
     "priceCurrency": "USD",
-    "description": "30 free sessions to start. Popular pack: 60 sessions for $10. AI Q&A Generator and Q&A Management free on first profile.",
+    "description": "30 free practice sessions to start. Popular pack: 60 sessions for $10. AI Q&A Generator and Q&A Management free on first profile.",
     "availability": "https://schema.org/InStock"
   },
-  "aggregateRating": {
-    "@type": "AggregateRating",
-    "ratingValue": "4.9",
-    "ratingCount": "127"
-  },
   "featureList": [
-    "Real-time speech-to-text transcription powered by Deepgram",
-    "Structured AI assistance for practice and communication",
-    "Low-latency speech processing and semantic retrieval",
-    "Personalized responses based on your uploaded context",
-    "Low-latency response streaming for practice sessions",
-    "Supports job, academic, and admissions preparation"
+    "Personalized practice questions generated from your resume and target-role context",
+    "Timed mock interview sessions with real-time Deepgram transcription",
+    "Personalized response suggestions grounded in your prepared context",
+    "Practice Q&A library with semantic retrieval",
+    "Session history export for review"
   ],
-  "keywords": "interview preparation, AI interview practice, interview communication, speech pipeline, semantic retrieval",
+  "keywords": siteConfig.keywords,
   "creator": {
     "@type": "Organization",
     "name": "InterviewMate",

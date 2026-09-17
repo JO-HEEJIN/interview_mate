@@ -1,5 +1,12 @@
 # Car Wash Prompt Architecture — Variable Isolation Results
 
+> **Correction (March 2026).** A follow-up investigation ([`investigation_2026-03-07.md`](investigation_2026-03-07.md), raw results in [`results/profile_star_20260307_233627/`](../results/profile_star_20260307_233627/) and [`results/c_star_only_100_20260308_002609/`](results/c_star_only_100_20260308_002609/)) changed how these results should be read:
+>
+> - The conditions below use **simplified experimental prompts**, not InterviewMate's production prompt. They do not validate the production prompt architecture.
+> - The same STAR scaffold embedded in the full production prompt passed **0/20 and 6/20** (claude-sonnet-4-6), depending on the profile. Standalone it passed 20/20, and 100/100 in a later run. Instructions such as "lead with the point" appear to make the model commit to an answer before reasoning.
+> - The original in-product "drive" answer, and the screenshots below that cite distance ("a 2-minute round trip"), came from the wrong reasoning. That answer was right by chance.
+> - All runs use one question, a small n, and Anthropic models. Treat them as a pilot showing that prompt ordering and complexity can suppress a reasoning scaffold, not as proof that any prompt works across topics.
+
 ## Origin
 
 This experiment was inspired by a viral Mastodon post and the subsequent Hacker News discussion.
@@ -78,7 +85,7 @@ C_role_star **(85%)** vs D_role_profile **(30%)**: In this exploratory study (N=
 - When STAR forces the model to think in "Situation → Task → Action" order, it naturally derives "Task: wash the car → Action: the car must be there"
 - In contrast, providing the profile (car model, location, etc.) still leaves the model at surface-level judgment: "100m is close, so walk"
 - The F_role_star_profile condition (95%) decomposes the 85%→100% lift: **Profile adds +10pp**, **RAG adds +5pp**
-- This proves that the "implicit context failure" identified in the HN discussion **can be solved with reasoning frameworks**
+- For this question and model, this suggests that the "implicit context failure" identified in the HN discussion **can be mitigated with a short reasoning framework** (see the correction above for the production-prompt caveat)
 
 ### 2. Without Profile: The Baseline Failure
 
@@ -104,7 +111,7 @@ When all layers are combined (Role + STAR + Profile + RAG), InterviewMate correc
 
 ![InterviewMate with full stack prompt — correctly answers "Drive"](images_provement/drive.png)
 
-This holds consistently across different accounts and sessions:
+A second session, shown below, also answered "drive", but its reasoning ("a 2-minute round trip") ignores the actual constraint (see correction above):
 
 ![Another session, same correct answer — "drive, that's a 2-minute round trip"](images_provement/drive2.png)
 
