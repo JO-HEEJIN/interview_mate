@@ -85,3 +85,6 @@ failed configurations discussed in the paper): `stage2_ao_experiment.py`
   within rollouts.
 - Not significant: within-rollout positional gradient (p=.34). Treated as
   preliminary throughout.
+
+Correction ([2026-09-16]): Earlier versions of the paper and the Stage 1 commit message described the 64 synthetic judge-audit cases as "human labels" / "human-labeled." These reference labels were drafted in an AI-assisted workflow following the scoring rubric, and not all 64 were independently hand-labeled by the author; the "사람 판정" notes in the audit JSON files were written as part of the same drafting process. The paper also used "pre-registered" for thresholds that were fixed in advance in internal project notes, not registered externally. A revised arXiv version with corrected wording will be submitted on [2026-09-24].
+  
